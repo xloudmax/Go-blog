@@ -1,0 +1,77 @@
+# File Management Operations
+
+# Import fragments
+#import "./fragments.graphql"
+
+# Queries
+
+# 获取文件夹列表
+query Folders {
+  folders {
+    ...FileFolderInfo
+  }
+}
+
+# 获取文件列表
+query Files($folder: String!) {
+  files(folder: $folder) {
+    ...MarkdownFileSummary
+  }
+}
+
+# 获取文件内容
+query FileContent($folder: String!, $fileName: String!) {
+  fileContent(folder: $folder, fileName: $fileName) {
+    ...MarkdownFileInfo
+  }
+}
+
+# Mutations
+
+# 创建文件夹
+mutation CreateFolder($input: CreateFolderInput!) {
+  createFolder(input: $input) {
+    ...FileFolderInfo
+  }
+}
+
+# 上传Markdown文件
+mutation UploadMarkdownFile($input: UploadMarkdownFileInput!) {
+  uploadMarkdownFile(input: $input) {
+    success
+    message
+    filePath
+    fileName
+  }
+}
+
+# 更新文件
+mutation UpdateFile($input: UpdateFileInput!) {
+  updateFile(input: $input) {
+    ...MarkdownFileInfo
+  }
+}
+
+# 删除文件
+mutation DeleteFile($folder: String!, $fileName: String!) {
+  deleteFile(folder: $folder, fileName: $fileName) {
+    ...GeneralResponseInfo
+  }
+}
+
+# 删除文件夹
+mutation DeleteFolder($name: String!) {
+  deleteFolder(name: $name) {
+    ...GeneralResponseInfo
+  }
+}
+
+# 上传图片
+mutation UploadImage($file: Upload!) {
+  uploadImage(file: $file) {
+    imageUrl
+    deleteUrl
+    filename
+    size
+  }
+}

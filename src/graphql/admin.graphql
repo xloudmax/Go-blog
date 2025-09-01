@@ -1,0 +1,93 @@
+# Admin Operations
+
+# Import fragments
+#import "./fragments.graphql"
+
+# Queries
+
+# 获取用户列表（管理员）
+query Users($limit: Int, $offset: Int, $search: String, $role: UserRole, $isVerified: Boolean) {
+  users(limit: $limit, offset: $offset, search: $search, role: $role, isVerified: $isVerified) {
+    ...UserInfo
+    postsCount
+  }
+}
+
+# 获取服务器仪表盘
+query ServerDashboard {
+  serverDashboard {
+    ...ServerDashboardInfo
+  }
+}
+
+# 获取邀请码列表
+query InviteCodes($limit: Int, $offset: Int, $isActive: Boolean) {
+  inviteCodes(limit: $limit, offset: $offset, isActive: $isActive) {
+    ...InviteCodeInfo
+  }
+}
+
+# Mutations
+
+# 管理员创建用户
+mutation AdminCreateUser($input: AdminCreateUserInput!) {
+  adminCreateUser(input: $input) {
+    ...UserInfo
+  }
+}
+
+# 管理员更新用户
+mutation AdminUpdateUser(
+  $id: ID!
+  $username: String
+  $email: String
+  $role: UserRole
+  $isVerified: Boolean
+  $isActive: Boolean
+) {
+  adminUpdateUser(
+    id: $id
+    username: $username
+    email: $email
+    role: $role
+    isVerified: $isVerified
+    isActive: $isActive
+  ) {
+    ...UserInfo
+  }
+}
+
+# 管理员删除用户
+mutation AdminDeleteUser($id: ID!) {
+  adminDeleteUser(id: $id) {
+    ...GeneralResponseInfo
+  }
+}
+
+# 创建邀请码
+mutation CreateInviteCode($input: CreateInviteCodeInput!) {
+  createInviteCode(input: $input) {
+    ...InviteCodeInfo
+  }
+}
+
+# 停用邀请码
+mutation DeactivateInviteCode($id: ID!) {
+  deactivateInviteCode(id: $id) {
+    ...GeneralResponseInfo
+  }
+}
+
+# 清理缓存
+mutation ClearCache {
+  clearCache {
+    ...GeneralResponseInfo
+  }
+}
+
+# 重建搜索索引
+mutation RebuildSearchIndex {
+  rebuildSearchIndex {
+    ...GeneralResponseInfo
+  }
+}

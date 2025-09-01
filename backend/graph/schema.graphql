@@ -1,0 +1,453 @@
+# --------------------
+# SCALARS & ENUMS
+# --------------------
+
+scalar Time
+scalar Upload
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AccessLevel {
+  PUBLIC
+  PRIVATE
+  RESTRICTED
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum VerificationType {
+  REGISTER
+  LOGIN
+  RESET_PASSWORD
+}
+
+# --------------------
+# CORE TYPES
+# --------------------
+
+type User {
+  id: ID!
+  username: String!
+  email: String!
+  role: UserRole!
+  isVerified: Boolean!
+  isActive: Boolean!
+  avatar: String
+  bio: String
+  lastLoginAt: Time
+  emailVerifiedAt: Time
+  createdAt: Time!
+  updatedAt: Time!
+  
+  # 关联数据
+  posts(limit: Int = 10, offset: Int = 0): [BlogPost!]!
+  postsCount: Int!
+}
+
+type BlogPost {
+  id: ID!
+  title: String!
+  slug: String!
+  excerpt: String
+  content: String!
+  tags: [String!]!
+  categories: [String!]!
+  coverImageUrl: String
+  accessLevel: AccessLevel!
+  status: PostStatus!
+  publishedAt: Time
+  lastEditedAt: Time
+  createdAt: Time!
+  updatedAt: Time!
+  
+  # 关联数据
+  author: User!
+  versions: [BlogPostVersion!]!
+  stats: BlogPostStats!
+  isLiked: Boolean! # 当前用户是否点赞了该文章
+}
+
+type BlogPostVersion {
+  id: ID!
+  versionNum: Int!
+  title: String!
+  content: String!
+  changeLog: String
+  createdAt: Time!
+  createdBy: User!
+}
+
+type BlogPostStats {
+  id: ID!
+  viewCount: Int!
+  likeCount: Int!
+  shareCount: Int!
+  commentCount: Int!
+  lastViewedAt: Time
+  updatedAt: Time!
+}
+
+type InviteCode {
+  id: ID!
+  code: String!
+  createdBy: User!
+  usedBy: User
+  usedAt: Time
+  expiresAt: Time!
+  maxUses: Int!
+  currentUses: Int!
+  isActive: Boolean!
+  description: String
+  createdAt: Time!
+}
+
+type AuthPayload {
+  token: String!
+  refreshToken: String!
+  user: User!
+  expiresAt: Time!
+}
+
+type GeneralResponse {
+  success: Boolean!
+  message: String
+  code: String
+}
+
+# 服务器统计信息（管理员专用）
+type ServerDashboard {
+  serverTime: Time!
+  hostname: String!
+  goVersion: String!
+  cpuCount: Int!
+  goroutines: Int!
+  memory: ServerMemoryStats!
+  uptime: String!
+  userCount: Int!
+  postCount: Int!
+  todayRegistrations: Int!
+  todayPosts: Int!
+}
+
+type ServerMemoryStats {
+  alloc: String!
+  totalAlloc: String!
+  sys: String!
+  heapAlloc: String!
+  heapSys: String!
+}
+
+type SearchResult {
+  posts: [BlogPost!]!
+  total: Int!
+  took: String! # 搜索耗时
+}
+
+type ImageUploadResponse {
+  imageUrl: String!
+  deleteUrl: String
+  filename: String!
+  size: Int!
+}
+
+# 文件和文件夹管理类型
+type FileFolder {
+  name: String!
+  path: String!
+  createdAt: Time!
+  fileCount: Int!
+}
+
+type MarkdownFile {
+  name: String!
+  folder: String!
+  content: String
+  size: Int!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type FileUploadResponse {
+  success: Boolean!
+  message: String!
+  filePath: String
+  fileName: String
+}
+
+# --------------------
+# INPUT TYPES
+# --------------------
+
+input RegisterInput {
+  username: String!
+  email: String!
+  password: String!
+  inviteCode: String
+}
+
+input LoginInput {
+  identifier: String! # 邮箱或用户名
+  password: String!
+  remember: Boolean = false
+}
+
+input EmailLoginInput {
+  email: String!
+}
+
+input VerifyEmailInput {
+  email: String!
+  code: String!
+  type: VerificationType!
+}
+
+input RequestPasswordResetInput {
+  email: String!
+}
+
+input ConfirmPasswordResetInput {
+  token: String!
+  newPassword: String!
+}
+
+input CreatePostInput {
+  title: String!
+  slug: String
+  excerpt: String
+  content: String!
+  tags: [String!]
+  categories: [String!]
+  coverImageUrl: String
+  accessLevel: AccessLevel = PUBLIC
+  status: PostStatus = DRAFT
+  publishAt: Time
+}
+
+input UpdatePostInput {
+  title: String
+  slug: String
+  excerpt: String
+  content: String
+  tags: [String!]
+  categories: [String!]
+  coverImageUrl: String
+  accessLevel: AccessLevel
+  status: PostStatus
+  changeLog: String
+}
+
+input PostFilterInput {
+  authorId: ID
+  status: PostStatus
+  accessLevel: AccessLevel
+  tags: [String!]
+  categories: [String!]
+  search: String
+  dateFrom: Time
+  dateTo: Time
+}
+
+input PostSortInput {
+  field: String = "createdAt" # createdAt, updatedAt, publishedAt, viewCount, likeCount
+  order: String = "DESC" # ASC, DESC
+}
+
+input CreateInviteCodeInput {
+  expiresAt: Time!
+  maxUses: Int = 1
+  description: String
+}
+
+input AdminCreateUserInput {
+  username: String!
+  email: String!
+  password: String!
+  role: UserRole = USER
+  isVerified: Boolean = false
+}
+
+input UpdateProfileInput {
+  username: String
+  bio: String
+  avatar: String
+}
+
+# 文件管理输入类型
+input CreateFolderInput {
+  name: String!
+}
+
+input UploadMarkdownFileInput {
+  file: Upload!
+  folder: String!
+  title: String!
+}
+
+input UpdateFileInput {
+  folder: String!
+  fileName: String!
+  content: String!
+}
+
+# --------------------
+# QUERY TYPE
+# --------------------
+
+type Query {
+  # 用户查询
+  me: User # 获取当前登录用户（需要认证）
+  user(id: ID!): User # 获取指定用户（需要认证）
+  users(
+    limit: Int = 10
+    offset: Int = 0
+    search: String
+    role: UserRole
+    isVerified: Boolean
+  ): [User!]! # 用户列表（管理员）
+
+  # 文章查询
+  post(id: ID, slug: String): BlogPost # 获取指定文章
+  posts(
+    limit: Int = 10
+    offset: Int = 0
+    filter: PostFilterInput
+    sort: PostSortInput
+  ): [BlogPost!]! # 文章列表
+
+  postVersions(postId: ID!): [BlogPostVersion!]! # 文章版本历史
+
+  # 搜索
+  searchPosts(
+    query: String!
+    limit: Int = 10
+    offset: Int = 0
+  ): SearchResult! # 搜索文章
+
+  # 搜索建议和统计
+  getSearchSuggestions(
+    query: String!
+    limit: Int = 10
+  ): [String!]! # 获取搜索建议
+
+  getTrendingSearches(
+    limit: Int = 10
+  ): [String!]! # 获取热门搜索词
+
+  getSearchStats: SearchStats! # 搜索统计信息
+
+  # 邀请码管理（管理员）
+  inviteCodes(
+    limit: Int = 10
+    offset: Int = 0
+    isActive: Boolean
+  ): [InviteCode!]!
+
+  # 系统管理（管理员）
+  serverDashboard: ServerDashboard!
+
+  # 统计信息
+  getPopularPosts(limit: Int = 10): [BlogPost!]!
+  getRecentPosts(limit: Int = 10): [BlogPost!]!
+  getTrendingTags(limit: Int = 20): [String!]!
+
+  # 文件和文件夹管理（需要认证）
+  folders: [FileFolder!]! # 获取所有文件夹列表
+  files(folder: String!): [MarkdownFile!]! # 获取指定文件夹的文件列表
+  fileContent(folder: String!, fileName: String!): MarkdownFile # 获取文件内容
+}
+
+# --------------------
+# MUTATION TYPE
+# --------------------
+
+type Mutation {
+  # 认证相关
+  register(input: RegisterInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+  emailLogin(input: EmailLoginInput!): GeneralResponse! # 发送邮箱登录验证码
+  verifyEmailAndLogin(input: VerifyEmailInput!): AuthPayload! # 验证邮箱验证码并登录
+  logout: GeneralResponse!
+  refreshToken: AuthPayload!
+
+  # 邮箱验证
+  sendVerificationCode(email: String!, type: VerificationType!): GeneralResponse!
+  verifyEmail(input: VerifyEmailInput!): GeneralResponse!
+
+  # 密码重置
+  requestPasswordReset(input: RequestPasswordResetInput!): GeneralResponse!
+  confirmPasswordReset(input: ConfirmPasswordResetInput!): GeneralResponse!
+
+  # 用户管理
+  updateProfile(input: UpdateProfileInput!): User!
+  changePassword(
+    currentPassword: String!
+    newPassword: String!
+  ): GeneralResponse!
+
+  # 文章管理
+  createPost(input: CreatePostInput!): BlogPost!
+  updatePost(id: ID!, input: UpdatePostInput!): BlogPost!
+  deletePost(id: ID!): GeneralResponse!
+  publishPost(id: ID!): BlogPost!
+  archivePost(id: ID!): BlogPost!
+  likePost(id: ID!): BlogPost!
+  unlikePost(id: ID!): BlogPost!
+
+  # 文件上传
+  uploadImage(file: Upload!): ImageUploadResponse!
+
+  # 文件和文件夹管理（需要认证）
+  createFolder(input: CreateFolderInput!): FileFolder!
+  uploadMarkdownFile(input: UploadMarkdownFileInput!): FileUploadResponse!
+  updateFile(input: UpdateFileInput!): MarkdownFile!
+  deleteFile(folder: String!, fileName: String!): GeneralResponse!
+  deleteFolder(name: String!): GeneralResponse!
+
+  # 管理员操作
+  adminCreateUser(input: AdminCreateUserInput!): User!
+  adminUpdateUser(
+    id: ID!
+    username: String
+    email: String
+    role: UserRole
+    isVerified: Boolean
+    isActive: Boolean
+  ): User!
+  adminDeleteUser(id: ID!): GeneralResponse!
+
+  # 邀请码管理（管理员）
+  createInviteCode(input: CreateInviteCodeInput!): InviteCode!
+  deactivateInviteCode(id: ID!): GeneralResponse!
+
+  # 系统管理（管理员）
+  clearCache: GeneralResponse!
+  rebuildSearchIndex: GeneralResponse!
+}
+
+# 搜索统计信息类型
+type SearchStats {
+  totalSearches: Int!
+  popularQueries: [PopularQuery!]!
+  searchTrends: [SearchTrend!]!
+}
+
+# 热门查询类型
+type PopularQuery {
+  query: String!
+  count: Int!
+  lastSearched: Time!
+}
+
+# 搜索趋势类型
+type SearchTrend {
+  date: String!
+  searchCount: Int!
+  topQueries: [String!]!
+}

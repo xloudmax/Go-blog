@@ -1,0 +1,314 @@
+/* 样式优化文件 */
+
+/* 全局优化样式 */
+:root {
+    /* 主色 */
+    --color-primary-light: #4f46e5;
+    --color-primary-dark: #6366f1;
+    --color-primary: #4f46e5;
+
+    /* 扩展色彩系统 */
+    --color-success-light: #d1fae5;
+    --color-success-dark: #047857;
+    --color-warning-light: #fef3c7;
+    --color-warning-dark: #b45309;
+    --color-error-light: #fee2e2;
+    --color-error-dark: #b91c1c;
+    --color-info-light: #dbeafe;
+    --color-info-dark: #1d4ed8;
+
+    /* 中性色 */
+    --color-neutral-50: #f9fafb;
+    --color-neutral-100: #f3f4f6;
+    --color-neutral-200: #e5e7eb;
+    --color-neutral-300: #d1d5db;
+    --color-neutral-400: #9ca3af;
+    --color-neutral-500: #6b7280;
+    --color-neutral-600: #4b5563;
+    --color-neutral-700: #374151;
+    --color-neutral-800: #1f2937;
+    --color-neutral-900: #111827;
+
+    /* 渐变色 */
+    --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    --gradient-secondary: linear-gradient(135deg, #0ea5e9 0%, #0d9488 100%);
+
+    /* 阴影 */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+    /* 圆角 */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
+    --radius-full: 9999px;
+
+    /* 间距 */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    --spacing-3xl: 4rem;
+}
+
+/* 暗色主题变量 */
+html.dark {
+    --color-success-light: #065f46;
+    --color-success-dark: #6ee7b7;
+    --color-warning-light: #92400e;
+    --color-warning-dark: #fcd34d;
+    --color-error-light: #991b1b;
+    --color-error-dark: #fca5a5;
+    --color-info-light: #1e3a8a;
+    --color-info-dark: #93c5fd;
+}
+
+/* 卡片组件优化 */
+.optimized-card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    border: 1px solid var(--color-neutral-200);
+}
+
+/*
+.optimized-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+*/
+
+html.dark .optimized-card {
+    border-color: var(--color-neutral-700);
+}
+
+/* 按钮组件优化 */
+.optimized-button {
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.optimized-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.optimized-button:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* 表单组件优化 */
+.optimized-input {
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.optimized-input:focus {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* 导航栏优化 */
+.optimized-navbar {
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.8) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+html.dark .optimized-navbar {
+    background-color: rgba(31, 31, 31, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* 页面过渡动画 */
+.page-transition-enter {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.page-transition-enter-active {
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+    opacity: 1;
+}
+
+.page-transition-exit-active {
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 300ms, transform 300ms;
+}
+
+/* 交互动效 */
+/* 按钮点击波纹效果 */
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* 渐变背景 */
+.gradient-bg {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+/* Tag组件优化样式 - 根据每种背景色设置最佳对比度的文字颜色 */
+.ant-tag {
+    font-weight: 500 !important;
+    border: none !important;
+}
+
+/* 红色系Tag - 使用深蓝色文字形成强对比 */
+.ant-tag-red,
+.ant-tag-volcano,
+.ant-tag[data-color="red"],
+.ant-tag[color="red"] {
+    color: #1e3a8a !important;
+}
+
+/* 蓝色系Tag - 使用黄色文字形成强对比 */
+.ant-tag-blue,
+.ant-tag-processing,
+.ant-tag-geekblue,
+.ant-tag[data-color="blue"],
+.ant-tag[data-color="processing"],
+.ant-tag[color="blue"] {
+    color: #eab308 !important;
+}
+
+/* 绿色系Tag - 使用深红色文字形成强对比 */
+.ant-tag-green,
+.ant-tag-success,
+.ant-tag[data-color="green"],
+.ant-tag[data-color="success"],
+.ant-tag[color="green"] {
+    color: #dc2626 !important;
+}
+
+/* 紫色系Tag - 使用黄色文字形成强对比 */
+.ant-tag-purple,
+.ant-tag-magenta,
+.ant-tag[data-color="purple"],
+.ant-tag[data-color="magenta"] {
+    color: #eab308 !important;
+}
+
+/* 青色系Tag - 使用深色文字 */
+.ant-tag-cyan,
+.ant-tag[data-color="cyan"] {
+    color: #0f172a !important;
+}
+
+/* 橙色系Tag - 使用深色文字 */
+.ant-tag-orange,
+.ant-tag[data-color="orange"],
+.ant-tag[color="orange"] {
+    color: #7c2d12 !important;
+}
+
+/* 黄色系Tag - 使用深色文字 */
+.ant-tag-warning,
+.ant-tag-gold,
+.ant-tag[data-color="warning"],
+.ant-tag[data-color="gold"] {
+    color: #92400e !important;
+}
+
+/* 浅色系Tag - 使用深色文字 */
+.ant-tag-lime,
+.ant-tag-pink,
+.ant-tag[data-color="lime"],
+.ant-tag[data-color="pink"] {
+    color: #365314 !important;
+}
+
+/* 错误状态Tag - 使用深蓝色文字形成强对比 */
+.ant-tag-error,
+.ant-tag[data-color="error"] {
+    color: #1e3a8a !important;
+}
+
+/* 默认Tag - 根据主题调整 */
+.ant-tag-default,
+.ant-tag[data-color="default"],
+.ant-tag[color="default"] {
+    color: #4b5563 !important;
+}
+
+/* 深色主题下的特殊处理 */
+html.dark .ant-tag-default,
+html.dark .ant-tag[data-color="default"],
+html.dark .ant-tag[color="default"] {
+    color: #d1d5db !important;
+}
+
+html.dark .ant-tag-cyan,
+html.dark .ant-tag[data-color="cyan"] {
+    color: #fbbf24 !important;
+}
+
+html.dark .ant-tag-orange,
+html.dark .ant-tag[data-color="orange"],
+html.dark .ant-tag[color="orange"] {
+    color: #fed7aa !important;
+}
+
+html.dark .ant-tag-warning,
+html.dark .ant-tag-gold,
+html.dark .ant-tag[data-color="warning"],
+html.dark .ant-tag[data-color="gold"] {
+    color: #fde68a !important;
+}
+
+html.dark .ant-tag-lime,
+html.dark .ant-tag-pink,
+html.dark .ant-tag[data-color="lime"],
+html.dark .ant-tag[data-color="pink"] {
+    color: #bbf7d0 !important;
+}
+
+/* 深色主题下的default tag使用橙色文字形成强对比 */
+html.dark .ant-tag-default {
+    color: #fb923c !important;
+}
+
+/* 冲突的CSS规则已移除，使用上面的精细颜色方案 */

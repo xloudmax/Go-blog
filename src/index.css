@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&display=swap');
+
+/* 移除无效的Hack Nerd Mono字体引用，因为CDN链接已失效 */
+
+/* 引入优化样式 */
+@import './styles/optimization.css';
+@import './styles/design-system.css';
+@import './styles/responsive-optimization.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 如果你要写全局 override 或自定义样式，可以接着写在这里 */
+
+html {
+  height: 100%; /* 或者 min-height: 100vh; */
+  width: 100%;
+  padding: 0;    /* 必须为 0 */
+  margin: 0;     /* 必须为 0 */
+  box-sizing: border-box;
+  font-family: 'Noto Sans SC', sans-serif; /* 移除Hack Nerd Mono */
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body {
+  height: 100%; /* 或者 min-height: 100vh; */
+  width: 100%;
+  margin: 0;     /* 必须为 0 */
+  padding: 0;    /* 必须为 0 */
+  background-color: inherit; /* 从 html 继承背景色 */
+  color: inherit;
+  font-family: inherit;
+}
+
+#root {
+  height: 100%; /* 或者 min-height: 100vh; */
+  width: 100%;
+  padding: 0;    /* 必须为 0 */
+  margin: 0;     /* 必须为 0 */
+  background-color: inherit; /* 从 body 继承背景色 */
+}
+
+/* 主题相关的 html 类样式 */
+html.light {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+html.dark {
+  color: #ffffff !important;
+  background-color: #1f1f1f !important; /* 确保这是一个足够深的颜色 */
+}
+
+/* 美化 Markdown 显示区域 */
+.markdown-body {
+  font-family: 'Noto Sans SC', sans-serif; /* 移除Hack Nerd Mono */
+  line-height: 1.7;
+  color: inherit;
+  background: inherit;
+  padding: 20px;
+}
+
+/* 编辑器包裹元素的基础样式 */
+.markdown-editor-container {
+  width: 100%;
+}
+
+/* 页面过渡动画 */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 300ms, transform 300ms;
+}

@@ -1,0 +1,114 @@
+# Auth Operations
+
+# Import fragments
+#import "./fragments.graphql"
+
+# Mutations
+
+# 用户注册
+mutation Register($input: RegisterInput!) {
+  register(input: $input) {
+    ...AuthPayloadInfo
+  }
+}
+
+# 用户登录
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    ...AuthPayloadInfo
+  }
+}
+
+# 邮箱登录（发送验证码）
+mutation EmailLogin($input: EmailLoginInput!) {
+  emailLogin(input: $input) {
+    ...GeneralResponseInfo
+  }
+}
+
+# 验证邮箱并登录
+mutation VerifyEmailAndLogin($input: VerifyEmailInput!) {
+  verifyEmailAndLogin(input: $input) {
+    ...AuthPayloadInfo
+  }
+}
+
+# 用户登出
+mutation Logout {
+  logout {
+    ...GeneralResponseInfo
+  }
+}
+
+# 刷新Token
+mutation RefreshToken {
+  refreshToken {
+    ...AuthPayloadInfo
+  }
+}
+
+# 发送验证码
+mutation SendVerificationCode($email: String!, $type: VerificationType!) {
+  sendVerificationCode(email: $email, type: $type) {
+    ...GeneralResponseInfo
+  }
+}
+
+# 验证邮箱
+mutation VerifyEmail($input: VerifyEmailInput!) {
+  verifyEmail(input: $input) {
+    ...GeneralResponseInfo
+  }
+}
+
+# 请求密码重置
+mutation RequestPasswordReset($input: RequestPasswordResetInput!) {
+  requestPasswordReset(input: $input) {
+    ...GeneralResponseInfo
+  }
+}
+
+# 确认密码重置
+mutation ConfirmPasswordReset($input: ConfirmPasswordResetInput!) {
+  confirmPasswordReset(input: $input) {
+    ...GeneralResponseInfo
+  }
+}
+
+# 更新个人资料
+mutation UpdateProfile($input: UpdateProfileInput!) {
+  updateProfile(input: $input) {
+    ...UserInfo
+  }
+}
+
+# 修改密码
+mutation ChangePassword($currentPassword: String!, $newPassword: String!) {
+  changePassword(currentPassword: $currentPassword, newPassword: $newPassword) {
+    ...GeneralResponseInfo
+  }
+}
+
+# Queries
+
+# 获取当前用户
+query Me {
+  me {
+    ...UserInfo
+    posts(limit: 5) {
+      ...BlogPostSummary
+    }
+    postsCount
+  }
+}
+
+# 获取指定用户
+query User($id: ID!) {
+  user(id: $id) {
+    ...UserInfo
+    posts(limit: 10) {
+      ...BlogPostSummary
+    }
+    postsCount
+  }
+}

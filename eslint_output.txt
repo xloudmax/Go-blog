@@ -1,0 +1,209 @@
+
+> @ lint /Users/shenyufei/Downloads/playground-main
+> eslint src
+
+
+/Users/shenyufei/Downloads/playground-main/src/__tests__/graphql.test.ts
+  2:10  warning  'ApolloClient' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/shenyufei/Downloads/playground-main/src/api/graphql/admin.ts
+    1:38  warning  'useLazyQuery' is defined but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+    3:3   warning  'User' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+    5:3   warning  'InviteCode' is defined but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+    6:3   warning  'ServerDashboard' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+    9:3   warning  'GeneralResponse' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  364:52  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/api/graphql/auth.ts
+   1:38  warning  'useLazyQuery' is defined but never used. Allowed unused vars must match /^_/u               @typescript-eslint/no-unused-vars
+   3:3   warning  'LoginInput' is defined but never used. Allowed unused vars must match /^_/u                 @typescript-eslint/no-unused-vars
+   4:3   warning  'RegisterInput' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+   5:3   warning  'EmailLoginInput' is defined but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+   6:3   warning  'VerifyEmailInput' is defined but never used. Allowed unused vars must match /^_/u           @typescript-eslint/no-unused-vars
+   7:3   warning  'RequestPasswordResetInput' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   8:3   warning  'ConfirmPasswordResetInput' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  11:3   warning  'AuthPayload' is defined but never used. Allowed unused vars must match /^_/u                @typescript-eslint/no-unused-vars
+  12:3   warning  'GeneralResponse' is defined but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+
+/Users/shenyufei/Downloads/playground-main/src/api/graphql/blog.ts
+  302:36   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  302:63   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  440:53   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  440:100  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  440:131  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  456:45   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  456:119  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  467:46   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  467:75   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  467:99   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  467:176  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  467:192  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  485:46   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  485:75   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  485:152  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  485:168  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/api/graphql/file.ts
+    1:38  warning  'useLazyQuery' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+    3:3   warning  'FileFolder' is defined but never used. Allowed unused vars must match /^_/u               @typescript-eslint/no-unused-vars
+    4:3   warning  'MarkdownFile' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+    5:3   warning  'CreateFolderInput' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+    6:3   warning  'UploadMarkdownFileInput' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+    7:3   warning  'UpdateFileInput' is defined but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+    8:3   warning  'GeneralResponse' is defined but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+    9:3   warning  'ImageUploadResponse' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+  216:23  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+  235:23  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+  235:38  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+  252:23  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+  264:56  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+  292:64  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+  358:3   warning  Unexpected console statement                                                               no-console
+  365:3   warning  Unexpected console statement                                                               no-console
+  371:3   warning  Unexpected console statement                                                               no-console
+  377:3   warning  Unexpected console statement                                                               no-console
+  383:3   warning  Unexpected console statement                                                               no-console
+  389:3   warning  Unexpected console statement                                                               no-console
+
+/Users/shenyufei/Downloads/playground-main/src/components/ResponsiveTester.tsx
+  37:27  warning  'width' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  37:42  warning  'height' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/shenyufei/Downloads/playground-main/src/components/VersionHistory.tsx
+  4:49  warning  'message' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+  8:9   warning  'Title' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/shenyufei/Downloads/playground-main/src/contexts/AuthContext.tsx
+   83:19  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  115:19  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  135:19  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  166:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/shenyufei/Downloads/playground-main/src/contexts/ThemeContext.tsx
+  13:14  warning  Fast refresh only works when a file only exports components. Move your React context(s) to a separate file                      react-refresh/only-export-components
+  78:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/shenyufei/Downloads/playground-main/src/graphql/cache-config.ts
+  7:85  warning  'readField' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/shenyufei/Downloads/playground-main/src/graphql/client.ts
+  37:7  warning  Unexpected console statement  no-console
+  50:5  warning  Unexpected console statement  no-console
+
+/Users/shenyufei/Downloads/playground-main/src/graphql/multiClient.ts
+   43:9   warning  Unexpected console statement                                                  no-console
+   56:7   warning  Unexpected console statement                                                  no-console
+  163:12  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/shenyufei/Downloads/playground-main/src/hooks/useAdmin.ts
+   79:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   80:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  163:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  164:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/hooks/useAppState.tsx
+   27:80  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  105:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  115:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  164:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  173:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  185:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  194:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/shenyufei/Downloads/playground-main/src/hooks/useBlog.ts
+   28:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  123:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  227:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  227:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  228:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  228:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  230:73  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  230:89  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/hooks/useFile.ts
+  80:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  89:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  89:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/layouts/AppLayout.tsx
+   84:17  warning  Unexpected console statement  no-console
+  126:29  warning  Unexpected console statement  no-console
+  143:17  warning  Unexpected console statement  no-console
+
+/Users/shenyufei/Downloads/playground-main/src/main.tsx
+  16:10  warning  Fast refresh only works when a file has exports. Move your component(s) to a separate file  react-refresh/only-export-components
+  30:10  warning  Fast refresh only works when a file has exports. Move your component(s) to a separate file  react-refresh/only-export-components
+
+/Users/shenyufei/Downloads/playground-main/src/pages/EditorPage.tsx
+  165:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/pages/HomePage.tsx
+   81:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  185:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  363:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/pages/LoginPage.tsx
+  100:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  127:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  150:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  159:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/pages/RegisterPage.tsx
+  108:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  130:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/pages/admin/AdminDashboard.tsx
+  24:3  warning  'ReloadOutlined' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/shenyufei/Downloads/playground-main/src/pages/admin/InviteCodeManagement.tsx
+   15:3   warning  'Checkbox' is defined but never used. Allowed unused vars must match /^_/u                      @typescript-eslint/no-unused-vars
+   40:9   warning  'RangePicker' is assigned a value but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+   98:21  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  108:21  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  124:21  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  130:9   warning  'toggleCodeSelection' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  178:19  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  178:32  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  203:39  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  211:19  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  211:32  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  229:19  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  229:32  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  246:19  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  246:32  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  264:19  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  264:32  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/pages/admin/SystemManagement.tsx
+  21:3   warning  'InfoCircleOutlined' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  37:5   warning  'stats' is assigned a value but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+  68:21  warning  Unexpected any. Specify a different type                                              @typescript-eslint/no-explicit-any
+  81:21  warning  Unexpected any. Specify a different type                                              @typescript-eslint/no-explicit-any
+
+/Users/shenyufei/Downloads/playground-main/src/pages/admin/UserManagement.tsx
+    7:3   warning  'Spin' is defined but never used. Allowed unused vars must match /^_/u                          @typescript-eslint/no-unused-vars
+   13:3   warning  'Menu' is defined but never used. Allowed unused vars must match /^_/u                          @typescript-eslint/no-unused-vars
+   22:3   warning  'Popconfirm' is defined but never used. Allowed unused vars must match /^_/u                    @typescript-eslint/no-unused-vars
+   26:3   warning  'EditOutlined' is defined but never used. Allowed unused vars must match /^_/u                  @typescript-eslint/no-unused-vars
+   27:3   warning  'DeleteOutlined' is defined but never used. Allowed unused vars must match /^_/u                @typescript-eslint/no-unused-vars
+   58:5   warning  'loadMore' is assigned a value but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+   66:50  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   95:21  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  115:21  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  125:21  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  137:20  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  157:21  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  163:9   warning  'toggleUserSelection' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/shenyufei/Downloads/playground-main/src/theme/antdTheme.tsx
+  156:10  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  156:22  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/shenyufei/Downloads/playground-main/src/utils/offlineStorage.ts
+  4:10  warning  'showErrorNotification' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+✖ 146 problems (0 errors, 146 warnings)
+

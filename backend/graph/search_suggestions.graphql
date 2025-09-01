@@ -1,0 +1,38 @@
+# 搜索建议和自动补全相关的GraphQL扩展
+
+extend type Query {
+  # 获取搜索建议
+  getSearchSuggestions(
+    query: String!
+    limit: Int = 10
+  ): [String!]!
+  
+  # 获取热门搜索词
+  getTrendingSearches(
+    limit: Int = 10
+  ): [String!]!
+  
+  # 搜索统计信息
+  getSearchStats: SearchStats!
+}
+
+# 搜索统计信息类型
+type SearchStats {
+  totalSearches: Int!
+  popularQueries: [PopularQuery!]!
+  searchTrends: [SearchTrend!]!
+}
+
+# 热门查询类型
+type PopularQuery {
+  query: String!
+  count: Int!
+  lastSearched: Time!
+}
+
+# 搜索趋势类型  
+type SearchTrend {
+  date: String!
+  searchCount: Int!
+  topQueries: [String!]!
+}

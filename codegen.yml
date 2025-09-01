@@ -1,0 +1,29 @@
+schema: './backend/graph/schema.graphql'
+documents: 'src/graphql/**/*.graphql'
+generates:
+  src/generated/graphql.ts:
+    plugins:
+      - 'typescript'
+      - 'typescript-operations'
+      - 'typescript-react-apollo'
+    config:
+      withHooks: true
+      withHOC: false
+      withComponent: false
+      apolloReactHooksImportFrom: '@apollo/client'
+      scalars:
+        Time: 'string'
+        Upload: 'File'
+      skipTypename: false
+      enumsAsTypes: true
+      constEnums: true
+      addDocBlocks: true
+      dedupeOperationSuffix: true
+      omitOperationSuffix: false
+      operationResultSuffix: 'Result'
+      documentVariableSuffix: 'Document'
+      fragmentVariableSuffix: 'FragmentDoc'
+      documentMode: 'documentNode'
+      pureMagicComment: true
+      extractAllFieldsToTypes: true
+      nonOptionalTypename: true

@@ -1,0 +1,223 @@
+import { useNavigate } from 'react-router-dom';
+// 导入Ant Design组件
+import {
+  Card,
+  Button,
+  Spin,
+  Alert,
+  Statistic,
+  Row,
+  Col,
+  Typography,
+  Space,
+  Tag
+} from 'antd';
+import {
+  UserOutlined,
+  FileTextOutlined,
+  DatabaseOutlined,
+  ClockCircleOutlined
+} from '@ant-design/icons';
+import { useSystemAdmin } from '@/hooks';
+
+const { Text } = Typography;
+
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+
+  const {
+    dashboard,
+    stats,
+    systemHealth,
+    loading,
+    error,
+    formatMemoryUsage,
+    refetchDashboard
+  } = useSystemAdmin();
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert
+        message="加载失败"
+        description={error.message}
+        type="error"
+        showIcon
+        action={
+          <Button size="small" onClick={() => refetchDashboard()}>
+            重试
+          </Button>
+        }
+      />
+    );
+  }
+
+  // 格式化运行时间
+  const formatUptime = (uptimeStr: string) => {
+    return uptimeStr;
+  };
+
+  return (
+    <div style={{ padding: '24px' }}>
+      {/* 页面标题 */}
+
+      {/* 系统健康度 */}
+      {systemHealth && (
+        <div style={{ marginBottom: '24px' }}>
+          <Space>
+            <Tag
+              color={
+                systemHealth.status === 'excellent' ? 'success' :
+                systemHealth.status === 'good' ? 'processing' :
+                systemHealth.status === 'warning' ? 'warning' : 'error'
+              }
+            >
+              {systemHealth.status === 'excellent' ? '优秀' :
+               systemHealth.status === 'good' ? '良好' :
+               systemHealth.status === 'warning' ? '警告' : '严重'}
+            </Tag>
+            <span>系统健康度: {systemHealth.score}/100</span>
+          </Space>
+        </div>
+      )}
+
+      {/* 统计卡片 */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="总用户数"
+              value={stats?.userCount || dashboard?.userCount || 0}
+              prefix={<UserOutlined style={{ color: '#4f46e5' }} />}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="总文章数"
+              value={stats?.postCount || dashboard?.postCount || 0}
+              prefix={<FileTextOutlined style={{ color: '#10b981' }} />}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="内存使用"
+              value={dashboard?.memory ? formatMemoryUsage(dashboard.memory.alloc) : '0 MB'}
+              prefix={<DatabaseOutlined style={{ color: '#f59e0b' }} />}
+              suffix={`/ ${dashboard?.memory ? formatMemoryUsage(dashboard.memory.totalAlloc) : '0 MB'}`}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="运行时间"
+              value={dashboard?.uptime ? formatUptime(dashboard.uptime) : '未知'}
+              prefix={<ClockCircleOutlined style={{ color: '#3b82f6' }} />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* 系统信息 */}
+      {dashboard && (
+        <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+          {/* 服务器信息 */}
+          <Col xs={24} lg={12}>
+            <Card title="服务器信息">
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">主机名:</Text>
+                  <Text>{dashboard.hostname}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">Go 版本:</Text>
+                  <Text>{dashboard.goVersion}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">CPU 核心:</Text>
+                  <Text>{dashboard.cpuCount}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">服务器时间:</Text>
+                  <Text>{new Date(dashboard.serverTime).toLocaleString('zh-CN')}</Text>
+                </div>
+              </Space>
+            </Card>
+          </Col>
+
+          {/* 内存详情 */}
+          <Col xs={24} lg={12}>
+            <Card title="内存使用详情">
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">当前分配:</Text>
+                  <Text>{formatMemoryUsage(dashboard.memory.alloc)}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">累计分配:</Text>
+                  <Text>{formatMemoryUsage(dashboard.memory.totalAlloc)}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">系统内存:</Text>
+                  <Text>{formatMemoryUsage(dashboard.memory.sys)}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">堆分配:</Text>
+                  <Text>{formatMemoryUsage(dashboard.memory.heapAlloc)}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">堆系统:</Text>
+                  <Text>{formatMemoryUsage(dashboard.memory.heapSys)}</Text>
+                </div>
+              </Space>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {/* 快捷操作 */}
+      <Card title="快捷操作">
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={8}>
+            <Button
+              block
+              onClick={() => navigate('/admin/users')}
+            >
+              👥 用户管理
+            </Button>
+          </Col>
+          <Col xs={24} md={8}>
+            <Button
+              block
+              onClick={() => navigate('/admin/invites')}
+            >
+              🎫 邀请码管理
+            </Button>
+          </Col>
+          <Col xs={24} md={8}>
+            <Button
+              block
+              onClick={() => navigate('/admin/system')}
+            >
+              ⚙️ 系统设置
+            </Button>
+          </Col>
+        </Row>
+      </Card>
+    </div>
+  );
+}
