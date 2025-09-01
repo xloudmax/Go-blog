@@ -1,16 +1,21 @@
 // src/App.tsx
-// 应用入口，仅负责路由包装与布局挂载
-import { BrowserRouter } from 'react-router-dom'
-import AppLayout from './layouts/AppLayout'
+// 应用入口，负责路由配置
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import AppLayout from './layouts/AppLayout';
+import LandingPage from './pages/LandingPage';
 
 /**
  * 应用的根组件
- * 由于布局已拆分到 AppLayout 中，此处只负责包裹 BrowserRouter
+ * 配置应用的主要路由
  */
 export default function App() {
     return (
         <BrowserRouter>
-            <AppLayout />
+            <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/*" element={<AppLayout />} />
+            </Routes>
         </BrowserRouter>
-    )
+    );
 }

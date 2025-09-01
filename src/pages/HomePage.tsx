@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Card,
   Button,
   Input,
-  Select,
   Spin,
   Alert,
   Avatar,
@@ -15,15 +14,10 @@ import {
   Typography,
   Space,
   Skeleton,
-  Tooltip,
   Dropdown,
   MenuProps,
   Statistic,
-  Collapse,
-  DatePicker,
-  AutoComplete,
-  Divider
-} from 'antd';
+  AutoComplete} from 'antd';
 import {
   SearchOutlined,
   AppstoreOutlined,
@@ -36,20 +30,14 @@ import {
   TagsOutlined,
   ArrowLeftOutlined,
   CloseOutlined,
-  FilterOutlined,
-  SortAscendingOutlined,
   MoreOutlined,
   ShareAltOutlined,
   RiseOutlined,
-  PlusOutlined,
-  HistoryOutlined,
-  BarChartOutlined
-} from '@ant-design/icons';
-import { useBlogList, useBlogDashboard, useBlogSearch } from '../hooks';
-import { useSearchSuggestionsHook, useTrendingSearchesHook } from '../hooks/useSearch';
-import { useAppUser } from '../hooks';
+  HistoryOutlined} from '@ant-design/icons';
+import { useBlogList, useBlogDashboard, useBlogSearch } from '@/hooks';
+import { useSearchSuggestionsHook, useTrendingSearchesHook } from '@/hooks';
+import { useAppUser } from '@/hooks';
 import MarkdownViewer from '../components/MarkdownViewer';
-import { PostStatus } from '../generated/graphql';
 
 // 定义文章类型
 interface BlogPost {
@@ -88,13 +76,11 @@ interface BlogPost {
 }
 
 const { Title, Text } = Typography;
-const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isAuthenticated, isAdmin } = useAppUser();
+  const { user, isAuthenticated } = useAppUser();
   const searchInputRef = useRef<any>(null);
 
   // 获取搜索参数
@@ -105,18 +91,8 @@ export default function HomePage() {
     posts,
     loading,
     error,
-    loadMore,
-    refetch,
-    filter,
-    sort,
-    filterByStatus,
     filterByTags,
-    clearFilters,
-    sortBy,
-    filterByDateRange,
-    filterByAuthor,
-    filterByAccessLevel
-  } = useBlogList();
+    clearFilters  } = useBlogList();
 
   // 仪表盘数据
   const {
@@ -139,7 +115,6 @@ export default function HomePage() {
   // 搜索建议功能
   const {
     suggestions,
-    loading: suggestionsLoading,
     fetchSuggestions
   } = useSearchSuggestionsHook();
 
@@ -159,15 +134,15 @@ export default function HomePage() {
   // 页面状态
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
-  const [dateRange, setDateRange] = useState<[string, string] | null>(null);
-  const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
-  const [accessLevel, setAccessLevel] = useState<string | null>(null);
+  const [, setDateRange] = useState<[string, string] | null>(null);
+  const [, setSelectedAuthor] = useState<string | null>(null);
+  const [, setAccessLevel] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // 处理搜索输入变化
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    
+
     if (value.trim()) {
       setShowSuggestions(true);
       fetchSuggestions(value, 10);
@@ -181,7 +156,7 @@ export default function HomePage() {
     setSearchQuery(value);
     setShowSuggestions(false);
     performSearch(value);
-    
+
     // 更新URL参数
     const newSearchParams = new URLSearchParams();
     newSearchParams.set('search', value);
@@ -194,7 +169,7 @@ export default function HomePage() {
     if (searchQuery.trim()) {
       performSearch(searchQuery);
       setShowSuggestions(false);
-      
+
       // 更新URL参数
       const newSearchParams = new URLSearchParams();
       newSearchParams.set('search', searchQuery);
@@ -210,23 +185,12 @@ export default function HomePage() {
     setSelectedAuthor(null);
     setAccessLevel(null);
     setShowSuggestions(false);
-    
+
     // 清除URL参数
     window.history.replaceState(null, '', '/');
   };
 
   // 应用筛选条件
-  const applyFilters = () => {
-    if (dateRange) {
-      filterByDateRange(dateRange[0], dateRange[1]);
-    }
-    if (selectedAuthor) {
-      filterByAuthor(selectedAuthor);
-    }
-    if (accessLevel) {
-      filterByAccessLevel(accessLevel as any);
-    }
-  };
 
   // 当前显示的文章列表
   const currentPosts = searchQuery ? (searchResults?.posts || []) : (posts || []);
@@ -334,10 +298,10 @@ export default function HomePage() {
                   onPressEnter={handleSearch}
                 />
               </AutoComplete>
-              
+
               {/* 搜索建议下拉 */}
               {showSuggestions && suggestions.length > 0 && (
-                <Card 
+                <Card
                   className="absolute z-10 mt-1 w-full optimized-card shadow-lg"
                   size="small"
                   style={{ top: '100%', left: 0 }}
@@ -367,9 +331,9 @@ export default function HomePage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   suffix={
-                    <Button 
-                      type="text" 
-                      icon={<SearchOutlined />} 
+                    <Button
+                      type="text"
+                      icon={<SearchOutlined />}
                       onClick={handleSearch}
                       className="p-0"
                     />
@@ -422,7 +386,7 @@ export default function HomePage() {
                   清除搜索
                 </Button>
               </div>
-              
+
               {/* 搜索历史 */}
               {searchHistory.length > 0 && (
                 <div className="mt-3">

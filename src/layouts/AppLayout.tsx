@@ -67,7 +67,7 @@ export default function AppLayout() {
     // 根据当前路径计算侧边栏选中状态，useMemo 避免重复计算
     const selected = useMemo(() => {
         const path = location.pathname
-        if (path === '/') return 'list'
+        if (path === '/home') return 'list'
         if (path.startsWith('/editor/posts')) return 'new'
         if (path.startsWith('/admin/folders')) return 'folders'
         if (path.startsWith('/admin')) return 'admin'
@@ -195,7 +195,7 @@ export default function AppLayout() {
         {
             key: 'list',
             icon: <HomeOutlined />,
-            label: <Link to="/">文章列表</Link>,
+            label: <Link to="/home">文章列表</Link>,
         },
         ...(isAuthenticated ? [{
             key: 'new',
@@ -223,7 +223,7 @@ export default function AppLayout() {
     const topMenuItems = [
         {
             key: 'list',
-            label: <Link to="/">文章列表</Link>,
+            label: <Link to="/home">文章列表</Link>,
         },
         ...(isAuthenticated ? [{
             key: 'new',
@@ -523,7 +523,7 @@ export default function AppLayout() {
                 <Content className="m-4 overflow-auto">
                     <div className="bg-white p-4 rounded-lg shadow optimized-card fade-in">
                         <Routes>
-                            <Route path="/" element={<HomePage />} />
+                            <Route path="/home" element={<HomePage />} />
                             <Route path="/post/:slug" element={<PostDetailPage />} />
                             <Route path="/posts/:folder/:file" element={<FilePage />} />
                             <Route path="/login" element={<LoginPage />} />
@@ -538,7 +538,7 @@ export default function AppLayout() {
                                 element={
                                     <div className="text-center mt-10 fade-in">
                                         <p className="text-lg">页面未找到</p>
-                                        <Link to="/" className="text-blue-600 hover:text-blue-800 transition-colors">
+                                        <Link to="/home" className="text-blue-600 hover:text-blue-800 transition-colors">
                                             返回文章列表
                                         </Link>
                                     </div>

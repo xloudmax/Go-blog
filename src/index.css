@@ -1,92 +1,265 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&display=swap');
-
-/* 移除无效的Hack Nerd Mono字体引用，因为CDN链接已失效 */
-
-/* 引入优化样式 */
-@import './styles/optimization.css';
+/* 导入设计系统核心样式 */
 @import './styles/design-system.css';
+@import './styles/optimization.css';
 @import './styles/responsive-optimization.css';
+@import './styles/animations.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 如果你要写全局 override 或自定义样式，可以接着写在这里 */
-
-html {
-  height: 100%; /* 或者 min-height: 100vh; */
-  width: 100%;
-  padding: 0;    /* 必须为 0 */
-  margin: 0;     /* 必须为 0 */
+/* 全局样式重置和优化 */
+* {
   box-sizing: border-box;
-  font-family: 'Noto Sans SC', sans-serif; /* 移除Hack Nerd Mono */
-}
-
-*, *:before, *:after {
-  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  height: 100%; /* 或者 min-height: 100vh; */
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f9fafb;
+  transition: background-color 0.3s ease;
+}
+
+html.dark body {
+  background-color: #111827;
+}
+
+/* 滚动条样式优化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* 焦点环样式优化 */
+:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* 文本选择样式 */
+::selection {
+  background-color: #4f46e5;
+  color: white;
+}
+
+/* 链接样式 */
+a {
+  color: #4f46e5;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #4338ca;
+}
+
+html.dark a {
+  color: #6366f1;
+}
+
+html.dark a:hover {
+  color: #818cf8;
+}
+
+/* 图片优化 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 表格样式优化 */
+table {
+  border-collapse: collapse;
   width: 100%;
-  margin: 0;     /* 必须为 0 */
-  padding: 0;    /* 必须为 0 */
-  background-color: inherit; /* 从 html 继承背景色 */
-  color: inherit;
+}
+
+th, td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+html.dark th, 
+html.dark td {
+  border-color: #374151;
+}
+
+th {
+  font-weight: 600;
+  background-color: #f9fafb;
+}
+
+html.dark th {
+  background-color: #1f2937;
+}
+
+/* 代码块样式 */
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+  background-color: #f3f4f6;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+html.dark code {
+  background-color: #374151;
+}
+
+/* 引用块样式 */
+blockquote {
+  border-left: 4px solid #4f46e5;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #4b5563;
+}
+
+html.dark blockquote {
+  border-color: #6366f1;
+  color: #9ca3af;
+}
+
+/* 分割线样式 */
+hr {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+html.dark hr {
+  border-color: #374151;
+}
+
+/* 列表样式优化 */
+ul, ol {
+  padding-left: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+/* 表单元素优化 */
+input, textarea, select {
   font-family: inherit;
 }
 
-#root {
-  height: 100%; /* 或者 min-height: 100vh; */
+/* 按钮样式重置 */
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* 防止文本选择 */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 文本截断 */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* 响应式容器 */
+.container {
   width: 100%;
-  padding: 0;    /* 必须为 0 */
-  margin: 0;     /* 必须为 0 */
-  background-color: inherit; /* 从 body 继承背景色 */
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: 1rem;
+  padding-left: 1rem;
 }
 
-/* 主题相关的 html 类样式 */
-html.light {
-  color: #000000 !important;
-  background-color: #ffffff !important;
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
 }
 
-html.dark {
-  color: #ffffff !important;
-  background-color: #1f1f1f !important; /* 确保这是一个足够深的颜色 */
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
 }
 
-/* 美化 Markdown 显示区域 */
-.markdown-body {
-  font-family: 'Noto Sans SC', sans-serif; /* 移除Hack Nerd Mono */
-  line-height: 1.7;
-  color: inherit;
-  background: inherit;
-  padding: 20px;
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
 }
 
-/* 编辑器包裹元素的基础样式 */
-.markdown-editor-container {
-  width: 100%;
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
 }
 
-/* 页面过渡动画 */
-.page-transition-enter {
-  opacity: 0;
-  transform: translateX(20px);
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  body {
+    background-color: white;
+  }
+  
+  html.dark body {
+    background-color: black;
+  }
 }
 
-.page-transition-enter-active {
-  opacity: 1;
-  transform: translateX(0);
-  transition: opacity 300ms, transform 300ms;
-}
-
-.page-transition-exit {
-  opacity: 1;
-}
-
-.page-transition-exit-active {
-  opacity: 0;
-  transform: translateX(-20px);
-  transition: opacity 300ms, transform 300ms;
+/* 减少动画偏好支持 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
