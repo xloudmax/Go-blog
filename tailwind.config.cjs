@@ -12,7 +12,5 @@ module.exports = {
     },
   },
   plugins: [
-    // 移除了 daisyUI 插件
   ],
-  // 移除了 daisyUI 配置
 };

@@ -16,8 +16,7 @@ import {
   Skeleton,
   Dropdown,
   MenuProps,
-  Statistic,
-  AutoComplete} from 'antd';
+  Statistic} from 'antd';
 import {
   SearchOutlined,
   AppstoreOutlined,
@@ -114,9 +113,7 @@ export default function HomePage() {
 
   // 搜索建议功能
   const {
-    suggestions,
-    fetchSuggestions
-  } = useSearchSuggestionsHook();
+    suggestions  } = useSearchSuggestionsHook();
 
   // 热门搜索词功能
   const {
@@ -137,24 +134,12 @@ export default function HomePage() {
   const [, setDateRange] = useState<[string, string] | null>(null);
   const [, setSelectedAuthor] = useState<string | null>(null);
   const [, setAccessLevel] = useState<string | null>(null);
-  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // 处理搜索输入变化
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-
-    if (value.trim()) {
-      setShowSuggestions(true);
-      fetchSuggestions(value, 10);
-    } else {
-      setShowSuggestions(false);
-    }
-  };
 
   // 处理搜索建议选择
   const handleSuggestionSelect = (value: string) => {
     setSearchQuery(value);
-    setShowSuggestions(false);
     performSearch(value);
 
     // 更新URL参数
@@ -168,7 +153,6 @@ export default function HomePage() {
     e.preventDefault();
     if (searchQuery.trim()) {
       performSearch(searchQuery);
-      setShowSuggestions(false);
 
       // 更新URL参数
       const newSearchParams = new URLSearchParams();
@@ -184,7 +168,6 @@ export default function HomePage() {
     setDateRange(null);
     setSelectedAuthor(null);
     setAccessLevel(null);
-    setShowSuggestions(false);
 
     // 清除URL参数
     window.history.replaceState(null, '', '/');
@@ -265,103 +248,49 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* 顶部导航区 */}
+      {/* 顶部导航区 - 简化的桌面端布局 */}
       <header className="sticky top-0 z-10 optimized-navbar p-4 backdrop-blur-sm shadow-sm home-page-header">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center justify-between">
+          {/* 左侧标题 */}
           <Title level={3} className="mb-0 text-display-2">博客首页</Title>
 
-          {/* 操作按钮 */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* 桌面端搜索框 */}
-            <div className="hidden sm:block w-64">
-              <AutoComplete
+          {/* 右侧操作区域 - 增加间隙 */}
+          <div className="flex items-center gap-12">
+            {/* 搜索框 */}
+            <div className="w-60">
+              <Input
                 ref={searchInputRef}
                 value={searchQuery}
-                options={(suggestions || []).map((suggestion: string) => ({
-                  value: suggestion,
-                  label: (
-                    <div className="flex items-center">
-                      <SearchOutlined className="mr-2 text-gray-400" />
-                      <span>{suggestion}</span>
-                    </div>
-                  )
-                }))}
-                onSelect={handleSuggestionSelect}
-                onSearch={handleSearchChange}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                onFocus={() => searchQuery && setShowSuggestions(true)}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onPressEnter={handleSearch}
                 placeholder="搜索文章..."
-                className="w-full optimized-input"
-              >
-                <Input
-                  suffix={<SearchOutlined />}
-                  onPressEnter={handleSearch}
-                />
-              </AutoComplete>
-
-              {/* 搜索建议下拉 */}
-              {showSuggestions && suggestions.length > 0 && (
-                <Card
-                  className="absolute z-10 mt-1 w-full optimized-card shadow-lg"
-                  size="small"
-                  style={{ top: '100%', left: 0 }}
-                >
-                  <div className="py-1">
-                    <div className="px-3 py-2 text-xs font-medium text-gray-500">搜索建议</div>
-                    {suggestions.slice(0, 8).map((suggestion: string, index: number) => (
-                      <div
-                        key={index}
-                        className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center"
-                        onClick={() => handleSuggestionSelect(suggestion)}
-                      >
-                        <SearchOutlined className="mr-2 text-gray-400" />
-                        <span>{suggestion}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
+                suffix={<SearchOutlined />}
+                className="optimized-input"
+              />
             </div>
 
-            {/* 移动端搜索框 */}
-            <div className="sm:hidden w-full mt-2">
-              <form onSubmit={handleSearch} className="w-full">
-                <Input
-                  placeholder="搜索文章..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  suffix={
-                    <Button
-                      type="text"
-                      icon={<SearchOutlined />}
-                      onClick={handleSearch}
-                      className="p-0"
-                    />
-                  }
-                  className="optimized-input"
-                />
-              </form>
-            </div>
-
-            {/* 视图切换 */}
-            <Space.Compact>
+            {/* 视图切换按钮 - 如果需要按钮间有间隙，可以改用 Space 而不是 Space.Compact */}
+            <Space size="small" > {/* 替换 Space.Compact 为 Space */}
               <Button
                 icon={<AppstoreOutlined />}
                 type={viewMode === 'grid' ? 'primary' : 'default'}
                 onClick={() => setViewMode('grid')}
-                className="optimized-button"
+                className="optimized-button px-4"
               />
               <Button
                 icon={<UnorderedListOutlined />}
                 type={viewMode === 'list' ? 'primary' : 'default'}
                 onClick={() => setViewMode('list')}
-                className="optimized-button"
+                className="optimized-button px-4"
               />
-            </Space.Compact>
+            </Space>
 
+            {/* 写文章按钮 */}
             {isAuthenticated && (
               <Link to="/editor">
-                <Button type="primary" icon={<EditOutlined />} className="optimized-button">写文章</Button>
+                <Button type="primary" icon={<EditOutlined />} className="optimized-button px-4" gap-12>
+                  写文章
+                </Button>
               </Link>
             )}
           </div>
@@ -623,6 +552,27 @@ export default function HomePage() {
                   </Card>
                 </Col>
               </Row>
+            </div>
+          )}
+
+          {/* 使用条件渲染替代showSuggestions状态 */}
+          {suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-10 mt-1">
+              <Card className="optimized-card shadow-lg" size="small">
+                <div className="py-1">
+                  <div className="px-3 py-2 text-xs font-medium text-gray-500">搜索建议</div>
+                  {suggestions.slice(0, 8).map((suggestion: string, index: number) => (
+                    <div
+                      key={index}
+                      className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center"
+                      onClick={() => handleSuggestionSelect(suggestion)}
+                    >
+                      <SearchOutlined className="mr-2 text-gray-400" />
+                      <span>{suggestion}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
           )}
 

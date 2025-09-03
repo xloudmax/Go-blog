@@ -1,11 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Button, Typography, Space } from 'antd';
-import {
-  LoginOutlined,
-  UserAddOutlined,
-  BookOutlined
-} from '@ant-design/icons';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Link} from 'react-router-dom';
+import {Button, Space, Typography} from 'antd';
+import {LoginOutlined, UserAddOutlined} from '@ant-design/icons';
 
 const { Title } = Typography;
 
@@ -305,11 +301,10 @@ const LandingPage: React.FC = () => {
   const updateMouseTrail = useCallback((x: number, y: number) => {
     const now = Date.now();
     setMouseTrail(prevTrail => {
-      const newTrail = [
-        { x, y, opacity: 1, timestamp: now },
+      return [
+        {x, y, opacity: 1, timestamp: now},
         ...prevTrail.slice(0, 8) // 保持最多9个点（包括新点）
       ];
-      return newTrail;
     });
   }, []);
 
@@ -381,36 +376,6 @@ const LandingPage: React.FC = () => {
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4 pointer-events-none">
         {/* 品牌标识 - 像素艺术风格 */}
         <div className="mb-12 animate-fade-in">
-          {/* 像素风格图标容器 */}
-          <div className="flex items-center justify-center mb-6 relative">
-            <div
-              className="relative p-6 rounded-none shadow-2xl animate-pulse"
-              style={{
-                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.95) 0%, rgba(124, 58, 237, 0.95) 100%)',
-                boxShadow: `
-                  0 0 20px rgba(99, 102, 241, 0.6),
-                  inset 0 0 20px rgba(255, 255, 255, 0.1),
-                  0 0 0 2px rgba(99, 102, 241, 0.8),
-                  0 0 0 4px rgba(124, 58, 237, 0.6)
-                `,
-                imageRendering: 'pixelated'
-              }}
-            >
-              <BookOutlined
-                className="text-5xl text-white animate-bounce"
-                style={{
-                  filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.8))',
-                  textShadow: '0 0 20px rgba(255, 255, 255, 0.5)'
-                }}
-              />
-              {/* 像素装饰点 */}
-              <div className="absolute -top-1 -left-1 w-2 h-2 bg-cyan-400 animate-ping"></div>
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-pink-400 animate-ping animation-delay-300"></div>
-              <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-green-400 animate-ping animation-delay-600"></div>
-              <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-yellow-400 animate-ping animation-delay-900"></div>
-            </div>
-          </div>
-
           {/* 像素风格标题 */}
           <div className="relative">
             <Title
@@ -450,9 +415,6 @@ const LandingPage: React.FC = () => {
                 ></div>
               ))}
             </div>
-            <p className="text-cyan-300 text-lg font-mono tracking-wider animate-bounce">
-              ▸ 像素艺术 × 生命游戏 ◂
-            </p>
           </div>
         </div>
 
@@ -579,13 +541,6 @@ const LandingPage: React.FC = () => {
               </div>
             </Link>
           </Space>
-        </div>
-
-        {/* 像素风格装饰文字 */}
-        <div className="mt-8 pointer-events-none">
-          <p className="text-white/60 text-sm font-mono tracking-widest animate-pulse">
-            ▸▸▸ 移动鼠标创建像素生命 ◂◂◂
-          </p>
         </div>
       </div>
     </div>
