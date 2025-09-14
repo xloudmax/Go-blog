@@ -13,14 +13,13 @@ import {
   Badge,
   Tooltip,
   theme,
-  message
+  notification
 } from 'antd';
 import { 
   MenuFoldOutlined, 
   MenuUnfoldOutlined, 
   HomeOutlined, 
   FileAddOutlined, 
-  FolderOutlined, 
   SettingOutlined, 
   UserOutlined,
   LogoutOutlined,
@@ -37,17 +36,17 @@ import {
 import { ThemeContext } from '../components/ThemeProvider'
 import { useAppUser } from '../hooks/appStateHooks'
 import { useBlogActions } from '../api/graphql/blog'
-import FilePage from '@/pages/FilePage'
 import HomePage from '@/pages/HomePage'
 import PostDetailPage from '@/pages/PostDetailPage'
 import EditorPage from '@/pages/EditorPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
-import FoldersPage from '@/pages/FoldersPage'
 import AdminPage from '@/pages/admin/AdminPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import offlineStorage from '@/utils/offlineStorage'
 import { showErrorNotification } from '@/components/ErrorNotification';
+import SearchPage from '@/pages/SearchPage'
+import ProfilePage from '@/pages/ProfilePage'
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Text } = Typography;
@@ -69,7 +68,6 @@ export default function AppLayout() {
         const path = location.pathname
         if (path === '/home') return 'list'
         if (path.startsWith('/editor/posts')) return 'new'
-        if (path.startsWith('/admin/folders')) return 'folders'
         if (path.startsWith('/admin')) return 'admin'
         if (path.startsWith('/profile')) return 'profile'
         return ''
@@ -105,7 +103,11 @@ export default function AppLayout() {
                 const unsyncedPosts = posts.filter(post => !post.lastSyncedAt);
 
                 if (unsyncedPosts.length > 0) {
-                    message.info(`发现${unsyncedPosts.length}篇离线文章，正在同步...`);
+                    notification.info({
+                      message: '提示',
+                      description: `发现${unsyncedPosts.length}篇离线文章，正在同步...`,
+                      duration: 5,
+                    });
 
                     let successCount = 0;
                     let failCount = 0;
@@ -130,11 +132,19 @@ export default function AppLayout() {
                     }
 
                     if (successCount > 0) {
-                        message.success(`成功同步${successCount}篇离线文章`);
+                        notification.success({
+                      message: '同步成功',
+                      description: `成功同步${successCount}篇离线文章`,
+                      duration: 5,
+                    });
                     }
 
                     if (failCount > 0) {
-                        message.error(`${failCount}篇文章同步失败，请检查网络连接后重试`);
+                        notification.error({
+                      message: '同步失败',
+                      description: `${failCount}篇文章同步失败，请检查网络连接后重试`,
+                      duration: 5,
+                    });
                     }
 
                     // 更新未同步状态
@@ -142,7 +152,11 @@ export default function AppLayout() {
                 }
             } catch (error) {
                 console.error('同步离线文章失败:', error);
-                message.error('离线文章同步失败，请稍后重试');
+                notification.error({
+                  message: '同步失败',
+                  description: '离线文章同步失败，请稍后重试',
+                  duration: 5,
+                });
             }
         };
 
@@ -197,15 +211,14 @@ export default function AppLayout() {
             icon: <HomeOutlined />,
             label: <Link to="/home">文章列表</Link>,
         },
+        {
+            key: 'search',
+            icon: <SearchOutlined />,
+            label: <Link to="/search">搜索</Link>,
+        },
         ...(isAuthenticated ? [{
             key: 'new',
-            icon: <FileAddOutlined />,
-            label: <a onClick={goEditor}>新建文章</a>,
-        }] : []),
-        ...(isAuthenticated ? [{
-            key: 'folders',
-            icon: <FolderOutlined />,
-            label: <Link to="/admin/folders">文件夹管理</Link>,
+            label: <Link to="/editor/posts">新建文章</Link>,
         }] : []),
         ...(isAuthenticated ? [{
             key: 'profile',
@@ -225,13 +238,13 @@ export default function AppLayout() {
             key: 'list',
             label: <Link to="/home">文章列表</Link>,
         },
+        {
+            key: 'search',
+            label: <Link to="/search">搜索</Link>,
+        },
         ...(isAuthenticated ? [{
             key: 'new',
             label: <Link to="/editor/posts">新建文章</Link>,
-        }] : []),
-        ...(isAuthenticated ? [{
-            key: 'folders',
-            label: <Link to="/admin/folders">文件夹管理</Link>,
         }] : []),
         ...(isAuthenticated ? [{
             key: 'profile',
@@ -245,7 +258,7 @@ export default function AppLayout() {
 
     // 主题切换按钮
     const ThemeToggleButton = () => (
-        <div className="flex items-center justify-between p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 transition-all responsive-padding-sm">
+        <div className="flex items-center justify-between p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700">
             <Switch
                 checked={appTheme === 'dark'}
                 onChange={toggle}
@@ -257,7 +270,10 @@ export default function AppLayout() {
     );
 
     return (
-        <Layout style={{ minHeight: '100vh' }}>
+        <Layout style={{ 
+            minHeight: '100vh', 
+            backgroundColor: appTheme === 'dark' ? '#1f2937' : '#ffffff' 
+        }}>
             {/* 桌面端侧边栏 */}
             <Sider
                 collapsible
@@ -267,7 +283,7 @@ export default function AppLayout() {
                 width={256}
                 className="optimized-card hidden lg:block shadow-lg"
             >
-                <div className="logo p-4 text-center font-bold text-lg transition-all">
+                <div className="logo p-4 text-center font-bold text-lg">
                     <Link to="/">
                         <div className="flex items-center justify-center gap-2">
                             <BookOutlined className="text-primary" />
@@ -287,7 +303,7 @@ export default function AppLayout() {
                 {/* 底部功能区 */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-neutral-200 dark:border-neutral-700">
                     {isAuthenticated && (
-                        <div className="flex items-center p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 transition-all cursor-pointer mt-3"
+                        <div className="flex items-center p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 cursor-pointer mt-3"
                              onClick={() => navigate('/profile')}>
                             {user?.avatar ? (
                                 <Avatar src={user.avatar} size="small" />
@@ -300,7 +316,7 @@ export default function AppLayout() {
                             {/* 未同步文章提示 */}
                             {hasUnsyncedPosts && (
                                 <Tooltip title="有待同步的离线文章">
-                                    <SyncOutlined spin className="ml-1 text-blue-500" />
+                                    <SyncOutlined className="ml-1 text-blue-500" />
                                 </Tooltip>
                             )}
                         </div>
@@ -364,7 +380,7 @@ export default function AppLayout() {
             </Drawer>
 
             <Layout>
-                <Header className="flex items-center justify-between px-4 optimized-navbar backdrop-blur-sm shadow-sm home-page-header">
+                <Header className="flex items-center justify-between px-4 optimized-navbar backdrop-blur-sm shadow-sm">
                     <div className="flex items-center">
                         {/* 移动端菜单按钮 */}
                         <Button
@@ -494,7 +510,7 @@ export default function AppLayout() {
                                     {/* 未同步文章提示 */}
                                     {hasUnsyncedPosts && (
                                         <Tooltip title="有待同步的离线文章">
-                                            <SyncOutlined spin className="ml-1 text-blue-500" />
+                                            <SyncOutlined className="ml-1 text-blue-500" />
                                         </Tooltip>
                                     )}
                                 </Button>
@@ -520,35 +536,37 @@ export default function AppLayout() {
                         />
                     </div>
                 </Header>
-                <Content className="m-4 overflow-auto">
-                    <div className="bg-white p-4 rounded-lg shadow optimized-card fade-in">
-                        <Routes>
-                            <Route path="/home" element={<HomePage />} />
-                            <Route path="/post/:slug" element={<PostDetailPage />} />
-                            <Route path="/posts/:folder/:file" element={<FilePage />} />
-                            <Route path="/login" element={<LoginPage />} />
-                            <Route path="/register" element={<RegisterPage />} />
-                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                            <Route path="/editor/:folder" element={<EditorPage />} />
-                            <Route path="/editor/:folder/:file" element={<EditorPage />} />
-                            <Route path="/admin/folders" element={<FoldersPage />} />
-                            <Route path="/admin/*" element={<AdminPage />} />
-                            <Route
-                                path="*"
-                                element={
-                                    <div className="text-center mt-10 fade-in">
-                                        <p className="text-lg">页面未找到</p>
-                                        <Link to="/home" className="text-blue-600 hover:text-blue-800 transition-colors">
+                <Content className="overflow-auto" style={{ 
+                    backgroundColor: appTheme === 'dark' ? '#1f2937' : '#f9fafb' 
+                }}>
+                    <Routes>
+                        <Route path="/home" element={<HomePage />} />
+                        <Route path="/search" element={<SearchPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/post/:slug" element={<PostDetailPage />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                        <Route path="/editor/posts" element={<EditorPage />} />
+                        <Route path="/editor/posts/:file" element={<EditorPage />} />
+                        <Route path="/admin/*" element={<AdminPage />} />
+                        <Route
+                            path="*"
+                            element={
+                                <div className="flex items-center justify-center min-h-screen">
+                                    <div className="text-center">
+                                        <p className="text-lg mb-4">页面未找到</p>
+                                        <Link to="/home" className="text-blue-600 hover:text-blue-800">
                                             返回文章列表
                                         </Link>
                                     </div>
-                                }
-                            />
-                        </Routes>
-                    </div>
+                                </div>
+                            }
+                        />
+                    </Routes>
                 </Content>
                 <Footer className="text-center bg-gray-100 dark:bg-gray-800 py-4">
-                    <Text type="secondary" className="text-sm">MyBlog ©{new Date().getFullYear()} Created with Ant Design</Text>
+                    <Text type="secondary" className="text-sm">Blog © {new Date().getFullYear()} Created with Ant Design</Text>
                 </Footer>
             </Layout>
         </Layout>

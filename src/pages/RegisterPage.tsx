@@ -40,7 +40,7 @@ export default function RegisterPage() {
     // 如果已登录，重定向到博客主页
     React.useEffect(() => {
         if (isAuthenticated) {
-            navigate('/');
+            navigate('/home');
         }
     }, [isAuthenticated, navigate]);
 
@@ -121,7 +121,7 @@ export default function RegisterPage() {
         try {
             await verifyEmail(formData.email, verificationCode, 'REGISTER');
             // 验证成功，直接跳转到博客主页
-            navigate('/', {
+            navigate('/home', {
                 state: {
                     message: '注册成功，欢迎来到博客！',
                     email: formData.email

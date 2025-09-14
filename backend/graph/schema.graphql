@@ -157,30 +157,6 @@ type ImageUploadResponse {
   size: Int!
 }
 
-# 文件和文件夹管理类型
-type FileFolder {
-  name: String!
-  path: String!
-  createdAt: Time!
-  fileCount: Int!
-}
-
-type MarkdownFile {
-  name: String!
-  folder: String!
-  content: String
-  size: Int!
-  createdAt: Time!
-  updatedAt: Time!
-}
-
-type FileUploadResponse {
-  success: Boolean!
-  message: String!
-  filePath: String
-  fileName: String
-}
-
 # --------------------
 # INPUT TYPES
 # --------------------
@@ -279,21 +255,46 @@ input UpdateProfileInput {
   avatar: String
 }
 
-# 文件管理输入类型
-input CreateFolderInput {
-  name: String!
+# 搜索输入类型
+input SearchInput {
+  query: String!
+  limit: Int = 10
+  offset: Int = 0
+  filters: SearchFilters
+  sortBy: String
 }
 
-input UploadMarkdownFileInput {
-  file: Upload!
-  folder: String!
-  title: String!
+# 搜索过滤条件
+input SearchFilters {
+  authorId: ID
+  tags: [String!]
+  categories: [String!]
+  dateFrom: Time
+  dateTo: Time
+  minViews: Int
+  minLikes: Int
 }
 
-input UpdateFileInput {
-  folder: String!
-  fileName: String!
-  content: String!
+# 搜索聚合信息
+type SearchFacets {
+  tags: [SearchFacetItem!]!
+  categories: [SearchFacetItem!]!
+  authors: [SearchFacetItem!]!
+}
+
+# 搜索聚合项
+type SearchFacetItem {
+  value: String!
+  count: Int!
+}
+
+# 增强搜索结果
+type EnhancedSearchResult {
+  posts: [BlogPost!]!
+  total: Int!
+  took: String!
+  suggestions: [String!]!
+  facets: SearchFacets!
 }
 
 # --------------------
@@ -330,6 +331,11 @@ type Query {
     offset: Int = 0
   ): SearchResult! # 搜索文章
 
+  # 增强搜索
+  enhancedSearch(
+    input: SearchInput!
+  ): EnhancedSearchResult! # 增强搜索文章
+
   # 搜索建议和统计
   getSearchSuggestions(
     query: String!
@@ -356,11 +362,6 @@ type Query {
   getPopularPosts(limit: Int = 10): [BlogPost!]!
   getRecentPosts(limit: Int = 10): [BlogPost!]!
   getTrendingTags(limit: Int = 20): [String!]!
-
-  # 文件和文件夹管理（需要认证）
-  folders: [FileFolder!]! # 获取所有文件夹列表
-  files(folder: String!): [MarkdownFile!]! # 获取指定文件夹的文件列表
-  fileContent(folder: String!, fileName: String!): MarkdownFile # 获取文件内容
 }
 
 # --------------------
@@ -403,13 +404,6 @@ type Mutation {
   # 文件上传
   uploadImage(file: Upload!): ImageUploadResponse!
 
-  # 文件和文件夹管理（需要认证）
-  createFolder(input: CreateFolderInput!): FileFolder!
-  uploadMarkdownFile(input: UploadMarkdownFileInput!): FileUploadResponse!
-  updateFile(input: UpdateFileInput!): MarkdownFile!
-  deleteFile(folder: String!, fileName: String!): GeneralResponse!
-  deleteFolder(name: String!): GeneralResponse!
-
   # 管理员操作
   adminCreateUser(input: AdminCreateUserInput!): User!
   adminUpdateUser(
@@ -450,4 +444,83 @@ type SearchTrend {
   date: String!
   searchCount: Int!
   topQueries: [String!]!
+}
+
+# 评论类型
+type BlogPostComment {
+  id: ID!
+  content: String!
+  blogPost: BlogPost!
+  user: User!
+  parent: BlogPostComment
+  replies: [BlogPostComment!]!
+  isApproved: Boolean!
+  likeCount: Int!
+  reportCount: Int!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# 评论输入类型
+input CreateCommentInput {
+  content: String!
+  blogPostId: ID!
+  parentId: ID
+}
+
+input UpdateCommentInput {
+  content: String!
+}
+
+# 评论过滤器
+input CommentFilterInput {
+  blogPostId: ID
+  userId: ID
+  isApproved: Boolean
+}
+
+# 评论排序
+input CommentSortInput {
+  field: String
+  order: String
+}
+
+extend type Query {
+  # 获取文章评论列表
+  comments(
+    blogPostId: ID!
+    limit: Int = 10
+    offset: Int = 0
+    filter: CommentFilterInput
+    sort: CommentSortInput
+  ): CommentResult!
+  
+  # 获取单个评论
+  comment(id: ID!): BlogPostComment
+}
+
+extend type Mutation {
+  # 创建评论
+  createComment(input: CreateCommentInput!): BlogPostComment!
+  
+  # 更新评论
+  updateComment(id: ID!, input: UpdateCommentInput!): BlogPostComment!
+  
+  # 删除评论
+  deleteComment(id: ID!): GeneralResponse!
+  
+  # 点赞评论
+  likeComment(id: ID!): BlogPostComment!
+  
+  # 取消点赞评论
+  unlikeComment(id: ID!): BlogPostComment!
+  
+  # 举报评论
+  reportComment(id: ID!): BlogPostComment!
+}
+
+# 评论结果类型
+type CommentResult {
+  comments: [BlogPostComment!]!
+  total: Int!
 }

@@ -6,10 +6,6 @@
   to { opacity: 1; }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-
 /* 淡入向上动画 */
 @keyframes fadeInUp {
   from {
@@ -20,10 +16,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out;
 }
 
 /* 缩放淡入动画 */
@@ -38,10 +30,6 @@
   }
 }
 
-.animate-scale-fade-in {
-  animation: scaleFadeIn 0.3s ease-out;
-}
-
 /* 脉冲动画 */
 @keyframes pulse {
   0%, 100% {
@@ -50,10 +38,6 @@
   50% {
     opacity: 0.5;
   }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* 弹跳动画 */
@@ -69,10 +53,6 @@
   }
 }
 
-.animate-bounce {
-  animation: bounce 1s infinite;
-}
-
 /* 旋转动画 */
 @keyframes spin {
   from {
@@ -81,10 +61,6 @@
   to {
     transform: rotate(360deg);
   }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
 }
 
 /* 摇摆动画 */
@@ -100,10 +76,6 @@
   }
 }
 
-.animate-swing {
-  animation: swing 1s ease-in-out infinite;
-}
-
 /* 抖动动画 */
 @keyframes shake {
   0%, 100% {
@@ -115,10 +87,6 @@
   20%, 40%, 60%, 80% {
     transform: translateX(5px);
   }
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
 }
 
 /* 滑入动画 */
@@ -133,10 +101,6 @@
   }
 }
 
-.animate-slide-in-left {
-  animation: slideInLeft 0.3s ease-out;
-}
-
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
@@ -146,10 +110,6 @@
     transform: translateX(0);
     opacity: 1;
   }
-}
-
-.animate-slide-in-right {
-  animation: slideInRight 0.3s ease-out;
 }
 
 @keyframes slideInUp {
@@ -163,10 +123,6 @@
   }
 }
 
-.animate-slide-in-up {
-  animation: slideInUp 0.3s ease-out;
-}
-
 @keyframes slideInDown {
   from {
     transform: translateY(-100%);
@@ -176,10 +132,6 @@
     transform: translateY(0);
     opacity: 1;
   }
-}
-
-.animate-slide-in-down {
-  animation: slideInDown 0.3s ease-out;
 }
 
 /* 弹性动画 */
@@ -195,10 +147,6 @@
   }
 }
 
-.animate-elastic {
-  animation: elastic 0.5s ease-out;
-}
-
 /* 翻转动画 */
 @keyframes flip {
   0% {
@@ -210,10 +158,6 @@
   100% {
     transform: perspective(400px) rotateY(360deg);
   }
-}
-
-.animate-flip {
-  animation: flip 1s ease-out;
 }
 
 /* 心跳动画 */
@@ -229,10 +173,6 @@
   }
 }
 
-.animate-heartbeat {
-  animation: heartbeat 1.5s ease-in-out infinite;
-}
-
 /* 波纹动画 */
 @keyframes ripple {
   0% {
@@ -243,10 +183,6 @@
     transform: scale(1);
     opacity: 0;
   }
-}
-
-.animate-ripple {
-  animation: ripple 0.6s linear;
 }
 
 /* 浮动动画 */
@@ -262,10 +198,6 @@
   }
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
 /* 闪烁动画 */
 @keyframes blink {
   0%, 100% {
@@ -274,10 +206,6 @@
   50% {
     opacity: 0;
   }
-}
-
-.animate-blink {
-  animation: blink 1s infinite;
 }
 
 /* 渐变动画 */
@@ -291,11 +219,6 @@
   100% {
     background-position: 0% 50%;
   }
-}
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient 3s ease infinite;
 }
 
 /* 折叠动画 */

@@ -1,4 +1,77 @@
-# 搜索建议和自动补全相关的GraphQL扩展
+# Search Operations
+
+# 搜索建议
+query SearchSuggestions($query: String!, $limit: Int) {
+  getSearchSuggestions(query: $query, limit: $limit)
+}
+
+# 热门搜索词
+query TrendingSearches($limit: Int = 10) {
+  getTrendingSearches(limit: $limit)
+}
+
+# 搜索统计信息
+query SearchStats {
+  getSearchStats {
+    totalSearches
+    popularQueries {
+      query
+      count
+      lastSearched
+    }
+    searchTrends {
+      date
+      searchCount
+      topQueries
+    }
+  }
+}
+
+# 增强的搜索功能
+input SearchInput {
+  query: String!
+  limit: Int = 10
+  offset: Int = 0
+  filters: SearchFilters
+  sortBy: SearchSortBy = RELEVANCE
+}
+
+input SearchFilters {
+  authorId: ID
+  tags: [String!]
+  categories: [String!]
+  dateFrom: Time
+  dateTo: Time
+  minViews: Int
+  minLikes: Int
+}
+
+enum SearchSortBy {
+  RELEVANCE
+  CREATED_AT
+  UPDATED_AT
+  VIEW_COUNT
+  LIKE_COUNT
+}
+
+type EnhancedSearchResult {
+  posts: [BlogPost!]!
+  total: Int!
+  took: String!
+  suggestions: [String!]
+  facets: SearchFacets
+}
+
+type SearchFacets {
+  tags: [SearchFacetItem!]
+  categories: [SearchFacetItem!]
+  authors: [SearchFacetItem!]
+}
+
+type SearchFacetItem {
+  value: String!
+  count: Int!
+}
 
 extend type Query {
   # 获取搜索建议
@@ -14,25 +87,7 @@ extend type Query {
   
   # 搜索统计信息
   getSearchStats: SearchStats!
-}
-
-# 搜索统计信息类型
-type SearchStats {
-  totalSearches: Int!
-  popularQueries: [PopularQuery!]!
-  searchTrends: [SearchTrend!]!
-}
-
-# 热门查询类型
-type PopularQuery {
-  query: String!
-  count: Int!
-  lastSearched: Time!
-}
-
-# 搜索趋势类型  
-type SearchTrend {
-  date: String!
-  searchCount: Int!
-  topQueries: [String!]!
+  
+  # 增强的搜索功能
+  enhancedSearch(input: SearchInput!): EnhancedSearchResult!
 }

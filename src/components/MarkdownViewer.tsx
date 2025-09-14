@@ -10,6 +10,7 @@ import rehypeKatex from 'rehype-katex'
 import 'github-markdown-css'
 import 'katex/dist/katex.min.css'
 import { Card } from 'antd'
+import './MarkdownViewer.css' // 引入自定义样式
 
 interface MarkdownViewerProps {
     /** Markdown 文本内容 */
@@ -18,7 +19,7 @@ interface MarkdownViewerProps {
 
 export default function MarkdownViewer({ content }: MarkdownViewerProps) {
     return (
-        <Card style={{ marginTop: '16px' }}>
+        <Card style={{ marginTop: '16px' }} className="markdown-viewer-card">
             <article className="markdown-body w-full prose max-w-none">
                 <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}

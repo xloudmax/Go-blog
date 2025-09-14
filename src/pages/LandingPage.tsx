@@ -39,7 +39,7 @@ const LandingPage: React.FC = () => {
   const mouseThrottleRef = useRef<number>(0);
   const trailAnimationRef = useRef<number>(0);
   const cellSize = 8;
-  const fps = 8; // 降低帧率，提升流畅度
+  const fps = 10; // 降低帧率，提升流畅度
 
   // 缓存网格尺寸
   const gridDimensions = useMemo(() => ({
@@ -86,29 +86,6 @@ const LandingPage: React.FC = () => {
     setCells(initialCells);
   }, [gridDimensions]);
 
-  // 鼠标轨迹动画循环
-  useEffect(() => {
-    const updateTrail = () => {
-      setMouseTrail(prevTrail =>
-        prevTrail
-          .map(point => ({
-            ...point,
-            opacity: Math.max(0, point.opacity - 0.05) // 逐渐淡出
-          }))
-          .filter(point => point.opacity > 0) // 移除完全透明的点
-      );
-      trailAnimationRef.current = requestAnimationFrame(updateTrail);
-    };
-
-    trailAnimationRef.current = requestAnimationFrame(updateTrail);
-
-    return () => {
-      if (trailAnimationRef.current) {
-        cancelAnimationFrame(trailAnimationRef.current);
-      }
-    };
-  }, []);
-
   // 添加初始模式
   const addInitialPatterns = useCallback((cells: Cell[][]) => {
     if (cells.length === 0 || cells[0].length === 0) return;
@@ -125,10 +102,6 @@ const LandingPage: React.FC = () => {
       { offsetX: 15, offsetY: 15, pattern: [
         { x: 1, y: 0 }, { x: 2, y: 1 }, { x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }
       ]},
-      // 振荡器
-      { offsetX: 0, offsetY: 0, pattern: [
-        { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }
-      ]}
     ];
 
     patterns.forEach(({ offsetX, offsetY, pattern }) => {
@@ -230,7 +203,7 @@ const LandingPage: React.FC = () => {
           if (cell.justBorn) {
             ctx.fillStyle = 'rgba(99, 102, 241, 0.9)';
           } else if (cell.justDied) {
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.5)';
+            ctx.fillStyle = 'rgba(70, 25, 25, 0.5)';
           } else {
             ctx.fillStyle = 'rgba(124, 58, 237, 0.8)';
           }
@@ -239,18 +212,7 @@ const LandingPage: React.FC = () => {
         }
       });
     });
-
-    // 渲染鼠标轨迹
-    mouseTrail.forEach((point, index) => {
-      const size = 4 - (index * 0.5); // 点的大小递减
-      if (size > 0) {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(99, 102, 241, ${point.opacity})`;
-        ctx.fill();
-      }
-    });
-  }, [cells, cellSize, mouseTrail]);
+  }, [cells, cellSize]);
 
   // 游戏循环
   useEffect(() => {
@@ -375,12 +337,12 @@ const LandingPage: React.FC = () => {
       {/* 内容区域 */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4 pointer-events-none">
         {/* 品牌标识 - 像素艺术风格 */}
-        <div className="mb-12 animate-fade-in">
+        <div className="mb-12">
           {/* 像素风格标题 */}
           <div className="relative">
             <Title
               level={1}
-              className="text-white mb-4 animate-pulse"
+              className="text-white mb-4"
               style={{
                 fontSize: '4rem',
                 fontFamily: 'monospace, "Courier New", Courier',
@@ -407,9 +369,8 @@ const LandingPage: React.FC = () => {
               {[...Array(15)].map((_, i) => (
                 <div
                   key={i}
-                  className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-600 animate-pulse"
+                  className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-600"
                   style={{
-                    animationDelay: `${i * 100}ms`,
                     imageRendering: 'pixelated'
                   }}
                 ></div>
@@ -419,20 +380,17 @@ const LandingPage: React.FC = () => {
         </div>
 
         {/* 像素风格认证按钮 */}
-        <div className="animate-fade-in-up pointer-events-auto">
+        <div className="pointer-events-auto">
           <Space size="large" className="flex flex-col sm:flex-row">
             {/* 登录按钮 - 像素风格 */}
             <Link to="/login">
               <div
-                className="group relative overflow-hidden transition-all duration-300 hover:scale-105"
-                style={{
-                  imageRendering: 'pixelated'
-                }}
+                className="group relative overflow-hidden"
               >
                 <Button
                   size="large"
                   icon={<LoginOutlined className="text-xl" />}
-                  className="flex items-center justify-center px-10 py-8 text-xl font-mono font-bold border-0 transition-all duration-300 relative z-10"
+                  className="flex items-center justify-center px-10 py-8 text-xl font-mono font-bold border-0 relative z-10"
                   style={{
                     background: 'transparent',
                     color: '#ffffff',
@@ -446,37 +404,15 @@ const LandingPage: React.FC = () => {
                     letterSpacing: '0.1em',
                     textShadow: '0 0 15px rgba(99, 102, 241, 0.8), 0 0 30px rgba(99, 102, 241, 0.6)'
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)';
-                    e.currentTarget.style.color = '#ffffff';
-                    e.currentTarget.style.boxShadow = `
-                      0 0 0 3px rgba(255, 255, 255, 0.9),
-                      0 0 0 6px rgba(99, 102, 241, 0.8),
-                      0 0 30px rgba(99, 102, 241, 0.8),
-                      0 0 50px rgba(99, 102, 241, 0.4)
-                    `;
-                    e.currentTarget.style.textShadow = '0 0 20px rgba(255, 255, 255, 0.9), 0 0 40px rgba(99, 102, 241, 0.8)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = '#ffffff';
-                    e.currentTarget.style.boxShadow = `
-                      0 0 0 3px rgba(99, 102, 241, 0.8),
-                      0 0 0 6px rgba(124, 58, 237, 0.6),
-                      0 8px 16px rgba(0, 0, 0, 0.3),
-                      0 0 20px rgba(99, 102, 241, 0.4)
-                    `;
-                    e.currentTarget.style.textShadow = '0 0 15px rgba(99, 102, 241, 0.8), 0 0 30px rgba(99, 102, 241, 0.6)';
-                  }}
                 >
                   ◤ 登录 ◥
                 </Button>
                 {/* 像素装饰效果 */}
-                <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute top-1 left-1 w-2 h-2 bg-cyan-400 animate-ping"></div>
-                  <div className="absolute top-1 right-1 w-2 h-2 bg-pink-400 animate-ping animation-delay-200"></div>
-                  <div className="absolute bottom-1 left-1 w-2 h-2 bg-green-400 animate-ping animation-delay-400"></div>
-                  <div className="absolute bottom-1 right-1 w-2 h-2 bg-yellow-400 animate-ping animation-delay-600"></div>
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                  <div className="absolute top-1 left-1 w-2 h-2 bg-cyan-400"></div>
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-pink-400"></div>
+                  <div className="absolute bottom-1 left-1 w-2 h-2 bg-green-400"></div>
+                  <div className="absolute bottom-1 right-1 w-2 h-2 bg-yellow-400"></div>
                 </div>
               </div>
             </Link>
@@ -484,15 +420,12 @@ const LandingPage: React.FC = () => {
             {/* 注册按钮 - 像素风格 */}
             <Link to="/register">
               <div
-                className="group relative overflow-hidden transition-all duration-300 hover:scale-105"
-                style={{
-                  imageRendering: 'pixelated'
-                }}
+                className="group relative overflow-hidden"
               >
                 <Button
                   size="large"
                   icon={<UserAddOutlined className="text-xl" />}
-                  className="flex items-center justify-center px-10 py-8 text-xl font-mono font-bold border-0 transition-all duration-300 relative z-10"
+                  className="flex items-center justify-center px-10 py-8 text-xl font-mono font-bold border-0 relative z-10"
                   style={{
                     background: 'transparent',
                     color: '#ffffff',
@@ -506,37 +439,15 @@ const LandingPage: React.FC = () => {
                     letterSpacing: '0.1em',
                     textShadow: '0 0 15px rgba(168, 85, 247, 0.8), 0 0 30px rgba(168, 85, 247, 0.6)'
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(168, 85, 247, 0.2)';
-                    e.currentTarget.style.color = '#ffffff';
-                    e.currentTarget.style.boxShadow = `
-                      0 0 0 3px rgba(255, 255, 255, 0.9),
-                      0 0 0 6px rgba(168, 85, 247, 0.8),
-                      0 0 30px rgba(168, 85, 247, 0.8),
-                      0 0 50px rgba(168, 85, 247, 0.4)
-                    `;
-                    e.currentTarget.style.textShadow = '0 0 20px rgba(255, 255, 255, 0.9), 0 0 40px rgba(168, 85, 247, 0.8)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = '#ffffff';
-                    e.currentTarget.style.boxShadow = `
-                      0 0 0 3px rgba(168, 85, 247, 0.8),
-                      0 0 0 6px rgba(124, 58, 237, 0.6),
-                      0 8px 16px rgba(0, 0, 0, 0.3),
-                      0 0 20px rgba(168, 85, 247, 0.4)
-                    `;
-                    e.currentTarget.style.textShadow = '0 0 15px rgba(168, 85, 247, 0.8), 0 0 30px rgba(168, 85, 247, 0.6)';
-                  }}
                 >
                   ◤ 注册 ◥
                 </Button>
                 {/* 像素装饰效果 */}
-                <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute top-1 left-1 w-2 h-2 bg-pink-400 animate-ping"></div>
-                  <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-400 animate-ping animation-delay-200"></div>
-                  <div className="absolute bottom-1 left-1 w-2 h-2 bg-yellow-400 animate-ping animation-delay-400"></div>
-                  <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-400 animate-ping animation-delay-600"></div>
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                  <div className="absolute top-1 left-1 w-2 h-2 bg-pink-400"></div>
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-400"></div>
+                  <div className="absolute bottom-1 left-1 w-2 h-2 bg-yellow-400"></div>
+                  <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-400"></div>
                 </div>
               </div>
             </Link>

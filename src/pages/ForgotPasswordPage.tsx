@@ -94,9 +94,9 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center px-4">
             <div className="w-full max-w-md">
-                <Card className="shadow-lg">
+                <Card className="shadow-lg mx-8">
                     <div className="text-center mb-6">
                         <Title level={2} className="mb-0">
                             {currentStep === 'request' ? '忘记密码' : '重置密码'}

@@ -1,20 +1,53 @@
 import { useState, useCallback, useMemo } from 'react';
 import { 
-  usePosts, 
-  useSearchPosts,
-  usePopularPosts,
-  useRecentPosts,
-  useTrendingTags
-} from '../api/graphql';
-import { PostFilterInput, PostSortInput, AccessLevel, PostStatus } from '../generated/graphql';
+  usePostsQuery, 
+  usePostQuery, 
+  usePopularPostsQuery, 
+  useRecentPostsQuery, 
+  useTrendingTagsQuery,
+  useSearchPostsQuery
+} from '@/generated/graphql';
+import type { 
+  PostFilterInput,
+  PostSortInput,
+  PostStatus,
+  AccessLevel
+} from '@/generated/graphql';
+import type { 
+  BlogPost,
+  CreatePostInput,
+  UpdatePostInput,
+  DashboardStats
+} from '@/types';
 
 // 博客列表管理hook
 export const useBlogList = () => {
   const [filter, setFilter] = useState<PostFilterInput>({});
-  const [sort, setSort] = useState<PostSortInput>({ field: 'createdAt', order: 'DESC' });
+  const [sort, setSort] = useState<PostSortInput>({ field: 'created_at', order: 'DESC' });
   const [limit] = useState(20);
 
-  const { posts, loading, error, loadMore, refetch } = usePosts(filter, sort, limit);
+  const { data, loading, error, fetchMore, refetch } = usePostsQuery({
+    variables: { limit, offset: 0, filter, sort },
+    errorPolicy: 'all',
+    notifyOnNetworkStatusChange: true,
+  });
+
+  const posts = data?.posts || [];
+
+  const loadMore = useCallback(() => {
+    return fetchMore({
+      variables: {
+        offset: posts.length,
+      },
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult) return prev;
+        return {
+          ...prev,
+          posts: [...(prev.posts || []), ...(fetchMoreResult.posts || [])],
+        };
+      },
+    });
+  }, [fetchMore, posts.length]);
 
   // 筛选方法
   const filterByAuthor = useCallback((authorId: string) => {
@@ -51,7 +84,7 @@ export const useBlogList = () => {
   }, []);
 
   return {
-    posts,
+    posts: posts as BlogPost[],
     loading,
     error,
     loadMore,
@@ -77,27 +110,30 @@ export const useBlogList = () => {
 
 // 博客搜索hook
 export const useBlogSearch = () => {
-  const { search, results, loading, error } = useSearchPosts();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchHistory, setSearchHistory] = useState<string[]>(() => {
     const saved = localStorage.getItem('blog_search_history');
     return saved ? JSON.parse(saved) : [];
   });
+
+  const { data: searchData, loading, error } = useSearchPostsQuery({
+    variables: { query: searchQuery, limit: 20, offset: 0 },
+    skip: !searchQuery,
+  });
   
-  // 执行搜索
-  const performSearch = useCallback(async (query: string) => {
+  // 执行搜索 - 修复无限循环问题
+  const performSearch = useCallback((query: string) => {
     if (!query.trim()) return;
     
     setSearchQuery(query);
     
     // 添加到搜索历史
-    const newHistory = [query, ...searchHistory.filter(h => h !== query)].slice(0, 10);
-    setSearchHistory(newHistory);
-    localStorage.setItem('blog_search_history', JSON.stringify(newHistory));
-    
-    // 执行搜索
-    await search(query);
-  }, [search, searchHistory]);
+    setSearchHistory(prevHistory => {
+      const newHistory = [query, ...prevHistory.filter(h => h !== query)].slice(0, 10);
+      localStorage.setItem('blog_search_history', JSON.stringify(newHistory));
+      return newHistory;
+    });
+  }, []); // 移除searchHistory依赖
   
   // 清除搜索历史
   const clearSearchHistory = useCallback(() => {
@@ -107,7 +143,8 @@ export const useBlogSearch = () => {
   
   return {
     searchQuery,
-    results,
+    results: searchData?.searchPosts?.posts || [],
+    total: searchData?.searchPosts?.total || 0,
     loading,
     error,
     searchHistory,
@@ -121,27 +158,36 @@ export const useBlogSearch = () => {
 
 // 博客仪表盘hook
 export const useBlogDashboard = () => {
-  const { posts: popularPosts, loading: loadingPopular } = usePopularPosts(5);
-  const { posts: recentPosts, loading: loadingRecent } = useRecentPosts(5);
-  const { tags: trendingTags, loading: loadingTags } = useTrendingTags(10);
+  const { data: popularData, loading: loadingPopular } = usePopularPostsQuery({
+    variables: { limit: 5 }
+  });
+  const { data: recentData, loading: loadingRecent } = useRecentPostsQuery({
+    variables: { limit: 5 }
+  });
+  const { data: tagsData, loading: loadingTags } = useTrendingTagsQuery({
+    variables: { limit: 10 }
+  });
+
+  const popularPosts = popularData?.getPopularPosts || [];
+  const recentPosts = recentData?.getRecentPosts || [];
+  const trendingTags = tagsData?.getTrendingTags || [];
   
-  const stats = useMemo(() => {
+  const stats = useMemo<DashboardStats>(() => {
     return {
-      totalViews: popularPosts.reduce((sum: number, post: { stats: { viewCount: number; }; }) => sum + (post.stats?.viewCount || 0), 0),
-      totalLikes: popularPosts.reduce((sum: number, post: { stats: { likeCount: number; }; }) => sum + (post.stats?.likeCount || 0), 0),
-      avgEngagement: popularPosts.length > 0 
-        ? popularPosts.reduce((sum: number, post: { stats: { likeCount: number; viewCount: number; }; }) => sum + ((post.stats?.likeCount || 0) / Math.max(post.stats?.viewCount || 1, 1)), 0) / popularPosts.length
-        : 0,
+      totalViews: popularPosts.reduce((sum, post) => sum + (post.stats?.viewCount || 0), 0),
+      totalLikes: popularPosts.reduce((sum, post) => sum + (post.stats?.likeCount || 0), 0),
+      totalPosts: popularPosts.length + recentPosts.length,
+      engagementRate: popularPosts.length > 0 
+        ? (popularPosts.reduce((sum, post) => sum + (post.stats?.likeCount || 0), 0) / popularPosts.reduce((sum, post) => sum + (post.stats?.viewCount || 0), 1)) * 100 
+        : 0
     };
-  }, [popularPosts]);
-  
-  const loading = loadingPopular || loadingRecent || loadingTags;
+  }, [popularPosts, recentPosts]);
   
   return {
-    popularPosts,
-    recentPosts,
+    popularPosts: popularPosts as BlogPost[],
+    recentPosts: recentPosts as BlogPost[],
     trendingTags,
     stats,
-    loading,
+    loading: loadingPopular || loadingRecent || loadingTags,
   };
 };

@@ -14,7 +14,7 @@ import {
     Statistic,
     Row,
     Col,
-    message,
+    notification,
     Dropdown,
     Space,
     Checkbox
@@ -102,9 +102,17 @@ export default function UserManagement() {
                 role: 'USER' as UserRole,
                 isVerified: false
             });
-            message.success('用户创建成功');
+            notification.success({
+                message: '成功',
+                description: '用户创建成功',
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '创建用户失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '创建用户失败',
+                duration: 5,
+            });
         }
     };
 
@@ -122,9 +130,17 @@ export default function UserManagement() {
             });
             setShowEditModal(false);
             setCurrentUser(null);
-            message.success('用户更新成功');
+            notification.success({
+                message: '成功',
+                description: '用户更新成功',
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '更新用户失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '更新用户失败',
+                duration: 5,
+            });
         }
     };
 
@@ -132,16 +148,28 @@ export default function UserManagement() {
     const handleDeleteUser = async (userId: string, username: string) => {
         try {
             await deleteUser(userId);
-            message.success(`用户 "${username}" 删除成功`);
+            notification.success({
+                message: '成功',
+                description: `用户 "${username}" 删除成功`,
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '删除用户失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '删除用户失败',
+                duration: 5,
+            });
         }
     };
 
     // 批量操作
     const handleBatchAction = async (action: 'activate' | 'deactivate' | 'verify' | 'unverify') => {
         if (selectedUsers.length === 0) {
-            message.warning('请先选择要操作的用户');
+            notification.warning({
+                message: '警告',
+                description: '请先选择要操作的用户',
+                duration: 3,
+            });
             return;
         }
 
@@ -164,9 +192,17 @@ export default function UserManagement() {
         try {
             await batchUpdateUsers(selectedUsers, updates);
             setSelectedUsers([]);
-            message.success('批量操作成功');
+            notification.success({
+                message: '成功',
+                description: '批量操作成功',
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '批量操作失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '批量操作失败',
+                duration: 5,
+            });
         }
     };
 

@@ -75,6 +75,20 @@ type ComplexityRoot struct {
 		Versions      func(childComplexity int) int
 	}
 
+	BlogPostComment struct {
+		BlogPost    func(childComplexity int) int
+		Content     func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		ID          func(childComplexity int) int
+		IsApproved  func(childComplexity int) int
+		LikeCount   func(childComplexity int) int
+		Parent      func(childComplexity int) int
+		Replies     func(childComplexity int) int
+		ReportCount func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+		User        func(childComplexity int) int
+	}
+
 	BlogPostStats struct {
 		CommentCount func(childComplexity int) int
 		ID           func(childComplexity int) int
@@ -95,18 +109,17 @@ type ComplexityRoot struct {
 		VersionNum func(childComplexity int) int
 	}
 
-	FileFolder struct {
-		CreatedAt func(childComplexity int) int
-		FileCount func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Path      func(childComplexity int) int
+	CommentResult struct {
+		Comments func(childComplexity int) int
+		Total    func(childComplexity int) int
 	}
 
-	FileUploadResponse struct {
-		FileName func(childComplexity int) int
-		FilePath func(childComplexity int) int
-		Message  func(childComplexity int) int
-		Success  func(childComplexity int) int
+	EnhancedSearchResult struct {
+		Facets      func(childComplexity int) int
+		Posts       func(childComplexity int) int
+		Suggestions func(childComplexity int) int
+		Took        func(childComplexity int) int
+		Total       func(childComplexity int) int
 	}
 
 	GeneralResponse struct {
@@ -136,15 +149,6 @@ type ComplexityRoot struct {
 		UsedBy      func(childComplexity int) int
 	}
 
-	MarkdownFile struct {
-		Content   func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		Folder    func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Size      func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-	}
-
 	Mutation struct {
 		AdminCreateUser      func(childComplexity int, input AdminCreateUserInput) int
 		AdminDeleteUser      func(childComplexity int, id string) int
@@ -153,14 +157,14 @@ type ComplexityRoot struct {
 		ChangePassword       func(childComplexity int, currentPassword string, newPassword string) int
 		ClearCache           func(childComplexity int) int
 		ConfirmPasswordReset func(childComplexity int, input ConfirmPasswordResetInput) int
-		CreateFolder         func(childComplexity int, input CreateFolderInput) int
+		CreateComment        func(childComplexity int, input CreateCommentInput) int
 		CreateInviteCode     func(childComplexity int, input CreateInviteCodeInput) int
 		CreatePost           func(childComplexity int, input CreatePostInput) int
 		DeactivateInviteCode func(childComplexity int, id string) int
-		DeleteFile           func(childComplexity int, folder string, fileName string) int
-		DeleteFolder         func(childComplexity int, name string) int
+		DeleteComment        func(childComplexity int, id string) int
 		DeletePost           func(childComplexity int, id string) int
 		EmailLogin           func(childComplexity int, input EmailLoginInput) int
+		LikeComment          func(childComplexity int, id string) int
 		LikePost             func(childComplexity int, id string) int
 		Login                func(childComplexity int, input LoginInput) int
 		Logout               func(childComplexity int) int
@@ -168,14 +172,15 @@ type ComplexityRoot struct {
 		RebuildSearchIndex   func(childComplexity int) int
 		RefreshToken         func(childComplexity int) int
 		Register             func(childComplexity int, input RegisterInput) int
+		ReportComment        func(childComplexity int, id string) int
 		RequestPasswordReset func(childComplexity int, input RequestPasswordResetInput) int
 		SendVerificationCode func(childComplexity int, email string, typeArg VerificationType) int
+		UnlikeComment        func(childComplexity int, id string) int
 		UnlikePost           func(childComplexity int, id string) int
-		UpdateFile           func(childComplexity int, input UpdateFileInput) int
+		UpdateComment        func(childComplexity int, id string, input UpdateCommentInput) int
 		UpdatePost           func(childComplexity int, id string, input UpdatePostInput) int
 		UpdateProfile        func(childComplexity int, input UpdateProfileInput) int
 		UploadImage          func(childComplexity int, file graphql.Upload) int
-		UploadMarkdownFile   func(childComplexity int, input UploadMarkdownFileInput) int
 		VerifyEmail          func(childComplexity int, input VerifyEmailInput) int
 		VerifyEmailAndLogin  func(childComplexity int, input VerifyEmailInput) int
 	}
@@ -187,9 +192,9 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		FileContent          func(childComplexity int, folder string, fileName string) int
-		Files                func(childComplexity int, folder string) int
-		Folders              func(childComplexity int) int
+		Comment              func(childComplexity int, id string) int
+		Comments             func(childComplexity int, blogPostID string, limit *int, offset *int, filter *CommentFilterInput, sort *CommentSortInput) int
+		EnhancedSearch       func(childComplexity int, input SearchInput) int
 		GetPopularPosts      func(childComplexity int, limit *int) int
 		GetRecentPosts       func(childComplexity int, limit *int) int
 		GetSearchStats       func(childComplexity int) int
@@ -205,6 +210,17 @@ type ComplexityRoot struct {
 		ServerDashboard      func(childComplexity int) int
 		User                 func(childComplexity int, id string) int
 		Users                func(childComplexity int, limit *int, offset *int, search *string, role *UserRole, isVerified *bool) int
+	}
+
+	SearchFacetItem struct {
+		Count func(childComplexity int) int
+		Value func(childComplexity int) int
+	}
+
+	SearchFacets struct {
+		Authors    func(childComplexity int) int
+		Categories func(childComplexity int) int
+		Tags       func(childComplexity int) int
 	}
 
 	SearchResult struct {
@@ -286,11 +302,6 @@ type MutationResolver interface {
 	LikePost(ctx context.Context, id string) (*BlogPost, error)
 	UnlikePost(ctx context.Context, id string) (*BlogPost, error)
 	UploadImage(ctx context.Context, file graphql.Upload) (*ImageUploadResponse, error)
-	CreateFolder(ctx context.Context, input CreateFolderInput) (*FileFolder, error)
-	UploadMarkdownFile(ctx context.Context, input UploadMarkdownFileInput) (*FileUploadResponse, error)
-	UpdateFile(ctx context.Context, input UpdateFileInput) (*MarkdownFile, error)
-	DeleteFile(ctx context.Context, folder string, fileName string) (*GeneralResponse, error)
-	DeleteFolder(ctx context.Context, name string) (*GeneralResponse, error)
 	AdminCreateUser(ctx context.Context, input AdminCreateUserInput) (*User, error)
 	AdminUpdateUser(ctx context.Context, id string, username *string, email *string, role *UserRole, isVerified *bool, isActive *bool) (*User, error)
 	AdminDeleteUser(ctx context.Context, id string) (*GeneralResponse, error)
@@ -298,6 +309,12 @@ type MutationResolver interface {
 	DeactivateInviteCode(ctx context.Context, id string) (*GeneralResponse, error)
 	ClearCache(ctx context.Context) (*GeneralResponse, error)
 	RebuildSearchIndex(ctx context.Context) (*GeneralResponse, error)
+	CreateComment(ctx context.Context, input CreateCommentInput) (*BlogPostComment, error)
+	UpdateComment(ctx context.Context, id string, input UpdateCommentInput) (*BlogPostComment, error)
+	DeleteComment(ctx context.Context, id string) (*GeneralResponse, error)
+	LikeComment(ctx context.Context, id string) (*BlogPostComment, error)
+	UnlikeComment(ctx context.Context, id string) (*BlogPostComment, error)
+	ReportComment(ctx context.Context, id string) (*BlogPostComment, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*User, error)
@@ -307,6 +324,7 @@ type QueryResolver interface {
 	Posts(ctx context.Context, limit *int, offset *int, filter *PostFilterInput, sort *PostSortInput) ([]*BlogPost, error)
 	PostVersions(ctx context.Context, postID string) ([]*BlogPostVersion, error)
 	SearchPosts(ctx context.Context, query string, limit *int, offset *int) (*SearchResult, error)
+	EnhancedSearch(ctx context.Context, input SearchInput) (*EnhancedSearchResult, error)
 	GetSearchSuggestions(ctx context.Context, query string, limit *int) ([]string, error)
 	GetTrendingSearches(ctx context.Context, limit *int) ([]string, error)
 	GetSearchStats(ctx context.Context) (*SearchStats, error)
@@ -315,9 +333,8 @@ type QueryResolver interface {
 	GetPopularPosts(ctx context.Context, limit *int) ([]*BlogPost, error)
 	GetRecentPosts(ctx context.Context, limit *int) ([]*BlogPost, error)
 	GetTrendingTags(ctx context.Context, limit *int) ([]string, error)
-	Folders(ctx context.Context) ([]*FileFolder, error)
-	Files(ctx context.Context, folder string) ([]*MarkdownFile, error)
-	FileContent(ctx context.Context, folder string, fileName string) (*MarkdownFile, error)
+	Comments(ctx context.Context, blogPostID string, limit *int, offset *int, filter *CommentFilterInput, sort *CommentSortInput) (*CommentResult, error)
+	Comment(ctx context.Context, id string) (*BlogPostComment, error)
 }
 
 type executableSchema struct {
@@ -493,6 +510,83 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BlogPost.Versions(childComplexity), true
 
+	case "BlogPostComment.blogPost":
+		if e.complexity.BlogPostComment.BlogPost == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.BlogPost(childComplexity), true
+
+	case "BlogPostComment.content":
+		if e.complexity.BlogPostComment.Content == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.Content(childComplexity), true
+
+	case "BlogPostComment.createdAt":
+		if e.complexity.BlogPostComment.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.CreatedAt(childComplexity), true
+
+	case "BlogPostComment.id":
+		if e.complexity.BlogPostComment.ID == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.ID(childComplexity), true
+
+	case "BlogPostComment.isApproved":
+		if e.complexity.BlogPostComment.IsApproved == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.IsApproved(childComplexity), true
+
+	case "BlogPostComment.likeCount":
+		if e.complexity.BlogPostComment.LikeCount == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.LikeCount(childComplexity), true
+
+	case "BlogPostComment.parent":
+		if e.complexity.BlogPostComment.Parent == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.Parent(childComplexity), true
+
+	case "BlogPostComment.replies":
+		if e.complexity.BlogPostComment.Replies == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.Replies(childComplexity), true
+
+	case "BlogPostComment.reportCount":
+		if e.complexity.BlogPostComment.ReportCount == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.ReportCount(childComplexity), true
+
+	case "BlogPostComment.updatedAt":
+		if e.complexity.BlogPostComment.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.UpdatedAt(childComplexity), true
+
+	case "BlogPostComment.user":
+		if e.complexity.BlogPostComment.User == nil {
+			break
+		}
+
+		return e.complexity.BlogPostComment.User(childComplexity), true
+
 	case "BlogPostStats.commentCount":
 		if e.complexity.BlogPostStats.CommentCount == nil {
 			break
@@ -591,61 +685,54 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BlogPostVersion.VersionNum(childComplexity), true
 
-	case "FileFolder.createdAt":
-		if e.complexity.FileFolder.CreatedAt == nil {
+	case "CommentResult.comments":
+		if e.complexity.CommentResult.Comments == nil {
 			break
 		}
 
-		return e.complexity.FileFolder.CreatedAt(childComplexity), true
+		return e.complexity.CommentResult.Comments(childComplexity), true
 
-	case "FileFolder.fileCount":
-		if e.complexity.FileFolder.FileCount == nil {
+	case "CommentResult.total":
+		if e.complexity.CommentResult.Total == nil {
 			break
 		}
 
-		return e.complexity.FileFolder.FileCount(childComplexity), true
+		return e.complexity.CommentResult.Total(childComplexity), true
 
-	case "FileFolder.name":
-		if e.complexity.FileFolder.Name == nil {
+	case "EnhancedSearchResult.facets":
+		if e.complexity.EnhancedSearchResult.Facets == nil {
 			break
 		}
 
-		return e.complexity.FileFolder.Name(childComplexity), true
+		return e.complexity.EnhancedSearchResult.Facets(childComplexity), true
 
-	case "FileFolder.path":
-		if e.complexity.FileFolder.Path == nil {
+	case "EnhancedSearchResult.posts":
+		if e.complexity.EnhancedSearchResult.Posts == nil {
 			break
 		}
 
-		return e.complexity.FileFolder.Path(childComplexity), true
+		return e.complexity.EnhancedSearchResult.Posts(childComplexity), true
 
-	case "FileUploadResponse.fileName":
-		if e.complexity.FileUploadResponse.FileName == nil {
+	case "EnhancedSearchResult.suggestions":
+		if e.complexity.EnhancedSearchResult.Suggestions == nil {
 			break
 		}
 
-		return e.complexity.FileUploadResponse.FileName(childComplexity), true
+		return e.complexity.EnhancedSearchResult.Suggestions(childComplexity), true
 
-	case "FileUploadResponse.filePath":
-		if e.complexity.FileUploadResponse.FilePath == nil {
+	case "EnhancedSearchResult.took":
+		if e.complexity.EnhancedSearchResult.Took == nil {
 			break
 		}
 
-		return e.complexity.FileUploadResponse.FilePath(childComplexity), true
+		return e.complexity.EnhancedSearchResult.Took(childComplexity), true
 
-	case "FileUploadResponse.message":
-		if e.complexity.FileUploadResponse.Message == nil {
+	case "EnhancedSearchResult.total":
+		if e.complexity.EnhancedSearchResult.Total == nil {
 			break
 		}
 
-		return e.complexity.FileUploadResponse.Message(childComplexity), true
-
-	case "FileUploadResponse.success":
-		if e.complexity.FileUploadResponse.Success == nil {
-			break
-		}
-
-		return e.complexity.FileUploadResponse.Success(childComplexity), true
+		return e.complexity.EnhancedSearchResult.Total(childComplexity), true
 
 	case "GeneralResponse.code":
 		if e.complexity.GeneralResponse.Code == nil {
@@ -773,48 +860,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.InviteCode.UsedBy(childComplexity), true
 
-	case "MarkdownFile.content":
-		if e.complexity.MarkdownFile.Content == nil {
-			break
-		}
-
-		return e.complexity.MarkdownFile.Content(childComplexity), true
-
-	case "MarkdownFile.createdAt":
-		if e.complexity.MarkdownFile.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.MarkdownFile.CreatedAt(childComplexity), true
-
-	case "MarkdownFile.folder":
-		if e.complexity.MarkdownFile.Folder == nil {
-			break
-		}
-
-		return e.complexity.MarkdownFile.Folder(childComplexity), true
-
-	case "MarkdownFile.name":
-		if e.complexity.MarkdownFile.Name == nil {
-			break
-		}
-
-		return e.complexity.MarkdownFile.Name(childComplexity), true
-
-	case "MarkdownFile.size":
-		if e.complexity.MarkdownFile.Size == nil {
-			break
-		}
-
-		return e.complexity.MarkdownFile.Size(childComplexity), true
-
-	case "MarkdownFile.updatedAt":
-		if e.complexity.MarkdownFile.UpdatedAt == nil {
-			break
-		}
-
-		return e.complexity.MarkdownFile.UpdatedAt(childComplexity), true
-
 	case "Mutation.adminCreateUser":
 		if e.complexity.Mutation.AdminCreateUser == nil {
 			break
@@ -894,17 +939,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.ConfirmPasswordReset(childComplexity, args["input"].(ConfirmPasswordResetInput)), true
 
-	case "Mutation.createFolder":
-		if e.complexity.Mutation.CreateFolder == nil {
+	case "Mutation.createComment":
+		if e.complexity.Mutation.CreateComment == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createFolder_args(ctx, rawArgs)
+		args, err := ec.field_Mutation_createComment_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateFolder(childComplexity, args["input"].(CreateFolderInput)), true
+		return e.complexity.Mutation.CreateComment(childComplexity, args["input"].(CreateCommentInput)), true
 
 	case "Mutation.createInviteCode":
 		if e.complexity.Mutation.CreateInviteCode == nil {
@@ -942,29 +987,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.DeactivateInviteCode(childComplexity, args["id"].(string)), true
 
-	case "Mutation.deleteFile":
-		if e.complexity.Mutation.DeleteFile == nil {
+	case "Mutation.deleteComment":
+		if e.complexity.Mutation.DeleteComment == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_deleteFile_args(ctx, rawArgs)
+		args, err := ec.field_Mutation_deleteComment_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteFile(childComplexity, args["folder"].(string), args["fileName"].(string)), true
-
-	case "Mutation.deleteFolder":
-		if e.complexity.Mutation.DeleteFolder == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteFolder_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteFolder(childComplexity, args["name"].(string)), true
+		return e.complexity.Mutation.DeleteComment(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deletePost":
 		if e.complexity.Mutation.DeletePost == nil {
@@ -989,6 +1022,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.EmailLogin(childComplexity, args["input"].(EmailLoginInput)), true
+
+	case "Mutation.likeComment":
+		if e.complexity.Mutation.LikeComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_likeComment_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LikeComment(childComplexity, args["id"].(string)), true
 
 	case "Mutation.likePost":
 		if e.complexity.Mutation.LikePost == nil {
@@ -1059,6 +1104,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.Register(childComplexity, args["input"].(RegisterInput)), true
 
+	case "Mutation.reportComment":
+		if e.complexity.Mutation.ReportComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_reportComment_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ReportComment(childComplexity, args["id"].(string)), true
+
 	case "Mutation.requestPasswordReset":
 		if e.complexity.Mutation.RequestPasswordReset == nil {
 			break
@@ -1083,6 +1140,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.SendVerificationCode(childComplexity, args["email"].(string), args["type"].(VerificationType)), true
 
+	case "Mutation.unlikeComment":
+		if e.complexity.Mutation.UnlikeComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unlikeComment_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnlikeComment(childComplexity, args["id"].(string)), true
+
 	case "Mutation.unlikePost":
 		if e.complexity.Mutation.UnlikePost == nil {
 			break
@@ -1095,17 +1164,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.UnlikePost(childComplexity, args["id"].(string)), true
 
-	case "Mutation.updateFile":
-		if e.complexity.Mutation.UpdateFile == nil {
+	case "Mutation.updateComment":
+		if e.complexity.Mutation.UpdateComment == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updateFile_args(ctx, rawArgs)
+		args, err := ec.field_Mutation_updateComment_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateFile(childComplexity, args["input"].(UpdateFileInput)), true
+		return e.complexity.Mutation.UpdateComment(childComplexity, args["id"].(string), args["input"].(UpdateCommentInput)), true
 
 	case "Mutation.updatePost":
 		if e.complexity.Mutation.UpdatePost == nil {
@@ -1142,18 +1211,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.UploadImage(childComplexity, args["file"].(graphql.Upload)), true
-
-	case "Mutation.uploadMarkdownFile":
-		if e.complexity.Mutation.UploadMarkdownFile == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_uploadMarkdownFile_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.UploadMarkdownFile(childComplexity, args["input"].(UploadMarkdownFileInput)), true
 
 	case "Mutation.verifyEmail":
 		if e.complexity.Mutation.VerifyEmail == nil {
@@ -1200,36 +1257,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PopularQuery.Query(childComplexity), true
 
-	case "Query.fileContent":
-		if e.complexity.Query.FileContent == nil {
+	case "Query.comment":
+		if e.complexity.Query.Comment == nil {
 			break
 		}
 
-		args, err := ec.field_Query_fileContent_args(ctx, rawArgs)
+		args, err := ec.field_Query_comment_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.FileContent(childComplexity, args["folder"].(string), args["fileName"].(string)), true
+		return e.complexity.Query.Comment(childComplexity, args["id"].(string)), true
 
-	case "Query.files":
-		if e.complexity.Query.Files == nil {
+	case "Query.comments":
+		if e.complexity.Query.Comments == nil {
 			break
 		}
 
-		args, err := ec.field_Query_files_args(ctx, rawArgs)
+		args, err := ec.field_Query_comments_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Files(childComplexity, args["folder"].(string)), true
+		return e.complexity.Query.Comments(childComplexity, args["blogPostId"].(string), args["limit"].(*int), args["offset"].(*int), args["filter"].(*CommentFilterInput), args["sort"].(*CommentSortInput)), true
 
-	case "Query.folders":
-		if e.complexity.Query.Folders == nil {
+	case "Query.enhancedSearch":
+		if e.complexity.Query.EnhancedSearch == nil {
 			break
 		}
 
-		return e.complexity.Query.Folders(childComplexity), true
+		args, err := ec.field_Query_enhancedSearch_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EnhancedSearch(childComplexity, args["input"].(SearchInput)), true
 
 	case "Query.getPopularPosts":
 		if e.complexity.Query.GetPopularPosts == nil {
@@ -1395,6 +1457,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Users(childComplexity, args["limit"].(*int), args["offset"].(*int), args["search"].(*string), args["role"].(*UserRole), args["isVerified"].(*bool)), true
+
+	case "SearchFacetItem.count":
+		if e.complexity.SearchFacetItem.Count == nil {
+			break
+		}
+
+		return e.complexity.SearchFacetItem.Count(childComplexity), true
+
+	case "SearchFacetItem.value":
+		if e.complexity.SearchFacetItem.Value == nil {
+			break
+		}
+
+		return e.complexity.SearchFacetItem.Value(childComplexity), true
+
+	case "SearchFacets.authors":
+		if e.complexity.SearchFacets.Authors == nil {
+			break
+		}
+
+		return e.complexity.SearchFacets.Authors(childComplexity), true
+
+	case "SearchFacets.categories":
+		if e.complexity.SearchFacets.Categories == nil {
+			break
+		}
+
+		return e.complexity.SearchFacets.Categories(childComplexity), true
+
+	case "SearchFacets.tags":
+		if e.complexity.SearchFacets.Tags == nil {
+			break
+		}
+
+		return e.complexity.SearchFacets.Tags(childComplexity), true
 
 	case "SearchResult.posts":
 		if e.complexity.SearchResult.Posts == nil {
@@ -1683,8 +1780,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputAdminCreateUserInput,
+		ec.unmarshalInputCommentFilterInput,
+		ec.unmarshalInputCommentSortInput,
 		ec.unmarshalInputConfirmPasswordResetInput,
-		ec.unmarshalInputCreateFolderInput,
+		ec.unmarshalInputCreateCommentInput,
 		ec.unmarshalInputCreateInviteCodeInput,
 		ec.unmarshalInputCreatePostInput,
 		ec.unmarshalInputEmailLoginInput,
@@ -1693,10 +1792,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPostSortInput,
 		ec.unmarshalInputRegisterInput,
 		ec.unmarshalInputRequestPasswordResetInput,
-		ec.unmarshalInputUpdateFileInput,
+		ec.unmarshalInputSearchFilters,
+		ec.unmarshalInputSearchInput,
+		ec.unmarshalInputUpdateCommentInput,
 		ec.unmarshalInputUpdatePostInput,
 		ec.unmarshalInputUpdateProfileInput,
-		ec.unmarshalInputUploadMarkdownFileInput,
 		ec.unmarshalInputVerifyEmailInput,
 	)
 	first := true
@@ -1910,10 +2010,10 @@ func (ec *executionContext) field_Mutation_confirmPasswordReset_args(ctx context
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createFolder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_createComment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateFolderInput2repairᚑplatformᚋgraphᚐCreateFolderInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateCommentInput2repairᚑplatformᚋgraphᚐCreateCommentInput)
 	if err != nil {
 		return nil, err
 	}
@@ -1954,30 +2054,14 @@ func (ec *executionContext) field_Mutation_deactivateInviteCode_args(ctx context
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteFile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_deleteComment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "folder", ec.unmarshalNString2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
 	if err != nil {
 		return nil, err
 	}
-	args["folder"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "fileName", ec.unmarshalNString2string)
-	if err != nil {
-		return nil, err
-	}
-	args["fileName"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteFolder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
-	if err != nil {
-		return nil, err
-	}
-	args["name"] = arg0
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -2000,6 +2084,17 @@ func (ec *executionContext) field_Mutation_emailLogin_args(ctx context.Context, 
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_likeComment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -2047,6 +2142,17 @@ func (ec *executionContext) field_Mutation_register_args(ctx context.Context, ra
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_reportComment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_requestPasswordReset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2074,6 +2180,17 @@ func (ec *executionContext) field_Mutation_sendVerificationCode_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_unlikeComment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_unlikePost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2085,14 +2202,19 @@ func (ec *executionContext) field_Mutation_unlikePost_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateFile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_updateComment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateFileInput2repairᚑplatformᚋgraphᚐUpdateFileInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
 	if err != nil {
 		return nil, err
 	}
-	args["input"] = arg0
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateCommentInput2repairᚑplatformᚋgraphᚐUpdateCommentInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
@@ -2134,17 +2256,6 @@ func (ec *executionContext) field_Mutation_uploadImage_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_uploadMarkdownFile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUploadMarkdownFileInput2repairᚑplatformᚋgraphᚐUploadMarkdownFileInput)
-	if err != nil {
-		return nil, err
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_verifyEmailAndLogin_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2178,30 +2289,56 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_fileContent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_comment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "folder", ec.unmarshalNString2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
 	if err != nil {
 		return nil, err
 	}
-	args["folder"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "fileName", ec.unmarshalNString2string)
-	if err != nil {
-		return nil, err
-	}
-	args["fileName"] = arg1
+	args["id"] = arg0
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_files_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_comments_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "folder", ec.unmarshalNString2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "blogPostId", ec.unmarshalNID2string)
 	if err != nil {
 		return nil, err
 	}
-	args["folder"] = arg0
+	args["blogPostId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCommentFilterInput2ᚖrepairᚑplatformᚋgraphᚐCommentFilterInput)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "sort", ec.unmarshalOCommentSortInput2ᚖrepairᚑplatformᚋgraphᚐCommentSortInput)
+	if err != nil {
+		return nil, err
+	}
+	args["sort"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_enhancedSearch_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNSearchInput2repairᚑplatformᚋgraphᚐSearchInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -3518,6 +3655,603 @@ func (ec *executionContext) fieldContext_BlogPost_isLiked(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _BlogPostComment_id(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_content(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_content(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Content, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_content(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_blogPost(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BlogPost, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*BlogPost)
+	fc.Result = res
+	return ec.marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_blogPost(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPost_id(ctx, field)
+			case "title":
+				return ec.fieldContext_BlogPost_title(ctx, field)
+			case "slug":
+				return ec.fieldContext_BlogPost_slug(ctx, field)
+			case "excerpt":
+				return ec.fieldContext_BlogPost_excerpt(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPost_content(ctx, field)
+			case "tags":
+				return ec.fieldContext_BlogPost_tags(ctx, field)
+			case "categories":
+				return ec.fieldContext_BlogPost_categories(ctx, field)
+			case "coverImageUrl":
+				return ec.fieldContext_BlogPost_coverImageUrl(ctx, field)
+			case "accessLevel":
+				return ec.fieldContext_BlogPost_accessLevel(ctx, field)
+			case "status":
+				return ec.fieldContext_BlogPost_status(ctx, field)
+			case "publishedAt":
+				return ec.fieldContext_BlogPost_publishedAt(ctx, field)
+			case "lastEditedAt":
+				return ec.fieldContext_BlogPost_lastEditedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPost_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "author":
+				return ec.fieldContext_BlogPost_author(ctx, field)
+			case "versions":
+				return ec.fieldContext_BlogPost_versions(ctx, field)
+			case "stats":
+				return ec.fieldContext_BlogPost_stats(ctx, field)
+			case "isLiked":
+				return ec.fieldContext_BlogPost_isLiked(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPost", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_user(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖrepairᚑplatformᚋgraphᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "username":
+				return ec.fieldContext_User_username(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "role":
+				return ec.fieldContext_User_role(ctx, field)
+			case "isVerified":
+				return ec.fieldContext_User_isVerified(ctx, field)
+			case "isActive":
+				return ec.fieldContext_User_isActive(ctx, field)
+			case "avatar":
+				return ec.fieldContext_User_avatar(ctx, field)
+			case "bio":
+				return ec.fieldContext_User_bio(ctx, field)
+			case "lastLoginAt":
+				return ec.fieldContext_User_lastLoginAt(ctx, field)
+			case "emailVerifiedAt":
+				return ec.fieldContext_User_emailVerifiedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			case "posts":
+				return ec.fieldContext_User_posts(ctx, field)
+			case "postsCount":
+				return ec.fieldContext_User_postsCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_parent(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_parent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Parent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*BlogPostComment)
+	fc.Result = res
+	return ec.marshalOBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_parent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPostComment_id(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPostComment_content(ctx, field)
+			case "blogPost":
+				return ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+			case "user":
+				return ec.fieldContext_BlogPostComment_user(ctx, field)
+			case "parent":
+				return ec.fieldContext_BlogPostComment_parent(ctx, field)
+			case "replies":
+				return ec.fieldContext_BlogPostComment_replies(ctx, field)
+			case "isApproved":
+				return ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+			case "reportCount":
+				return ec.fieldContext_BlogPostComment_reportCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPostComment_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPostComment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_replies(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_replies(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Replies, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*BlogPostComment)
+	fc.Result = res
+	return ec.marshalNBlogPostComment2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostCommentᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_replies(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPostComment_id(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPostComment_content(ctx, field)
+			case "blogPost":
+				return ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+			case "user":
+				return ec.fieldContext_BlogPostComment_user(ctx, field)
+			case "parent":
+				return ec.fieldContext_BlogPostComment_parent(ctx, field)
+			case "replies":
+				return ec.fieldContext_BlogPostComment_replies(ctx, field)
+			case "isApproved":
+				return ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+			case "reportCount":
+				return ec.fieldContext_BlogPostComment_reportCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPostComment_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPostComment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_isApproved(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsApproved, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_isApproved(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_likeCount(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LikeCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_likeCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_reportCount(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_reportCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReportCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_reportCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_createdAt(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BlogPostComment_updatedAt(ctx context.Context, field graphql.CollectedField, obj *BlogPostComment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BlogPostComment_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPostComment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BlogPostStats_id(ctx context.Context, field graphql.CollectedField, obj *BlogPostStats) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_BlogPostStats_id(ctx, field)
 	if err != nil {
@@ -4158,8 +4892,8 @@ func (ec *executionContext) fieldContext_BlogPostVersion_createdBy(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _FileFolder_name(ctx context.Context, field graphql.CollectedField, obj *FileFolder) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FileFolder_name(ctx, field)
+func (ec *executionContext) _CommentResult_comments(ctx context.Context, field graphql.CollectedField, obj *CommentResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CommentResult_comments(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4172,7 +4906,7 @@ func (ec *executionContext) _FileFolder_name(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
+		return obj.Comments, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4184,26 +4918,50 @@ func (ec *executionContext) _FileFolder_name(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]*BlogPostComment)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNBlogPostComment2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostCommentᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_FileFolder_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CommentResult_comments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "FileFolder",
+		Object:     "CommentResult",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPostComment_id(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPostComment_content(ctx, field)
+			case "blogPost":
+				return ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+			case "user":
+				return ec.fieldContext_BlogPostComment_user(ctx, field)
+			case "parent":
+				return ec.fieldContext_BlogPostComment_parent(ctx, field)
+			case "replies":
+				return ec.fieldContext_BlogPostComment_replies(ctx, field)
+			case "isApproved":
+				return ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+			case "reportCount":
+				return ec.fieldContext_BlogPostComment_reportCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPostComment_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPostComment", field.Name)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _FileFolder_path(ctx context.Context, field graphql.CollectedField, obj *FileFolder) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FileFolder_path(ctx, field)
+func (ec *executionContext) _CommentResult_total(ctx context.Context, field graphql.CollectedField, obj *CommentResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CommentResult_total(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4216,95 +4974,7 @@ func (ec *executionContext) _FileFolder_path(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Path, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_FileFolder_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "FileFolder",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _FileFolder_createdAt(ctx context.Context, field graphql.CollectedField, obj *FileFolder) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FileFolder_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_FileFolder_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "FileFolder",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _FileFolder_fileCount(ctx context.Context, field graphql.CollectedField, obj *FileFolder) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FileFolder_fileCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.FileCount, nil
+		return obj.Total, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4321,9 +4991,9 @@ func (ec *executionContext) _FileFolder_fileCount(ctx context.Context, field gra
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_FileFolder_fileCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CommentResult_total(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "FileFolder",
+		Object:     "CommentResult",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -4334,8 +5004,8 @@ func (ec *executionContext) fieldContext_FileFolder_fileCount(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _FileUploadResponse_success(ctx context.Context, field graphql.CollectedField, obj *FileUploadResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FileUploadResponse_success(ctx, field)
+func (ec *executionContext) _EnhancedSearchResult_posts(ctx context.Context, field graphql.CollectedField, obj *EnhancedSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnhancedSearchResult_posts(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4348,7 +5018,7 @@ func (ec *executionContext) _FileUploadResponse_success(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Success, nil
+		return obj.Posts, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4360,26 +5030,64 @@ func (ec *executionContext) _FileUploadResponse_success(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.([]*BlogPost)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNBlogPost2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_FileUploadResponse_success(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnhancedSearchResult_posts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "FileUploadResponse",
+		Object:     "EnhancedSearchResult",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPost_id(ctx, field)
+			case "title":
+				return ec.fieldContext_BlogPost_title(ctx, field)
+			case "slug":
+				return ec.fieldContext_BlogPost_slug(ctx, field)
+			case "excerpt":
+				return ec.fieldContext_BlogPost_excerpt(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPost_content(ctx, field)
+			case "tags":
+				return ec.fieldContext_BlogPost_tags(ctx, field)
+			case "categories":
+				return ec.fieldContext_BlogPost_categories(ctx, field)
+			case "coverImageUrl":
+				return ec.fieldContext_BlogPost_coverImageUrl(ctx, field)
+			case "accessLevel":
+				return ec.fieldContext_BlogPost_accessLevel(ctx, field)
+			case "status":
+				return ec.fieldContext_BlogPost_status(ctx, field)
+			case "publishedAt":
+				return ec.fieldContext_BlogPost_publishedAt(ctx, field)
+			case "lastEditedAt":
+				return ec.fieldContext_BlogPost_lastEditedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPost_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "author":
+				return ec.fieldContext_BlogPost_author(ctx, field)
+			case "versions":
+				return ec.fieldContext_BlogPost_versions(ctx, field)
+			case "stats":
+				return ec.fieldContext_BlogPost_stats(ctx, field)
+			case "isLiked":
+				return ec.fieldContext_BlogPost_isLiked(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPost", field.Name)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _FileUploadResponse_message(ctx context.Context, field graphql.CollectedField, obj *FileUploadResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FileUploadResponse_message(ctx, field)
+func (ec *executionContext) _EnhancedSearchResult_total(ctx context.Context, field graphql.CollectedField, obj *EnhancedSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnhancedSearchResult_total(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4392,7 +5100,51 @@ func (ec *executionContext) _FileUploadResponse_message(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Message, nil
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnhancedSearchResult_total(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnhancedSearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnhancedSearchResult_took(ctx context.Context, field graphql.CollectedField, obj *EnhancedSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnhancedSearchResult_took(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Took, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4409,9 +5161,9 @@ func (ec *executionContext) _FileUploadResponse_message(ctx context.Context, fie
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_FileUploadResponse_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnhancedSearchResult_took(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "FileUploadResponse",
+		Object:     "EnhancedSearchResult",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -4422,8 +5174,8 @@ func (ec *executionContext) fieldContext_FileUploadResponse_message(_ context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _FileUploadResponse_filePath(ctx context.Context, field graphql.CollectedField, obj *FileUploadResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FileUploadResponse_filePath(ctx, field)
+func (ec *executionContext) _EnhancedSearchResult_suggestions(ctx context.Context, field graphql.CollectedField, obj *EnhancedSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnhancedSearchResult_suggestions(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4436,23 +5188,26 @@ func (ec *executionContext) _FileUploadResponse_filePath(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FilePath, nil
+		return obj.Suggestions, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_FileUploadResponse_filePath(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnhancedSearchResult_suggestions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "FileUploadResponse",
+		Object:     "EnhancedSearchResult",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -4463,8 +5218,8 @@ func (ec *executionContext) fieldContext_FileUploadResponse_filePath(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _FileUploadResponse_fileName(ctx context.Context, field graphql.CollectedField, obj *FileUploadResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_FileUploadResponse_fileName(ctx, field)
+func (ec *executionContext) _EnhancedSearchResult_facets(ctx context.Context, field graphql.CollectedField, obj *EnhancedSearchResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnhancedSearchResult_facets(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4477,28 +5232,39 @@ func (ec *executionContext) _FileUploadResponse_fileName(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FileName, nil
+		return obj.Facets, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*SearchFacets)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNSearchFacets2ᚖrepairᚑplatformᚋgraphᚐSearchFacets(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_FileUploadResponse_fileName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnhancedSearchResult_facets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "FileUploadResponse",
+		Object:     "EnhancedSearchResult",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "tags":
+				return ec.fieldContext_SearchFacets_tags(ctx, field)
+			case "categories":
+				return ec.fieldContext_SearchFacets_categories(ctx, field)
+			case "authors":
+				return ec.fieldContext_SearchFacets_authors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SearchFacets", field.Name)
 		},
 	}
 	return fc, nil
@@ -5328,267 +6094,6 @@ func (ec *executionContext) _InviteCode_createdAt(ctx context.Context, field gra
 func (ec *executionContext) fieldContext_InviteCode_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InviteCode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MarkdownFile_name(ctx context.Context, field graphql.CollectedField, obj *MarkdownFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MarkdownFile_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MarkdownFile_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MarkdownFile",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MarkdownFile_folder(ctx context.Context, field graphql.CollectedField, obj *MarkdownFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MarkdownFile_folder(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Folder, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MarkdownFile_folder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MarkdownFile",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MarkdownFile_content(ctx context.Context, field graphql.CollectedField, obj *MarkdownFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MarkdownFile_content(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Content, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MarkdownFile_content(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MarkdownFile",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MarkdownFile_size(ctx context.Context, field graphql.CollectedField, obj *MarkdownFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MarkdownFile_size(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Size, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MarkdownFile_size(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MarkdownFile",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MarkdownFile_createdAt(ctx context.Context, field graphql.CollectedField, obj *MarkdownFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MarkdownFile_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MarkdownFile_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MarkdownFile",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MarkdownFile_updatedAt(ctx context.Context, field graphql.CollectedField, obj *MarkdownFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MarkdownFile_updatedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UpdatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MarkdownFile_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MarkdownFile",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -7049,331 +7554,6 @@ func (ec *executionContext) fieldContext_Mutation_uploadImage(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_createFolder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_createFolder(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateFolder(rctx, fc.Args["input"].(CreateFolderInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*FileFolder)
-	fc.Result = res
-	return ec.marshalNFileFolder2ᚖrepairᚑplatformᚋgraphᚐFileFolder(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_createFolder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_FileFolder_name(ctx, field)
-			case "path":
-				return ec.fieldContext_FileFolder_path(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_FileFolder_createdAt(ctx, field)
-			case "fileCount":
-				return ec.fieldContext_FileFolder_fileCount(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type FileFolder", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createFolder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_uploadMarkdownFile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_uploadMarkdownFile(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UploadMarkdownFile(rctx, fc.Args["input"].(UploadMarkdownFileInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*FileUploadResponse)
-	fc.Result = res
-	return ec.marshalNFileUploadResponse2ᚖrepairᚑplatformᚋgraphᚐFileUploadResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_uploadMarkdownFile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "success":
-				return ec.fieldContext_FileUploadResponse_success(ctx, field)
-			case "message":
-				return ec.fieldContext_FileUploadResponse_message(ctx, field)
-			case "filePath":
-				return ec.fieldContext_FileUploadResponse_filePath(ctx, field)
-			case "fileName":
-				return ec.fieldContext_FileUploadResponse_fileName(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type FileUploadResponse", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_uploadMarkdownFile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_updateFile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_updateFile(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateFile(rctx, fc.Args["input"].(UpdateFileInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*MarkdownFile)
-	fc.Result = res
-	return ec.marshalNMarkdownFile2ᚖrepairᚑplatformᚋgraphᚐMarkdownFile(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_updateFile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_MarkdownFile_name(ctx, field)
-			case "folder":
-				return ec.fieldContext_MarkdownFile_folder(ctx, field)
-			case "content":
-				return ec.fieldContext_MarkdownFile_content(ctx, field)
-			case "size":
-				return ec.fieldContext_MarkdownFile_size(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_MarkdownFile_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_MarkdownFile_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MarkdownFile", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_updateFile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_deleteFile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_deleteFile(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteFile(rctx, fc.Args["folder"].(string), fc.Args["fileName"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*GeneralResponse)
-	fc.Result = res
-	return ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_deleteFile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "success":
-				return ec.fieldContext_GeneralResponse_success(ctx, field)
-			case "message":
-				return ec.fieldContext_GeneralResponse_message(ctx, field)
-			case "code":
-				return ec.fieldContext_GeneralResponse_code(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type GeneralResponse", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_deleteFile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_deleteFolder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_deleteFolder(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteFolder(rctx, fc.Args["name"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*GeneralResponse)
-	fc.Result = res
-	return ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_deleteFolder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "success":
-				return ec.fieldContext_GeneralResponse_success(ctx, field)
-			case "message":
-				return ec.fieldContext_GeneralResponse_message(ctx, field)
-			case "code":
-				return ec.fieldContext_GeneralResponse_code(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type GeneralResponse", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_deleteFolder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_adminCreateUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_adminCreateUser(ctx, field)
 	if err != nil {
@@ -7849,6 +8029,464 @@ func (ec *executionContext) fieldContext_Mutation_rebuildSearchIndex(_ context.C
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GeneralResponse", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createComment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateComment(rctx, fc.Args["input"].(CreateCommentInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*BlogPostComment)
+	fc.Result = res
+	return ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createComment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPostComment_id(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPostComment_content(ctx, field)
+			case "blogPost":
+				return ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+			case "user":
+				return ec.fieldContext_BlogPostComment_user(ctx, field)
+			case "parent":
+				return ec.fieldContext_BlogPostComment_parent(ctx, field)
+			case "replies":
+				return ec.fieldContext_BlogPostComment_replies(ctx, field)
+			case "isApproved":
+				return ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+			case "reportCount":
+				return ec.fieldContext_BlogPostComment_reportCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPostComment_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPostComment", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateComment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateComment(rctx, fc.Args["id"].(string), fc.Args["input"].(UpdateCommentInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*BlogPostComment)
+	fc.Result = res
+	return ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateComment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPostComment_id(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPostComment_content(ctx, field)
+			case "blogPost":
+				return ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+			case "user":
+				return ec.fieldContext_BlogPostComment_user(ctx, field)
+			case "parent":
+				return ec.fieldContext_BlogPostComment_parent(ctx, field)
+			case "replies":
+				return ec.fieldContext_BlogPostComment_replies(ctx, field)
+			case "isApproved":
+				return ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+			case "reportCount":
+				return ec.fieldContext_BlogPostComment_reportCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPostComment_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPostComment", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteComment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteComment(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*GeneralResponse)
+	fc.Result = res
+	return ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteComment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_GeneralResponse_success(ctx, field)
+			case "message":
+				return ec.fieldContext_GeneralResponse_message(ctx, field)
+			case "code":
+				return ec.fieldContext_GeneralResponse_code(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GeneralResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_likeComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_likeComment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LikeComment(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*BlogPostComment)
+	fc.Result = res
+	return ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_likeComment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPostComment_id(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPostComment_content(ctx, field)
+			case "blogPost":
+				return ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+			case "user":
+				return ec.fieldContext_BlogPostComment_user(ctx, field)
+			case "parent":
+				return ec.fieldContext_BlogPostComment_parent(ctx, field)
+			case "replies":
+				return ec.fieldContext_BlogPostComment_replies(ctx, field)
+			case "isApproved":
+				return ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+			case "reportCount":
+				return ec.fieldContext_BlogPostComment_reportCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPostComment_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPostComment", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_likeComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_unlikeComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_unlikeComment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UnlikeComment(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*BlogPostComment)
+	fc.Result = res
+	return ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_unlikeComment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPostComment_id(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPostComment_content(ctx, field)
+			case "blogPost":
+				return ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+			case "user":
+				return ec.fieldContext_BlogPostComment_user(ctx, field)
+			case "parent":
+				return ec.fieldContext_BlogPostComment_parent(ctx, field)
+			case "replies":
+				return ec.fieldContext_BlogPostComment_replies(ctx, field)
+			case "isApproved":
+				return ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+			case "reportCount":
+				return ec.fieldContext_BlogPostComment_reportCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPostComment_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPostComment", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_unlikeComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_reportComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_reportComment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ReportComment(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*BlogPostComment)
+	fc.Result = res
+	return ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_reportComment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BlogPostComment_id(ctx, field)
+			case "content":
+				return ec.fieldContext_BlogPostComment_content(ctx, field)
+			case "blogPost":
+				return ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+			case "user":
+				return ec.fieldContext_BlogPostComment_user(ctx, field)
+			case "parent":
+				return ec.fieldContext_BlogPostComment_parent(ctx, field)
+			case "replies":
+				return ec.fieldContext_BlogPostComment_replies(ctx, field)
+			case "isApproved":
+				return ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+			case "reportCount":
+				return ec.fieldContext_BlogPostComment_reportCount(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BlogPostComment_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BlogPostComment", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_reportComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -8540,6 +9178,73 @@ func (ec *executionContext) fieldContext_Query_searchPosts(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_enhancedSearch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_enhancedSearch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EnhancedSearch(rctx, fc.Args["input"].(SearchInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*EnhancedSearchResult)
+	fc.Result = res
+	return ec.marshalNEnhancedSearchResult2ᚖrepairᚑplatformᚋgraphᚐEnhancedSearchResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_enhancedSearch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "posts":
+				return ec.fieldContext_EnhancedSearchResult_posts(ctx, field)
+			case "total":
+				return ec.fieldContext_EnhancedSearchResult_total(ctx, field)
+			case "took":
+				return ec.fieldContext_EnhancedSearchResult_took(ctx, field)
+			case "suggestions":
+				return ec.fieldContext_EnhancedSearchResult_suggestions(ctx, field)
+			case "facets":
+				return ec.fieldContext_EnhancedSearchResult_facets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EnhancedSearchResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_enhancedSearch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_getSearchSuggestions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getSearchSuggestions(ctx, field)
 	if err != nil {
@@ -9090,8 +9795,8 @@ func (ec *executionContext) fieldContext_Query_getTrendingTags(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_folders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_folders(ctx, field)
+func (ec *executionContext) _Query_comments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_comments(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9104,7 +9809,7 @@ func (ec *executionContext) _Query_folders(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Folders(rctx)
+		return ec.resolvers.Query().Comments(rctx, fc.Args["blogPostId"].(string), fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["filter"].(*CommentFilterInput), fc.Args["sort"].(*CommentSortInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9116,12 +9821,12 @@ func (ec *executionContext) _Query_folders(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*FileFolder)
+	res := resTmp.(*CommentResult)
 	fc.Result = res
-	return ec.marshalNFileFolder2ᚕᚖrepairᚑplatformᚋgraphᚐFileFolderᚄ(ctx, field.Selections, res)
+	return ec.marshalNCommentResult2ᚖrepairᚑplatformᚋgraphᚐCommentResult(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_folders(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_comments(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -9129,74 +9834,12 @@ func (ec *executionContext) fieldContext_Query_folders(_ context.Context, field 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "name":
-				return ec.fieldContext_FileFolder_name(ctx, field)
-			case "path":
-				return ec.fieldContext_FileFolder_path(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_FileFolder_createdAt(ctx, field)
-			case "fileCount":
-				return ec.fieldContext_FileFolder_fileCount(ctx, field)
+			case "comments":
+				return ec.fieldContext_CommentResult_comments(ctx, field)
+			case "total":
+				return ec.fieldContext_CommentResult_total(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type FileFolder", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_files(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_files(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Files(rctx, fc.Args["folder"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*MarkdownFile)
-	fc.Result = res
-	return ec.marshalNMarkdownFile2ᚕᚖrepairᚑplatformᚋgraphᚐMarkdownFileᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_files(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_MarkdownFile_name(ctx, field)
-			case "folder":
-				return ec.fieldContext_MarkdownFile_folder(ctx, field)
-			case "content":
-				return ec.fieldContext_MarkdownFile_content(ctx, field)
-			case "size":
-				return ec.fieldContext_MarkdownFile_size(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_MarkdownFile_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_MarkdownFile_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MarkdownFile", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type CommentResult", field.Name)
 		},
 	}
 	defer func() {
@@ -9206,15 +9849,15 @@ func (ec *executionContext) fieldContext_Query_files(ctx context.Context, field 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_files_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_comments_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_fileContent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_fileContent(ctx, field)
+func (ec *executionContext) _Query_comment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_comment(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9227,7 +9870,7 @@ func (ec *executionContext) _Query_fileContent(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().FileContent(rctx, fc.Args["folder"].(string), fc.Args["fileName"].(string))
+		return ec.resolvers.Query().Comment(rctx, fc.Args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9236,12 +9879,12 @@ func (ec *executionContext) _Query_fileContent(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*MarkdownFile)
+	res := resTmp.(*BlogPostComment)
 	fc.Result = res
-	return ec.marshalOMarkdownFile2ᚖrepairᚑplatformᚋgraphᚐMarkdownFile(ctx, field.Selections, res)
+	return ec.marshalOBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_fileContent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_comment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -9249,20 +9892,30 @@ func (ec *executionContext) fieldContext_Query_fileContent(ctx context.Context, 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "name":
-				return ec.fieldContext_MarkdownFile_name(ctx, field)
-			case "folder":
-				return ec.fieldContext_MarkdownFile_folder(ctx, field)
+			case "id":
+				return ec.fieldContext_BlogPostComment_id(ctx, field)
 			case "content":
-				return ec.fieldContext_MarkdownFile_content(ctx, field)
-			case "size":
-				return ec.fieldContext_MarkdownFile_size(ctx, field)
+				return ec.fieldContext_BlogPostComment_content(ctx, field)
+			case "blogPost":
+				return ec.fieldContext_BlogPostComment_blogPost(ctx, field)
+			case "user":
+				return ec.fieldContext_BlogPostComment_user(ctx, field)
+			case "parent":
+				return ec.fieldContext_BlogPostComment_parent(ctx, field)
+			case "replies":
+				return ec.fieldContext_BlogPostComment_replies(ctx, field)
+			case "isApproved":
+				return ec.fieldContext_BlogPostComment_isApproved(ctx, field)
+			case "likeCount":
+				return ec.fieldContext_BlogPostComment_likeCount(ctx, field)
+			case "reportCount":
+				return ec.fieldContext_BlogPostComment_reportCount(ctx, field)
 			case "createdAt":
-				return ec.fieldContext_MarkdownFile_createdAt(ctx, field)
+				return ec.fieldContext_BlogPostComment_createdAt(ctx, field)
 			case "updatedAt":
-				return ec.fieldContext_MarkdownFile_updatedAt(ctx, field)
+				return ec.fieldContext_BlogPostComment_updatedAt(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type MarkdownFile", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type BlogPostComment", field.Name)
 		},
 	}
 	defer func() {
@@ -9272,7 +9925,7 @@ func (ec *executionContext) fieldContext_Query_fileContent(ctx context.Context, 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_fileContent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_comment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -9405,6 +10058,244 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchFacetItem_value(ctx context.Context, field graphql.CollectedField, obj *SearchFacetItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SearchFacetItem_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SearchFacetItem_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchFacetItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchFacetItem_count(ctx context.Context, field graphql.CollectedField, obj *SearchFacetItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SearchFacetItem_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SearchFacetItem_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchFacetItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchFacets_tags(ctx context.Context, field graphql.CollectedField, obj *SearchFacets) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SearchFacets_tags(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tags, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*SearchFacetItem)
+	fc.Result = res
+	return ec.marshalNSearchFacetItem2ᚕᚖrepairᚑplatformᚋgraphᚐSearchFacetItemᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SearchFacets_tags(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchFacets",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "value":
+				return ec.fieldContext_SearchFacetItem_value(ctx, field)
+			case "count":
+				return ec.fieldContext_SearchFacetItem_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SearchFacetItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchFacets_categories(ctx context.Context, field graphql.CollectedField, obj *SearchFacets) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SearchFacets_categories(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Categories, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*SearchFacetItem)
+	fc.Result = res
+	return ec.marshalNSearchFacetItem2ᚕᚖrepairᚑplatformᚋgraphᚐSearchFacetItemᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SearchFacets_categories(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchFacets",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "value":
+				return ec.fieldContext_SearchFacetItem_value(ctx, field)
+			case "count":
+				return ec.fieldContext_SearchFacetItem_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SearchFacetItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchFacets_authors(ctx context.Context, field graphql.CollectedField, obj *SearchFacets) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SearchFacets_authors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Authors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*SearchFacetItem)
+	fc.Result = res
+	return ec.marshalNSearchFacetItem2ᚕᚖrepairᚑplatformᚋgraphᚐSearchFacetItemᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SearchFacets_authors(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchFacets",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "value":
+				return ec.fieldContext_SearchFacetItem_value(ctx, field)
+			case "count":
+				return ec.fieldContext_SearchFacetItem_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SearchFacetItem", field.Name)
 		},
 	}
 	return fc, nil
@@ -13242,6 +14133,81 @@ func (ec *executionContext) unmarshalInputAdminCreateUserInput(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCommentFilterInput(ctx context.Context, obj any) (CommentFilterInput, error) {
+	var it CommentFilterInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"blogPostId", "userId", "isApproved"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "blogPostId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("blogPostId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BlogPostID = data
+		case "userId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
+		case "isApproved":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isApproved"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsApproved = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCommentSortInput(ctx context.Context, obj any) (CommentSortInput, error) {
+	var it CommentSortInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"field", "order"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		case "order":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Order = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputConfirmPasswordResetInput(ctx context.Context, obj any) (ConfirmPasswordResetInput, error) {
 	var it ConfirmPasswordResetInput
 	asMap := map[string]any{}
@@ -13276,27 +14242,41 @@ func (ec *executionContext) unmarshalInputConfirmPasswordResetInput(ctx context.
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreateFolderInput(ctx context.Context, obj any) (CreateFolderInput, error) {
-	var it CreateFolderInput
+func (ec *executionContext) unmarshalInputCreateCommentInput(ctx context.Context, obj any) (CreateCommentInput, error) {
+	var it CreateCommentInput
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name"}
+	fieldsInOrder := [...]string{"content", "blogPostId", "parentId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "name":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		case "content":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Content = data
+		case "blogPostId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("blogPostId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BlogPostID = data
+		case "parentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParentID = data
 		}
 	}
 
@@ -13709,34 +14689,151 @@ func (ec *executionContext) unmarshalInputRequestPasswordResetInput(ctx context.
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpdateFileInput(ctx context.Context, obj any) (UpdateFileInput, error) {
-	var it UpdateFileInput
+func (ec *executionContext) unmarshalInputSearchFilters(ctx context.Context, obj any) (SearchFilters, error) {
+	var it SearchFilters
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"folder", "fileName", "content"}
+	fieldsInOrder := [...]string{"authorId", "tags", "categories", "dateFrom", "dateTo", "minViews", "minLikes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "folder":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("folder"))
+		case "authorId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorID = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		case "categories":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categories"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Categories = data
+		case "dateFrom":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateFrom"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DateFrom = data
+		case "dateTo":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateTo"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DateTo = data
+		case "minViews":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minViews"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinViews = data
+		case "minLikes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minLikes"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinLikes = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSearchInput(ctx context.Context, obj any) (SearchInput, error) {
+	var it SearchInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["limit"]; !present {
+		asMap["limit"] = 10
+	}
+	if _, present := asMap["offset"]; !present {
+		asMap["offset"] = 0
+	}
+
+	fieldsInOrder := [...]string{"query", "limit", "offset", "filters", "sortBy"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "query":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Folder = data
-		case "fileName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileName"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			it.Query = data
+		case "limit":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.FileName = data
+			it.Limit = data
+		case "offset":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Offset = data
+		case "filters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filters"))
+			data, err := ec.unmarshalOSearchFilters2ᚖrepairᚑplatformᚋgraphᚐSearchFilters(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Filters = data
+		case "sortBy":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortBy"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SortBy = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateCommentInput(ctx context.Context, obj any) (UpdateCommentInput, error) {
+	var it UpdateCommentInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"content"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
 		case "content":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -13875,47 +14972,6 @@ func (ec *executionContext) unmarshalInputUpdateProfileInput(ctx context.Context
 				return it, err
 			}
 			it.Avatar = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputUploadMarkdownFileInput(ctx context.Context, obj any) (UploadMarkdownFileInput, error) {
-	var it UploadMarkdownFileInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"file", "folder", "title"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "file":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file"))
-			data, err := ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.File = data
-		case "folder":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("folder"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Folder = data
-		case "title":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Title = data
 		}
 	}
 
@@ -14137,6 +15193,92 @@ func (ec *executionContext) _BlogPost(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var blogPostCommentImplementors = []string{"BlogPostComment"}
+
+func (ec *executionContext) _BlogPostComment(ctx context.Context, sel ast.SelectionSet, obj *BlogPostComment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, blogPostCommentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BlogPostComment")
+		case "id":
+			out.Values[i] = ec._BlogPostComment_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "content":
+			out.Values[i] = ec._BlogPostComment_content(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "blogPost":
+			out.Values[i] = ec._BlogPostComment_blogPost(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "user":
+			out.Values[i] = ec._BlogPostComment_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "parent":
+			out.Values[i] = ec._BlogPostComment_parent(ctx, field, obj)
+		case "replies":
+			out.Values[i] = ec._BlogPostComment_replies(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isApproved":
+			out.Values[i] = ec._BlogPostComment_isApproved(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "likeCount":
+			out.Values[i] = ec._BlogPostComment_likeCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reportCount":
+			out.Values[i] = ec._BlogPostComment_reportCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._BlogPostComment_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._BlogPostComment_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var blogPostStatsImplementors = []string{"BlogPostStats"}
 
 func (ec *executionContext) _BlogPostStats(ctx context.Context, sel ast.SelectionSet, obj *BlogPostStats) graphql.Marshaler {
@@ -14269,34 +15411,24 @@ func (ec *executionContext) _BlogPostVersion(ctx context.Context, sel ast.Select
 	return out
 }
 
-var fileFolderImplementors = []string{"FileFolder"}
+var commentResultImplementors = []string{"CommentResult"}
 
-func (ec *executionContext) _FileFolder(ctx context.Context, sel ast.SelectionSet, obj *FileFolder) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, fileFolderImplementors)
+func (ec *executionContext) _CommentResult(ctx context.Context, sel ast.SelectionSet, obj *CommentResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, commentResultImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("FileFolder")
-		case "name":
-			out.Values[i] = ec._FileFolder_name(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("CommentResult")
+		case "comments":
+			out.Values[i] = ec._CommentResult_comments(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "path":
-			out.Values[i] = ec._FileFolder_path(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "createdAt":
-			out.Values[i] = ec._FileFolder_createdAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "fileCount":
-			out.Values[i] = ec._FileFolder_fileCount(ctx, field, obj)
+		case "total":
+			out.Values[i] = ec._CommentResult_total(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -14323,31 +15455,42 @@ func (ec *executionContext) _FileFolder(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var fileUploadResponseImplementors = []string{"FileUploadResponse"}
+var enhancedSearchResultImplementors = []string{"EnhancedSearchResult"}
 
-func (ec *executionContext) _FileUploadResponse(ctx context.Context, sel ast.SelectionSet, obj *FileUploadResponse) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, fileUploadResponseImplementors)
+func (ec *executionContext) _EnhancedSearchResult(ctx context.Context, sel ast.SelectionSet, obj *EnhancedSearchResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, enhancedSearchResultImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("FileUploadResponse")
-		case "success":
-			out.Values[i] = ec._FileUploadResponse_success(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("EnhancedSearchResult")
+		case "posts":
+			out.Values[i] = ec._EnhancedSearchResult_posts(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "message":
-			out.Values[i] = ec._FileUploadResponse_message(ctx, field, obj)
+		case "total":
+			out.Values[i] = ec._EnhancedSearchResult_total(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "filePath":
-			out.Values[i] = ec._FileUploadResponse_filePath(ctx, field, obj)
-		case "fileName":
-			out.Values[i] = ec._FileUploadResponse_fileName(ctx, field, obj)
+		case "took":
+			out.Values[i] = ec._EnhancedSearchResult_took(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "suggestions":
+			out.Values[i] = ec._EnhancedSearchResult_suggestions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "facets":
+			out.Values[i] = ec._EnhancedSearchResult_facets(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14545,67 +15688,6 @@ func (ec *executionContext) _InviteCode(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var markdownFileImplementors = []string{"MarkdownFile"}
-
-func (ec *executionContext) _MarkdownFile(ctx context.Context, sel ast.SelectionSet, obj *MarkdownFile) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, markdownFileImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("MarkdownFile")
-		case "name":
-			out.Values[i] = ec._MarkdownFile_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "folder":
-			out.Values[i] = ec._MarkdownFile_folder(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "content":
-			out.Values[i] = ec._MarkdownFile_content(ctx, field, obj)
-		case "size":
-			out.Values[i] = ec._MarkdownFile_size(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "createdAt":
-			out.Values[i] = ec._MarkdownFile_createdAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "updatedAt":
-			out.Values[i] = ec._MarkdownFile_updatedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -14765,41 +15847,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "createFolder":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createFolder(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "uploadMarkdownFile":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_uploadMarkdownFile(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "updateFile":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_updateFile(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "deleteFile":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_deleteFile(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "deleteFolder":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_deleteFolder(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "adminCreateUser":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_adminCreateUser(ctx, field)
@@ -14845,6 +15892,48 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "rebuildSearchIndex":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_rebuildSearchIndex(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createComment":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createComment(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateComment":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateComment(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteComment":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteComment(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "likeComment":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_likeComment(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unlikeComment":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_unlikeComment(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reportComment":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_reportComment(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -15085,6 +16174,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "enhancedSearch":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_enhancedSearch(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "getSearchSuggestions":
 			field := field
 
@@ -15261,7 +16372,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "folders":
+		case "comments":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -15270,7 +16381,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_folders(ctx, field)
+				res = ec._Query_comments(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -15283,29 +16394,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "files":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_files(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "fileContent":
+		case "comment":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -15314,7 +16403,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_fileContent(ctx, field)
+				res = ec._Query_comment(ctx, field)
 				return res
 			}
 
@@ -15332,6 +16421,99 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var searchFacetItemImplementors = []string{"SearchFacetItem"}
+
+func (ec *executionContext) _SearchFacetItem(ctx context.Context, sel ast.SelectionSet, obj *SearchFacetItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, searchFacetItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SearchFacetItem")
+		case "value":
+			out.Values[i] = ec._SearchFacetItem_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._SearchFacetItem_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var searchFacetsImplementors = []string{"SearchFacets"}
+
+func (ec *executionContext) _SearchFacets(ctx context.Context, sel ast.SelectionSet, obj *SearchFacets) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, searchFacetsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SearchFacets")
+		case "tags":
+			out.Values[i] = ec._SearchFacets_tags(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "categories":
+			out.Values[i] = ec._SearchFacets_categories(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "authors":
+			out.Values[i] = ec._SearchFacets_authors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16164,6 +17346,64 @@ func (ec *executionContext) marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlog
 	return ec._BlogPost(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNBlogPostComment2repairᚑplatformᚋgraphᚐBlogPostComment(ctx context.Context, sel ast.SelectionSet, v BlogPostComment) graphql.Marshaler {
+	return ec._BlogPostComment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBlogPostComment2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*BlogPostComment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx context.Context, sel ast.SelectionSet, v *BlogPostComment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BlogPostComment(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNBlogPostStats2ᚖrepairᚑplatformᚋgraphᚐBlogPostStats(ctx context.Context, sel ast.SelectionSet, v *BlogPostStats) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -16244,13 +17484,27 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNCommentResult2repairᚑplatformᚋgraphᚐCommentResult(ctx context.Context, sel ast.SelectionSet, v CommentResult) graphql.Marshaler {
+	return ec._CommentResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCommentResult2ᚖrepairᚑplatformᚋgraphᚐCommentResult(ctx context.Context, sel ast.SelectionSet, v *CommentResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CommentResult(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNConfirmPasswordResetInput2repairᚑplatformᚋgraphᚐConfirmPasswordResetInput(ctx context.Context, v any) (ConfirmPasswordResetInput, error) {
 	res, err := ec.unmarshalInputConfirmPasswordResetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCreateFolderInput2repairᚑplatformᚋgraphᚐCreateFolderInput(ctx context.Context, v any) (CreateFolderInput, error) {
-	res, err := ec.unmarshalInputCreateFolderInput(ctx, v)
+func (ec *executionContext) unmarshalNCreateCommentInput2repairᚑplatformᚋgraphᚐCreateCommentInput(ctx context.Context, v any) (CreateCommentInput, error) {
+	res, err := ec.unmarshalInputCreateCommentInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -16269,76 +17523,18 @@ func (ec *executionContext) unmarshalNEmailLoginInput2repairᚑplatformᚋgraph�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNFileFolder2repairᚑplatformᚋgraphᚐFileFolder(ctx context.Context, sel ast.SelectionSet, v FileFolder) graphql.Marshaler {
-	return ec._FileFolder(ctx, sel, &v)
+func (ec *executionContext) marshalNEnhancedSearchResult2repairᚑplatformᚋgraphᚐEnhancedSearchResult(ctx context.Context, sel ast.SelectionSet, v EnhancedSearchResult) graphql.Marshaler {
+	return ec._EnhancedSearchResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNFileFolder2ᚕᚖrepairᚑplatformᚋgraphᚐFileFolderᚄ(ctx context.Context, sel ast.SelectionSet, v []*FileFolder) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNFileFolder2ᚖrepairᚑplatformᚋgraphᚐFileFolder(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNFileFolder2ᚖrepairᚑplatformᚋgraphᚐFileFolder(ctx context.Context, sel ast.SelectionSet, v *FileFolder) graphql.Marshaler {
+func (ec *executionContext) marshalNEnhancedSearchResult2ᚖrepairᚑplatformᚋgraphᚐEnhancedSearchResult(ctx context.Context, sel ast.SelectionSet, v *EnhancedSearchResult) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._FileFolder(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNFileUploadResponse2repairᚑplatformᚋgraphᚐFileUploadResponse(ctx context.Context, sel ast.SelectionSet, v FileUploadResponse) graphql.Marshaler {
-	return ec._FileUploadResponse(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNFileUploadResponse2ᚖrepairᚑplatformᚋgraphᚐFileUploadResponse(ctx context.Context, sel ast.SelectionSet, v *FileUploadResponse) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._FileUploadResponse(ctx, sel, v)
+	return ec._EnhancedSearchResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNGeneralResponse2repairᚑplatformᚋgraphᚐGeneralResponse(ctx context.Context, sel ast.SelectionSet, v GeneralResponse) graphql.Marshaler {
@@ -16464,64 +17660,6 @@ func (ec *executionContext) unmarshalNLoginInput2repairᚑplatformᚋgraphᚐLog
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNMarkdownFile2repairᚑplatformᚋgraphᚐMarkdownFile(ctx context.Context, sel ast.SelectionSet, v MarkdownFile) graphql.Marshaler {
-	return ec._MarkdownFile(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNMarkdownFile2ᚕᚖrepairᚑplatformᚋgraphᚐMarkdownFileᚄ(ctx context.Context, sel ast.SelectionSet, v []*MarkdownFile) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNMarkdownFile2ᚖrepairᚑplatformᚋgraphᚐMarkdownFile(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNMarkdownFile2ᚖrepairᚑplatformᚋgraphᚐMarkdownFile(ctx context.Context, sel ast.SelectionSet, v *MarkdownFile) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._MarkdownFile(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNPopularQuery2ᚕᚖrepairᚑplatformᚋgraphᚐPopularQueryᚄ(ctx context.Context, sel ast.SelectionSet, v []*PopularQuery) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -16593,6 +17731,75 @@ func (ec *executionContext) unmarshalNRegisterInput2repairᚑplatformᚋgraphᚐ
 
 func (ec *executionContext) unmarshalNRequestPasswordResetInput2repairᚑplatformᚋgraphᚐRequestPasswordResetInput(ctx context.Context, v any) (RequestPasswordResetInput, error) {
 	res, err := ec.unmarshalInputRequestPasswordResetInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSearchFacetItem2ᚕᚖrepairᚑplatformᚋgraphᚐSearchFacetItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*SearchFacetItem) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSearchFacetItem2ᚖrepairᚑplatformᚋgraphᚐSearchFacetItem(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSearchFacetItem2ᚖrepairᚑplatformᚋgraphᚐSearchFacetItem(ctx context.Context, sel ast.SelectionSet, v *SearchFacetItem) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SearchFacetItem(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSearchFacets2ᚖrepairᚑplatformᚋgraphᚐSearchFacets(ctx context.Context, sel ast.SelectionSet, v *SearchFacets) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SearchFacets(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNSearchInput2repairᚑplatformᚋgraphᚐSearchInput(ctx context.Context, v any) (SearchInput, error) {
+	res, err := ec.unmarshalInputSearchInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -16764,8 +17971,8 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) unmarshalNUpdateFileInput2repairᚑplatformᚋgraphᚐUpdateFileInput(ctx context.Context, v any) (UpdateFileInput, error) {
-	res, err := ec.unmarshalInputUpdateFileInput(ctx, v)
+func (ec *executionContext) unmarshalNUpdateCommentInput2repairᚑplatformᚋgraphᚐUpdateCommentInput(ctx context.Context, v any) (UpdateCommentInput, error) {
+	res, err := ec.unmarshalInputUpdateCommentInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -16793,11 +18000,6 @@ func (ec *executionContext) marshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋg
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) unmarshalNUploadMarkdownFileInput2repairᚑplatformᚋgraphᚐUploadMarkdownFileInput(ctx context.Context, v any) (UploadMarkdownFileInput, error) {
-	res, err := ec.unmarshalInputUploadMarkdownFileInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUser2repairᚑplatformᚋgraphᚐUser(ctx context.Context, sel ast.SelectionSet, v User) graphql.Marshaler {
@@ -17159,6 +18361,13 @@ func (ec *executionContext) marshalOBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlog
 	return ec._BlogPost(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx context.Context, sel ast.SelectionSet, v *BlogPostComment) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BlogPostComment(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -17187,6 +18396,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOCommentFilterInput2ᚖrepairᚑplatformᚋgraphᚐCommentFilterInput(ctx context.Context, v any) (*CommentFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCommentFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOCommentSortInput2ᚖrepairᚑplatformᚋgraphᚐCommentSortInput(ctx context.Context, v any) (*CommentSortInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCommentSortInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
@@ -17225,13 +18450,6 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
-func (ec *executionContext) marshalOMarkdownFile2ᚖrepairᚑplatformᚋgraphᚐMarkdownFile(ctx context.Context, sel ast.SelectionSet, v *MarkdownFile) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._MarkdownFile(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalOPostFilterInput2ᚖrepairᚑplatformᚋgraphᚐPostFilterInput(ctx context.Context, v any) (*PostFilterInput, error) {
 	if v == nil {
 		return nil, nil
@@ -17262,6 +18480,14 @@ func (ec *executionContext) marshalOPostStatus2ᚖrepairᚑplatformᚋgraphᚐPo
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOSearchFilters2ᚖrepairᚑplatformᚋgraphᚐSearchFilters(ctx context.Context, v any) (*SearchFilters, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputSearchFilters(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {

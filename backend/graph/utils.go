@@ -5,18 +5,35 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
+	"net/smtp"
 	"os"
-	"path/filepath"
 	"repair-platform/middleware"
 	"repair-platform/models"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+)
+
+// 验证码相关常量
+const (
+	VerificationCodeTTL = 10 * time.Minute // 验证码有效期10分钟
+)
+
+// VerificationCode 验证码结构
+type VerificationCode struct {
+	Code      string
+	ExpiresAt time.Time
+}
+
+// 内存中的验证码存储（生产环境应使用 Redis）
+var (
+	verificationCodes = make(map[string]*VerificationCode)
+	verificationMutex = sync.RWMutex{}
 )
 
 // GraphQLError 标准 GraphQL 错误结构
@@ -41,8 +58,6 @@ var (
 	ErrInternalError      = GraphQLError{Message: "服务器内部错误", Code: "INTERNAL_ERROR"}
 )
 
-// 验证码有效期
-const VerificationCodeTTL = 15 * time.Minute
 
 // isAuthenticated 检查用户是否已认证
 func isAuthenticated(ctx context.Context) bool {
@@ -70,11 +85,27 @@ func getUserFromContext(ctx context.Context, db *gorm.DB) (*models.User, error) 
 					if errors.Is(err, gorm.ErrRecordNotFound) {
 						return nil, ErrUserNotFound
 					}
-					return nil, ErrInternalError
+					return nil, fmt.Errorf("数据库查询错误: %w", err)
 				}
 				return &user, nil
 			}
+			return nil, fmt.Errorf("用户ID类型错误")
 		}
+		// 如果Gin上下文中没有user_id，尝试获取username
+		if username, exists := ginCtx.Get("username"); exists {
+			if name, ok := username.(string); ok {
+				var user models.User
+				if err := db.Where("username = ?", name).First(&user).Error; err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						return nil, ErrUserNotFound
+					}
+					return nil, fmt.Errorf("数据库查询错误: %w", err)
+				}
+				return &user, nil
+			}
+			return nil, fmt.Errorf("用户名类型错误")
+		}
+		return nil, ErrUnauthorized
 	}
 
 	// 回退到原来的逻辑（用于直接GraphQL上下文）
@@ -88,7 +119,7 @@ func getUserFromContext(ctx context.Context, db *gorm.DB) (*models.User, error) 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
 		}
-		return nil, ErrInternalError
+		return nil, fmt.Errorf("数据库查询错误: %w", err)
 	}
 
 	return &user, nil
@@ -124,12 +155,32 @@ func convertToGraphQLUser(user *models.User) *User {
 		role = UserRoleUser
 	}
 
+	// Convert string fields to string pointers if not empty
+	var bio *string
+	if user.Bio != "" {
+		bio = &user.Bio
+	}
+	
+	var avatar *string
+	if user.Avatar != "" {
+		avatar = &user.Avatar
+	}
+	
+	var lastLoginAt *time.Time
+	if user.LastLoginAt != nil {
+		lastLoginAt = user.LastLoginAt
+	}
+
 	return &User{
 		ID:         strconv.FormatUint(uint64(user.ID), 10),
 		Username:   user.Username,
 		Email:      user.Email,
 		Role:       role,
 		IsVerified: user.IsVerified,
+		IsActive:   user.IsActive,
+		Bio:        bio,
+		Avatar:     avatar,
+		LastLoginAt: lastLoginAt,
 		CreatedAt:  user.CreatedAt,
 		UpdatedAt:  user.UpdatedAt,
 	}
@@ -171,31 +222,71 @@ func generateSecureCode() (string, error) {
 func sendVerificationCode(to, code string) error {
 	logger := middleware.GetLogger()
 
+	// 检查是否为开发环境（可以通过环境变量控制）
 	// 开发环境下跳过实际邮件发送，只记录日志
-	logger.Infow("[开发模式] 验证码", "email", to, "code", code)
-	return nil
-
-	// 以下是实际的邮件发送代码（暂时注释）
-	/*
-		from := "xloudmaxx@gmail.com"
-		password := "mbbf hrde wlpk bphe"
-		smtpHost := "smtp.gmail.com"
-		smtpPort := "587"
-
-		subject := "Subject: 邮箱验证码\n"
-		body := fmt.Sprintf("您的验证码是: %s\n有效期为 %d 分钟", code, VerificationCodeTTL/time.Minute)
-		msg := fmt.Sprintf("From: %s\nTo: %s\n%s\n\n%s", from, to, subject, body)
-
-		auth := smtp.PlainAuth("", from, password, smtpHost)
-		err := smtp.SendMail(fmt.Sprintf("%s:%s", smtpHost, smtpPort), auth, from, []string{to}, []byte(msg))
-		if err != nil {
-			logger.Errorw("发送邮件失败", "email", to, "error", err)
-			return err
-		}
-
-		logger.Infow("邮件发送成功", "email", to)
+	if os.Getenv("GO_ENV") != "production" {
+		logger.Infow("[开发模式] 验证码", "email", to, "code", code)
 		return nil
-	*/
+	}
+
+	// 生产环境的邮件发送代码
+	from := "xloudmaxx@gmail.com"
+	password := "mbbf hrde wlpk bphe"
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+
+	subject := "Subject: 邮箱验证码\n"
+	body := fmt.Sprintf("您的验证码是: %s\n有效期为 %d 分钟", code, VerificationCodeTTL/time.Minute)
+	msg := fmt.Sprintf("From: %s\nTo: %s\n%s\n\n%s", from, to, subject, body)
+
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+	err := smtp.SendMail(fmt.Sprintf("%s:%s", smtpHost, smtpPort), auth, from, []string{to}, []byte(msg))
+	if err != nil {
+		logger.Errorw("发送邮件失败", "email", to, "error", err)
+		return err
+	}
+
+	logger.Infow("邮件发送成功", "email", to)
+	return nil
+}
+
+// storeVerificationCode 存储验证码
+func storeVerificationCode(email, code string) {
+	verificationMutex.Lock()
+	defer verificationMutex.Unlock()
+	
+	verificationCodes[email] = &VerificationCode{
+		Code:      code,
+		ExpiresAt: time.Now().Add(VerificationCodeTTL),
+	}
+}
+
+// verifyCode 验证验证码
+func verifyCode(email, code string) bool {
+	verificationMutex.RLock()
+	defer verificationMutex.RUnlock()
+	
+	stored, exists := verificationCodes[email]
+	if !exists {
+		return false
+	}
+	
+	// 检查是否过期
+	if time.Now().After(stored.ExpiresAt) {
+		// 删除过期的验证码
+		delete(verificationCodes, email)
+		return false
+	}
+	
+	return stored.Code == code
+}
+
+// deleteVerificationCode 删除验证码（验证成功后清除）
+func deleteVerificationCode(email string) {
+	verificationMutex.Lock()
+	defer verificationMutex.Unlock()
+	
+	delete(verificationCodes, email)
 }
 
 // parseID 解析字符串 ID 为 uint
@@ -222,6 +313,11 @@ func intPtr(i int) *int {
 
 // convertToGraphQLBlogPost 转换数据库博客模型为 GraphQL 博客类型
 func convertToGraphQLBlogPost(post *models.BlogPost) *BlogPost {
+	return convertToGraphQLBlogPostWithUser(post, nil)
+}
+
+// convertToGraphQLBlogPostWithUser 转换数据库博客模型为 GraphQL 博客类型，支持用户特定信息
+func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models.User) *BlogPost {
 	// 转换访问级别
 	var accessLevel AccessLevel
 	switch post.AccessLevel {
@@ -263,13 +359,8 @@ func convertToGraphQLBlogPost(post *models.BlogPost) *BlogPost {
 		}
 	}
 
-	// 读取文件内容（如果有ContentPath）
+	// 直接使用数据库中的内容
 	content := post.Content
-	if post.ContentPath != "" {
-		if data, err := ioutil.ReadFile(post.ContentPath); err == nil {
-			content = string(data)
-		}
-	}
 
 	// 处理封面图片 URL
 	var coverImageURL *string
@@ -283,9 +374,9 @@ func convertToGraphQLBlogPost(post *models.BlogPost) *BlogPost {
 		excerpt = &post.Excerpt
 	}
 
-	// 转换统计信息
+	// 转换统计信息，确保stats总是存在且包含ID
 	var stats *BlogPostStats
-	if post.Stats != nil {
+	if post.Stats != nil && post.Stats.ID != 0 {
 		stats = &BlogPostStats{
 			ID:           strconv.FormatUint(uint64(post.Stats.ID), 10),
 			ViewCount:    post.Stats.ViewCount,
@@ -295,7 +386,21 @@ func convertToGraphQLBlogPost(post *models.BlogPost) *BlogPost {
 			LastViewedAt: post.Stats.LastViewedAt,
 			UpdatedAt:    post.Stats.UpdatedAt,
 		}
+	} else {
+		// 如果stats为空或ID为0，提供默认统计信息
+		stats = &BlogPostStats{
+			ID:           strconv.FormatUint(uint64(post.ID), 10) + "_stats", // 使用post ID + 后缀作为临时ID
+			ViewCount:    0,
+			LikeCount:    0,
+			ShareCount:   0,
+			CommentCount: 0,
+			LastViewedAt: nil,
+			UpdatedAt:    post.UpdatedAt,
+		}
 	}
+
+	// 默认isLiked为false
+	isLiked := false
 
 	return &BlogPost{
 		ID:            strconv.FormatUint(uint64(post.ID), 10),
@@ -314,7 +419,49 @@ func convertToGraphQLBlogPost(post *models.BlogPost) *BlogPost {
 		UpdatedAt:     post.UpdatedAt,
 		Author:        convertToGraphQLUser(&post.Author),
 		Stats:         stats,
+		IsLiked:       isLiked,
 	}
+}
+
+// ensurePostStats 确保文章有统计记录
+func ensurePostStats(db *gorm.DB, postID uint) error {
+	var existingStats models.BlogPostStats
+	err := db.Where("blog_post_id = ?", postID).First(&existingStats).Error
+	
+	// 如果统计记录不存在，创建一个
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		stats := &models.BlogPostStats{
+			BlogPostID:   postID,
+			ViewCount:    0,
+			LikeCount:    0,
+			ShareCount:   0,
+			CommentCount: 0,
+		}
+		return db.Create(stats).Error
+	}
+	
+	return err // 返回其他错误，nil表示记录已存在
+}
+
+// SetBlogPostIsLiked 设置博客文章的点赞状态
+func SetBlogPostIsLiked(graphqlPost *BlogPost, post *models.BlogPost, currentUser *models.User, db *gorm.DB) error {
+	if currentUser == nil || post.Stats == nil {
+		graphqlPost.IsLiked = false
+		return nil
+	}
+
+	// 检查用户是否已经点赞了这篇文章
+	var existingLike models.BlogPostLike
+	err := db.Where("blog_post_id = ? AND user_id = ?", post.ID, currentUser.ID).First(&existingLike).Error
+	if err != nil {
+		// 没有点赞
+		graphqlPost.IsLiked = false
+	} else {
+		// 已经点赞
+		graphqlPost.IsLiked = true
+	}
+
+	return nil
 }
 
 // convertToGraphQLBlogPostVersion 转换数据库博客版本模型为 GraphQL 博客版本类型
@@ -333,76 +480,6 @@ func convertToGraphQLBlogPostVersion(version *models.BlogPostVersion) *BlogPostV
 		CreatedAt:  version.CreatedAt,
 		CreatedBy:  convertToGraphQLUser(&version.CreatedBy),
 	}
-}
-
-// saveBlogPostContent 保存博客文章内容到文件
-func saveBlogPostContent(content string, basePath string, title string) (string, error) {
-	// 确保目录存在
-	if err := ensureFolderExists(basePath); err != nil {
-		return "", fmt.Errorf("创建目录失败: %w", err)
-	}
-
-	// 创建文件名（使用标题作为文件名）
-	filename := strings.ReplaceAll(title, " ", "_") + ".md"
-	filename = strings.ReplaceAll(filename, "/", "_")
-	// 移除其他可能有问题的字符
-	filename = strings.ReplaceAll(filename, ":", "_")
-	filename = strings.ReplaceAll(filename, "?", "_")
-	filename = strings.ReplaceAll(filename, "*", "_")
-	filename = strings.ReplaceAll(filename, "|", "_")
-	filename = strings.ReplaceAll(filename, "<", "_")
-	filename = strings.ReplaceAll(filename, ">", "_")
-	filename = strings.ReplaceAll(filename, "\\", "_")
-
-	filePath := filepath.Join(basePath, filename)
-
-	// 写入文件
-	err := ioutil.WriteFile(filePath, []byte(content), 0644)
-	if err != nil {
-		return "", fmt.Errorf("写入文件失败: %w", err)
-	}
-
-	return filePath, nil
-}
-
-// 文件管理相关常量和函数
-const (
-	defaultBasePath = "uploads"
-	markdownExt     = ".md"
-)
-
-// getBasePath 获取基础路径
-func getBasePath() string {
-	if basePath := os.Getenv("BASE_PATH"); basePath != "" {
-		return basePath
-	}
-	return defaultBasePath
-}
-
-// isPathInsideBase 验证路径是否在基础路径内
-func isPathInsideBase(path, base string) bool {
-	absBase, _ := filepath.Abs(base)
-	absPath, _ := filepath.Abs(path)
-	return strings.HasPrefix(absPath, absBase)
-}
-
-// ensureFolderExists 确保文件夹路径存在
-func ensureFolderExists(folderPath string) error {
-	return os.MkdirAll(folderPath, os.ModePerm)
-}
-
-// isValidFolderName 验证文件夹名称是否有效
-func isValidFolderName(name string) bool {
-	for _, char := range name {
-		if !(char == '_' ||
-			(char >= 'a' && char <= 'z') ||
-			(char >= 'A' && char <= 'Z') ||
-			(char >= '0' && char <= '9') ||
-			(char >= 0x4E00 && char <= 0x9FA5)) {
-			return false
-		}
-	}
-	return true
 }
 
 // convertToGraphQLInviteCode 转换数据库邀请码模型为 GraphQL 邀请码类型
@@ -466,4 +543,22 @@ func getUptime() string {
 	} else {
 		return fmt.Sprintf("%d秒", seconds)
 	}
+}
+
+// generateInviteCode 生成唯一的邀请码
+func generateInviteCode() string {
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const codeLength = 8
+	
+	code := make([]byte, codeLength)
+	for i := range code {
+		randomIndex, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			// 如果加密随机数生成失败，回退到时间戳
+			return fmt.Sprintf("INV%d", time.Now().Unix())
+		}
+		code[i] = charset[randomIndex.Int64()]
+	}
+	
+	return string(code)
 }

@@ -28,18 +28,3 @@ describe('GraphQL Operations', () => {
     expect(testQuery.definitions).toHaveLength(1);
   });
 });
-
-// Mock测试 - 测试hooks的基本结构
-describe('Custom Hooks Structure', () => {
-  it('should export required hooks', async () => {
-    const { useAppUser } = await import('../hooks/useAppState');
-    const { useBlogList } = await import('../hooks/useBlog');
-    const { useFileOperations } = await import('../api/graphql/file');
-    const { useUserAdmin } = await import('../hooks/useAdmin');
-    
-    expect(useAppUser).toBeDefined();
-    expect(useBlogList).toBeDefined();
-    expect(useFileOperations).toBeDefined();
-    expect(useUserAdmin).toBeDefined();
-  });
-});

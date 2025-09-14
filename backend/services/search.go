@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	"gorm.io/gorm"
 )
@@ -62,18 +63,12 @@ func (s *SearchService) AdvancedSearchPosts(query string, limit, offset int, use
 		}
 	}
 
-	// 多字段搜索
-	var searchConditions []string
-	var searchArgs []interface{}
-
-	for _, keyword := range keywords {
-		likeKeyword := "%" + keyword + "%"
-		searchConditions = append(searchConditions, "(title LIKE ? OR content LIKE ? OR tags LIKE ? OR categories LIKE ?)")
-		searchArgs = append(searchArgs, likeKeyword, likeKeyword, likeKeyword, likeKeyword)
-	}
-
+	// 多字段搜索 - 使用增强的全文搜索
+	searchConditions := s.buildFullTextSearchConditions(keywords)
 	if len(searchConditions) > 0 {
-		dbQuery = dbQuery.Where(strings.Join(searchConditions, " AND "), searchArgs...)
+		for _, condition := range searchConditions {
+			dbQuery = dbQuery.Where(condition.query, condition.args...)
+		}
 	}
 
 	// 获取总数
@@ -118,6 +113,34 @@ func (s *SearchService) AdvancedSearchPosts(query string, limit, offset int, use
 	return searchResult, nil
 }
 
+// SearchCondition 搜索条件结构
+type SearchCondition struct {
+	query string
+	args  []interface{}
+}
+
+// buildFullTextSearchConditions 构建全文搜索条件
+func (s *SearchService) buildFullTextSearchConditions(keywords []string) []SearchCondition {
+	var conditions []SearchCondition
+
+	// 为每个关键词构建搜索条件
+	for _, keyword := range keywords {
+		// 使用 PostgreSQL 的全文搜索功能（如果使用 PostgreSQL）
+		// 或使用 LIKE 进行模糊匹配
+		likeKeyword := "%" + keyword + "%"
+
+		// 构建多字段搜索条件
+		condition := SearchCondition{
+			query: "(title LIKE ? OR content LIKE ? OR tags LIKE ? OR categories LIKE ?)",
+			args:  []interface{}{likeKeyword, likeKeyword, likeKeyword, likeKeyword},
+		}
+
+		conditions = append(conditions, condition)
+	}
+
+	return conditions
+}
+
 // ScoredPost 带得分的文章
 type ScoredPost struct {
 	Post  models.BlogPost
@@ -138,6 +161,10 @@ func (s *SearchService) calculateRelevanceScores(posts []models.BlogPost, keywor
 
 	// 按得分降序排序
 	sort.Slice(scoredPosts, func(i, j int) bool {
+		// 如果得分相同，按创建时间排序（新的在前）
+		if scoredPosts[i].Score == scoredPosts[j].Score {
+			return scoredPosts[i].Post.CreatedAt.After(scoredPosts[j].Post.CreatedAt)
+		}
 		return scoredPosts[i].Score > scoredPosts[j].Score
 	})
 
@@ -160,6 +187,9 @@ func (s *SearchService) calculatePostScore(post models.BlogPost, keywords []stri
 	// 人气因子（基于浏览量和点赞数）
 	popularityFactor := s.calculatePopularityFactor(post)
 
+	// 关键词密度因子
+	keywordDensityFactor := s.calculateKeywordDensityFactor(post, keywords)
+
 	for _, keyword := range keywords {
 		lowerKeyword := strings.ToLower(keyword)
 
@@ -178,8 +208,8 @@ func (s *SearchService) calculatePostScore(post models.BlogPost, keywords []stri
 		totalScore += titleScore + contentScore + tagsScore + categoriesScore
 	}
 
-	// 应用时间和人气因子
-	finalScore := totalScore * timeFactor * popularityFactor
+	// 应用各种因子
+	finalScore := totalScore * timeFactor * popularityFactor * keywordDensityFactor
 
 	return finalScore
 }
@@ -237,13 +267,55 @@ func (s *SearchService) calculatePopularityFactor(post models.BlogPost) float64 
 	return 1.0
 }
 
-// tokenize 分词处理
+// calculateKeywordDensityFactor 计算关键词密度因子
+func (s *SearchService) calculateKeywordDensityFactor(post models.BlogPost, keywords []string) float64 {
+	if len(keywords) == 0 {
+		return 1.0
+	}
+
+	totalWords := float64(len(strings.Fields(post.Content)))
+	if totalWords == 0 {
+		return 1.0
+	}
+
+	keywordCount := 0
+	for _, keyword := range keywords {
+		keywordCount += strings.Count(strings.ToLower(post.Content), strings.ToLower(keyword))
+	}
+
+	// 计算关键词密度（关键词出现次数/总词数）
+	density := float64(keywordCount) / totalWords
+
+	// 密度在2%-8%之间为最佳，给予最高分
+	if density >= 0.02 && density <= 0.08 {
+		return 1.5 // 给予1.5倍加分
+	} else if density > 0.08 {
+		// 密度过高可能不是好文章，适当降低得分
+		return 0.8
+	}
+
+	// 密度较低，正常得分
+	return 1.0
+}
+
+// tokenize 分词处理 - 改进版本
 func (s *SearchService) tokenize(query string) []string {
-	// 简单的分词实现，可以后续集成更高级的分词器
+	// 清理查询字符串
 	query = strings.TrimSpace(query)
 	if query == "" {
 		return []string{}
 	}
+
+	// 移除标点符号，只保留字母、数字和中文字符
+	var cleanedQuery strings.Builder
+	for _, r := range query {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.Is(unicode.Scripts["Han"], r) {
+			cleanedQuery.WriteRune(r)
+		} else {
+			cleanedQuery.WriteRune(' ')
+		}
+	}
+	query = cleanedQuery.String()
 
 	// 按空格分割
 	words := strings.Fields(query)
@@ -254,9 +326,12 @@ func (s *SearchService) tokenize(query string) []string {
 
 	for _, word := range words {
 		word = strings.ToLower(strings.TrimSpace(word))
-		if len(word) >= 2 && !keywordMap[word] { // 忽略长度小于2的词
-			keywordMap[word] = true
-			keywords = append(keywords, word)
+		// 忽略长度小于2的词，除非是数字
+		if len(word) >= 2 || (len(word) == 1 && unicode.IsDigit(rune(word[0]))) {
+			if !keywordMap[word] {
+				keywordMap[word] = true
+				keywords = append(keywords, word)
+			}
 		}
 	}
 
@@ -332,6 +407,7 @@ func (s *SearchService) GetTrendingSearches(limit int) ([]string, error) {
 	var tags []string
 	err := s.db.Model(&models.BlogPost{}).
 		Where("status = 'PUBLISHED' AND access_level = 'PUBLIC'").
+		Where("tags IS NOT NULL AND tags != ''").              // 添加非空检查
 		Where("created_at > ?", time.Now().AddDate(0, -1, 0)). // 最近一个月
 		Pluck("tags", &tags).Error
 
@@ -342,7 +418,8 @@ func (s *SearchService) GetTrendingSearches(limit int) ([]string, error) {
 	// 统计标签频率
 	tagCount := make(map[string]int)
 	for _, tagString := range tags {
-		if tagString != "" {
+		// 再次检查确保不为空
+		if tagString != "" && tagString != "NULL" {
 			tagList := strings.Split(tagString, ",")
 			for _, tag := range tagList {
 				tag = strings.TrimSpace(tag)
@@ -377,4 +454,180 @@ func (s *SearchService) GetTrendingSearches(limit int) ([]string, error) {
 	}
 
 	return trending, nil
+}
+
+// HighlightKeywords 高亮关键词
+func (s *SearchService) HighlightKeywords(content string, keywords []string) string {
+	if len(keywords) == 0 {
+		return content
+	}
+
+	result := content
+	for _, keyword := range keywords {
+		// 使用简单的标记高亮关键词
+		highlighted := "<mark>" + keyword + "</mark>"
+		result = strings.ReplaceAll(result, keyword, highlighted)
+	}
+
+	return result
+}
+
+// FacetItem 聚合项
+type FacetItem struct {
+	Value string
+	Count int
+}
+
+// GetTagFacets 获取标签聚合
+func (s *SearchService) GetTagFacets(query string, limit int) ([]FacetItem, error) {
+	var facets []FacetItem
+
+	// 简化实现：从匹配的文章中提取标签并统计
+	var posts []models.BlogPost
+	err := s.db.Model(&models.BlogPost{}).
+		Where("status = 'PUBLISHED' AND access_level = 'PUBLIC'").
+		Where("title LIKE ? OR content LIKE ? OR tags LIKE ? OR categories LIKE ?",
+			"%"+query+"%", "%"+query+"%", "%"+query+"%", "%"+query+"%").
+		Find(&posts).Error
+
+	if err != nil {
+		return facets, err
+	}
+
+	// 统计标签频率
+	tagCount := make(map[string]int)
+	for _, post := range posts {
+		if post.Tags != "" {
+			tags := strings.Split(post.Tags, ",")
+			for _, tag := range tags {
+				tag = strings.TrimSpace(tag)
+				if tag != "" {
+					tagCount[tag]++
+				}
+			}
+		}
+	}
+
+	// 转换为 FacetItem 列表并排序
+	type tagCountPair struct {
+		tag   string
+		count int
+	}
+
+	var tagCounts []tagCountPair
+	for tag, count := range tagCount {
+		tagCounts = append(tagCounts, tagCountPair{tag: tag, count: count})
+	}
+
+	// 按计数排序
+	sort.Slice(tagCounts, func(i, j int) bool {
+		return tagCounts[i].count > tagCounts[j].count
+	})
+
+	// 限制返回数量
+	for i, tc := range tagCounts {
+		if i >= limit {
+			break
+		}
+		facets = append(facets, FacetItem{Value: tc.tag, Count: tc.count})
+	}
+
+	return facets, nil
+}
+
+// GetCategoryFacets 获取分类聚合
+func (s *SearchService) GetCategoryFacets(query string, limit int) ([]FacetItem, error) {
+	var facets []FacetItem
+
+	// 简化实现：从匹配的文章中提取分类并统计
+	var posts []models.BlogPost
+	err := s.db.Model(&models.BlogPost{}).
+		Where("status = 'PUBLISHED' AND access_level = 'PUBLIC'").
+		Where("title LIKE ? OR content LIKE ? OR tags LIKE ? OR categories LIKE ?",
+			"%"+query+"%", "%"+query+"%", "%"+query+"%", "%"+query+"%").
+		Find(&posts).Error
+
+	if err != nil {
+		return facets, err
+	}
+
+	// 统计分类频率
+	categoryCount := make(map[string]int)
+	for _, post := range posts {
+		if post.Categories != "" {
+			categories := strings.Split(post.Categories, ",")
+			for _, category := range categories {
+				category = strings.TrimSpace(category)
+				if category != "" {
+					categoryCount[category]++
+				}
+			}
+		}
+	}
+
+	// 转换为 FacetItem 列表并排序
+	type categoryCountPair struct {
+		category string
+		count    int
+	}
+
+	var categoryCounts []categoryCountPair
+	for category, count := range categoryCount {
+		categoryCounts = append(categoryCounts, categoryCountPair{category: category, count: count})
+	}
+
+	// 按计数排序
+	sort.Slice(categoryCounts, func(i, j int) bool {
+		return categoryCounts[i].count > categoryCounts[j].count
+	})
+
+	// 限制返回数量
+	for i, cc := range categoryCounts {
+		if i >= limit {
+			break
+		}
+		facets = append(facets, FacetItem{Value: cc.category, Count: cc.count})
+	}
+
+	return facets, nil
+}
+
+// GetAuthorFacets 获取作者聚合
+func (s *SearchService) GetAuthorFacets(query string, limit int) ([]FacetItem, error) {
+	var facets []FacetItem
+
+	// 简化实现：从匹配的文章中提取作者并统计
+	type AuthorResult struct {
+		Username string
+		Count    int
+	}
+
+	var authors []AuthorResult
+	err := s.db.Model(&models.BlogPost{}).
+		Select("users.username, COUNT(*) as count").
+		Joins("JOIN users ON blog_post.author_id = users.id").
+		Where("blog_post.status = 'PUBLISHED' AND blog_post.access_level = 'PUBLIC'").
+		Where("blog_post.title LIKE ? OR blog_post.content LIKE ? OR blog_post.tags LIKE ? OR blog_post.categories LIKE ?",
+			"%"+query+"%", "%"+query+"%", "%"+query+"%", "%"+query+"%").
+		Group("users.username").
+		Order("count DESC").
+		Limit(limit).
+		Scan(&authors).Error
+
+	if err != nil {
+		return facets, err
+	}
+
+	// 转换为 FacetItem 列表
+	for _, author := range authors {
+		facets = append(facets, FacetItem{Value: author.Username, Count: author.Count})
+	}
+
+	return facets, nil
+}
+
+// GetCacheStats 获取缓存统计信息
+func (s *SearchService) GetCacheStats() map[string]interface{} {
+	cacheService := GetGlobalSearchCache()
+	return cacheService.GetCacheStats()
 }

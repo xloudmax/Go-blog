@@ -17,7 +17,6 @@ type BlogPost struct {
 	Tags          string            `gorm:"type:text" json:"tags"`                                          // 文章标签，逗号分隔
 	Categories    string            `gorm:"type:text" json:"categories"`                                    // 文章分类，逗号分隔
 	CoverImageURL string            `gorm:"type:text" json:"cover_image_url"`                               // 封面图片的 URL
-	ContentPath   string            `gorm:"type:text" json:"content_path"`                                  // Markdown 文件的路径（可选）
 	ViewCount     int               `gorm:"default:0" json:"view_count"`                                    // 浏览次数
 	Likes         int               `gorm:"default:0" json:"likes"`                                         // 点赞数
 	AccessLevel   string            `gorm:"type:varchar(20);not null;default:'PUBLIC'" json:"access_level"` // 访问权限（PUBLIC, PRIVATE, RESTRICTED）

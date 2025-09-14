@@ -33,19 +33,31 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
      * 优先级：本地缓存 > html 类名 > 系统偏好 > 默认亮色
      */
     function getInitialTheme(): Theme {
+        // 强制清除任何现有的主题类
+        document.documentElement.classList.remove('light', 'dark');
+        document.body.classList.remove('light', 'dark');
+        
         const saved = localStorage.getItem('theme')
+        console.log('Saved theme from localStorage:', saved)
         if (saved === 'light' || saved === 'dark') {
             return saved
         }
-        if (document.documentElement.classList.contains('dark')) {
+        
+        // 清除后检查是否还有dark类
+        const hasHtmlDarkClass = document.documentElement.classList.contains('dark')
+        console.log('HTML has dark class after cleanup:', hasHtmlDarkClass)
+        if (hasHtmlDarkClass) {
             return 'dark'
         }
-        if (
-            window.matchMedia &&
-            window.matchMedia('(prefers-color-scheme: dark)').matches
-        ) {
-            return 'dark'
-        }
+        
+        // 注释掉系统偏好检测，默认使用亮色主题
+        // const prefersColorScheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        // console.log('System prefers dark mode:', prefersColorScheme)
+        // if (prefersColorScheme) {
+        //     return 'dark'
+        // }
+        
+        console.log('Defaulting to light theme')
         return 'light'
     }
 
@@ -53,10 +65,28 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
     // 当 theme 改变时，写入 localStorage 并同步到 DOM
     useEffect(() => {
+        console.log('Theme effect triggered, current theme:', theme)
         localStorage.setItem('theme', theme);
+        
+        // 强制清除所有主题类
         document.documentElement.classList.remove('light', 'dark');
+        document.body.classList.remove('light', 'dark');
+        
+        // 添加当前主题类
         document.documentElement.classList.add(theme);
+        document.body.classList.add(theme);
         document.documentElement.setAttribute('data-theme', theme);
+        
+        // 强制设置根元素样式
+        if (theme === 'light') {
+            document.documentElement.style.colorScheme = 'light';
+            document.body.style.backgroundColor = '#ffffff';
+        } else {
+            document.documentElement.style.colorScheme = 'dark';
+            document.body.style.backgroundColor = '#1f2937';
+        }
+        
+        console.log('Applied theme to DOM:', theme, 'HTML classes:', document.documentElement.className)
 
         // 同步 highlight.js 主题
         const id = 'hljs-theme';

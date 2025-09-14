@@ -112,7 +112,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         await authLogout();
         setErrorState(null);
       } catch (error: any) {
-        console.error('登出错误:', error.message);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('登出错误:', error.message);
+        }
         // 即使登出失败也清理本地状态
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');

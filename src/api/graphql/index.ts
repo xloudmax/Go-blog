@@ -8,8 +8,7 @@ export type { AuthState } from './auth';
 // 博客相关
 export * from './blog';
 
-// 文件管理相关
-export * from './file';
+// 删除文件管理相关导出
 
 // 管理员相关
 export * from './admin';
@@ -22,8 +21,7 @@ export type {
   User,
   BlogPost,
   BlogPostVersion,
-  FileFolder,
-  MarkdownFile,
+  // 删除 FileFolder 和 MarkdownFile 类型
   InviteCode,
   ServerDashboard,
   AuthPayload,
@@ -33,7 +31,7 @@ export type {
   RegisterInput,
   CreatePostInput,
   UpdatePostInput,
-  CreateFolderInput,
+  // 删除 CreateFolderInput
   AdminCreateUserInput,
   // 枚举
   UserRole,

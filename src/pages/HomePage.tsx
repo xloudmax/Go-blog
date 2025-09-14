@@ -1,772 +1,154 @@
-import React, { useState, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  Card,
   Button,
-  Input,
-  Spin,
-  Alert,
-  Avatar,
-  Tag,
-  Row,
-  Col,
-  List,
   Typography,
-  Space,
-  Skeleton,
-  Dropdown,
-  MenuProps,
-  Statistic} from 'antd';
+  notification
+} from 'antd';
 import {
-  SearchOutlined,
-  AppstoreOutlined,
-  UnorderedListOutlined,
   EditOutlined,
-  EyeOutlined,
-  LikeOutlined,
-  FireOutlined,
-  FileTextOutlined,
-  TagsOutlined,
-  ArrowLeftOutlined,
-  CloseOutlined,
-  MoreOutlined,
-  ShareAltOutlined,
-  RiseOutlined,
-  HistoryOutlined} from '@ant-design/icons';
-import { useBlogList, useBlogDashboard, useBlogSearch } from '@/hooks';
-import { useSearchSuggestionsHook, useTrendingSearchesHook } from '@/hooks';
+  FileTextOutlined
+} from '@ant-design/icons';
+import { useBlogList } from '@/hooks';
 import { useAppUser } from '@/hooks';
-import MarkdownViewer from '../components/MarkdownViewer';
-
-// 定义文章类型
-interface BlogPost {
-  __typename?: 'BlogPost';
-  id: string;
-  title: string;
-  slug?: string;
-  excerpt?: string;
-  coverImageUrl?: string;
-  tags?: string[];
-  stats?: {
-    viewCount?: number;
-    likeCount?: number;
-  };
-  author: {
-    __typename?: 'User';
-    id?: string;
-    username: string;
-    avatar?: string;
-    createdAt?: string;
-    email?: string;
-    isVerified?: boolean;
-    lastLoginAt?: string;
-    role?: string;
-    updatedAt?: string;
-  };
-  publishedAt?: string;
-  createdAt: string;
-  content?: string;
-  accessLevel?: string;
-  categories?: string[];
-  lastEditedAt?: string;
-  status?: string;
-  updatedAt?: string;
-  versions?: any[];
-}
+import type { BlogPost, PostFilter } from '@/types';
+import ArticleListContainer from '@/components/ArticleListContainer';
+import TagCloud from '@/components/TagCloud';
+import SearchAndFilter from '@/components/SearchAndFilter';
+import ArticleSkeleton from '@/components/ArticleSkeleton';
 
 const { Title, Text } = Typography;
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user, isAuthenticated } = useAppUser();
-  const searchInputRef = useRef<any>(null);
-
-  // 获取搜索参数
-  const initialSearchQuery = searchParams.get('search') || '';
 
   // 博客列表管理
   const {
     posts,
     loading,
     error,
-    filterByTags,
-    clearFilters  } = useBlogList();
+    refetch
+  } = useBlogList();
 
-  // 仪表盘数据
-  const {
-    popularPosts,
-    recentPosts,
-    trendingTags,
-    loading: dashboardLoading
-  } = useBlogDashboard();
-
-  // 搜索功能
-  const {
-    searchQuery,
-    results: searchResults,
-    loading: searchLoading,
-    performSearch,
-    setSearchQuery,
-    searchHistory
-  } = useBlogSearch();
-
-  // 搜索建议功能
-  const {
-    suggestions  } = useSearchSuggestionsHook();
-
-  // 热门搜索词功能
-  const {
-    trendingSearches
-  } = useTrendingSearchesHook(10);
-
-  // 初始化搜索查询
-  React.useEffect(() => {
-    if (initialSearchQuery) {
-      setSearchQuery(initialSearchQuery);
-      performSearch(initialSearchQuery);
-    }
-  }, [initialSearchQuery, setSearchQuery, performSearch]);
-
-  // 页面状态
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
-  const [, setDateRange] = useState<[string, string] | null>(null);
-  const [, setSelectedAuthor] = useState<string | null>(null);
-  const [, setAccessLevel] = useState<string | null>(null);
-
-  // 处理搜索输入变化
-
-  // 处理搜索建议选择
-  const handleSuggestionSelect = (value: string) => {
-    setSearchQuery(value);
-    performSearch(value);
-
-    // 更新URL参数
-    const newSearchParams = new URLSearchParams();
-    newSearchParams.set('search', value);
-    window.history.replaceState(null, '', `?${newSearchParams.toString()}`);
-  };
-
-  // 处理搜索
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      performSearch(searchQuery);
-
-      // 更新URL参数
-      const newSearchParams = new URLSearchParams();
-      newSearchParams.set('search', searchQuery);
-      window.history.replaceState(null, '', `?${newSearchParams.toString()}`);
-    }
-  };
-
-  // 清除搜索
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    clearFilters();
-    setDateRange(null);
-    setSelectedAuthor(null);
-    setAccessLevel(null);
-
-    // 清除URL参数
-    window.history.replaceState(null, '', '/');
-  };
-
-  // 应用筛选条件
+  // 筛选状态
+  const [filters, setFilters] = useState<PostFilter>({});
+  const [searchQuery, setSearchQuery] = useState('');
 
   // 当前显示的文章列表
-  const currentPosts = searchQuery ? (searchResults?.posts || []) : (posts || []);
+  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
 
-  // 格式化日期
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+  // 更新筛选后的文章列表
+  React.useEffect(() => {
+    if (!posts) return;
+
+    let result = [...posts];
+
+    // 应用搜索筛选
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(post => 
+        post.title.toLowerCase().includes(query) ||
+        (post.excerpt && post.excerpt.toLowerCase().includes(query)) ||
+        (post.tags && post.tags.some(tag => tag.toLowerCase().includes(query)))
+      );
+    }
+
+    // 应用标签筛选
+    if (filters.tags && filters.tags.length > 0) {
+      result = result.filter(post => 
+        post.tags && filters.tags?.every(tag => post.tags?.includes(tag))
+      );
+    }
+
+    // 应用状态筛选
+    if (filters.status) {
+      result = result.filter(post => post.status === filters.status);
+    }
+
+    setFilteredPosts(result);
+
+    // 收集所有标签
+    const tags = new Set<string>();
+    posts.forEach(post => {
+      if (post.tags) {
+        post.tags.forEach(tag => tags.add(tag));
+      }
     });
+    setAllTags(Array.from(tags));
+  }, [posts, searchQuery, filters]);
+
+  // 处理搜索
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
 
-  // 文章操作菜单
-  const getPostMenuItems = (post: BlogPost): MenuProps['items'] => [
-    {
-      key: 'view',
-      icon: <EyeOutlined />,
-      label: '查看文章',
-      onClick: () => navigate(`/post/${post.slug}`)
-    },
-    {
-      key: 'share',
-      icon: <ShareAltOutlined />,
-      label: '分享文章',
-      onClick: () => {
-        navigator.clipboard.writeText(`${window.location.origin}/post/${post.slug}`);
-        // 这里应该使用 message.success，但为了避免引入额外的依赖，我们用 alert
-        alert('链接已复制到剪贴板');
-      }
-    },
-    ...(isAuthenticated && post.author.username === user?.username ? [
-      {
-        key: 'edit',
-        icon: <EditOutlined />,
-        label: '编辑文章',
-        onClick: () => navigate(`/editor/posts/${post.slug}`)
-      }
-    ] : [])
-  ];
+  // 处理筛选
+  const handleFilter = (newFilters: PostFilter) => {
+    setFilters(newFilters);
+  };
 
-  // 如果正在查看单篇文章
-  if (selectedPost) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <header className="sticky top-0 z-10 optimized-navbar p-4 backdrop-blur-sm shadow-sm home-page-header">
-          <div className="flex items-center">
-            <Button
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => setSelectedPost(null)}
-              className="optimized-button"
-            >
-              返回列表
-            </Button>
-            <Title level={4} className="ml-4 mb-0">
-              {selectedPost.title}
-            </Title>
-            <div className="ml-auto">
-              <Text type="secondary">
-                {formatDate(selectedPost.publishedAt || selectedPost.createdAt)}
-              </Text>
-            </div>
-          </div>
-        </header>
-        <main className="flex-1 overflow-auto p-4">
-          <MarkdownViewer content={selectedPost?.content || ''} />
-        </main>
-      </div>
-    );
-  }
+  // 清除筛选器
+  const handleClearFilters = () => {
+    setFilters({});
+    setSearchQuery('');
+  };
+
+  // 处理标签点击
+  const handleTagClick = (tag: string) => {
+    setFilters({ ...filters, tags: [tag] });
+  };
+
+  // 处理文章操作
+  const handlePostAction = (action: 'view' | 'edit' | 'share', post: BlogPost) => {
+    // 这里可以添加全局的操作处理逻辑
+    console.log(`执行操作: ${action} on post: ${post.title}`);
+  };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* 顶部导航区 - 简化的桌面端布局 */}
-      <header className="sticky top-0 z-10 optimized-navbar p-4 backdrop-blur-sm shadow-sm home-page-header">
-        <div className="flex items-center justify-between">
-          {/* 左侧标题 */}
-          <Title level={3} className="mb-0 text-display-2">博客首页</Title>
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+        {/* 标签云 */}
+        {posts && posts.length > 0 && (
+          <TagCloud 
+            posts={posts} 
+            onTagClick={handleTagClick} 
+          />
+        )}
 
-          {/* 右侧操作区域 - 增加间隙 */}
-          <div className="flex items-center gap-12">
-            {/* 搜索框 */}
-            <div className="w-60">
-              <Input
-                ref={searchInputRef}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onPressEnter={handleSearch}
-                placeholder="搜索文章..."
-                suffix={<SearchOutlined />}
-                className="optimized-input"
-              />
-            </div>
+        {/* 搜索和筛选 */}
+        <SearchAndFilter
+          onSearch={handleSearch}
+          onFilter={handleFilter}
+          activeFilters={filters}
+          onClearFilters={handleClearFilters}
+          allTags={allTags}
+        />
 
-            {/* 视图切换按钮 - 如果需要按钮间有间隙，可以改用 Space 而不是 Space.Compact */}
-            <Space size="small" > {/* 替换 Space.Compact 为 Space */}
-              <Button
-                icon={<AppstoreOutlined />}
-                type={viewMode === 'grid' ? 'primary' : 'default'}
-                onClick={() => setViewMode('grid')}
-                className="optimized-button px-4"
-              />
-              <Button
-                icon={<UnorderedListOutlined />}
-                type={viewMode === 'list' ? 'primary' : 'default'}
-                onClick={() => setViewMode('list')}
-                className="optimized-button px-4"
-              />
-            </Space>
-
-            {/* 写文章按钮 */}
-            {isAuthenticated && (
-              <Link to="/editor">
-                <Button type="primary" icon={<EditOutlined />} className="optimized-button px-4" gap-12>
-                  写文章
-                </Button>
-              </Link>
-            )}
+        {/* 内容区域 */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, index) => (
+              <ArticleSkeleton key={index} />
+            ))}
           </div>
-        </div>
-      </header>
-
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto px-4 py-6">
-          {/* 搜索结果标题 */}
-          {searchQuery && (
-            <div className="mb-6">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Title level={4} className="mb-0">
-                  搜索 "{searchQuery}" 的结果 {searchResults?.total && `(${searchResults.total}条)`}
-                </Title>
-                <Button
-                  type="text"
-                  icon={<CloseOutlined />}
-                  onClick={handleClearSearch}
-                  className="optimized-button"
-                >
-                  清除搜索
-                </Button>
-              </div>
-
-              {/* 搜索历史 */}
-              {searchHistory.length > 0 && (
-                <div className="mt-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <HistoryOutlined className="text-gray-500" />
-                    <span className="text-sm text-gray-500">搜索历史:</span>
-                    {searchHistory.slice(0, 5).map((historyItem, index) => (
-                      <Button
-                        key={index}
-                        type="link"
-                        size="small"
-                        onClick={() => {
-                          setSearchQuery(historyItem);
-                          performSearch(historyItem);
-                        }}
-                      >
-                        {historyItem}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
+        ) : error ? (
+          <div className="text-center py-16">
+            <Text className="text-red-500">{error.message}</Text>
+            <div className="mt-4">
+              <Button onClick={() => refetch()}>重新加载</Button>
             </div>
-          )}
-
-          {/* 热门搜索词 */}
-          {!searchQuery && trendingSearches.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <FireOutlined className="text-red-500" />
-                <span className="font-medium">热门搜索</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {trendingSearches.slice(0, 10).map((searchTerm: string, index: number) => (
-                  <Button
-                    key={index}
-                    type="default"
-                    size="small"
-                    onClick={() => {
-                      setSearchQuery(searchTerm);
-                      performSearch(searchTerm);
-                    }}
-                    className="rounded-full"
-                  >
-                    {searchTerm}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 仪表盘区域 - 使用卡片布局 */}
-          {!searchQuery && (
-            <div className="mb-8">
-              <Title level={4} className="mb-4 flex items-center text-display-2">
-                <FireOutlined className="mr-2" />
-                仪表盘
-              </Title>
-              <Row gutter={[16, 16]}>
-                {/* 统计卡片 */}
-                <Col xs={24} md={12} lg={6}>
-                  <Card className="optimized-card dashboard-statistic-card">
-                    <Statistic
-                      title="总文章数"
-                      value={posts?.length || 0}
-                      prefix={<FileTextOutlined />}
-                      valueStyle={{ color: '#4f46e5' }}
-                    />
-                  </Card>
-                </Col>
-
-                <Col xs={24} md={12} lg={6}>
-                  <Card className="optimized-card dashboard-statistic-card">
-                    <Statistic
-                      title="热门文章"
-                      value={popularPosts?.length || 0}
-                      prefix={<FireOutlined />}
-                      valueStyle={{ color: '#ff4d4f' }}
-                    />
-                  </Card>
-                </Col>
-
-                <Col xs={24} md={12} lg={6}>
-                  <Card className="optimized-card dashboard-statistic-card">
-                    <Statistic
-                      title="今日发布"
-                      value={recentPosts?.filter((post: any) => {
-                        const today = new Date();
-                        const postDate = new Date(post.publishedAt || post.createdAt);
-                        return postDate.toDateString() === today.toDateString();
-                      }).length || 0}
-                      prefix={<RiseOutlined />}
-                      valueStyle={{ color: '#52c41a' }}
-                    />
-                  </Card>
-                </Col>
-
-                <Col xs={24} md={12} lg={6}>
-                  <Card className="optimized-card dashboard-statistic-card">
-                    <Statistic
-                      title="热门标签"
-                      value={trendingTags?.length || 0}
-                      prefix={<TagsOutlined />}
-                      valueStyle={{ color: '#722ed1' }}
-                    />
-                  </Card>
-                </Col>
-
-                {/* 热门文章 */}
-                <Col xs={24} lg={8}>
-                  <Card
-                    size="small"
-                    title={
-                      <Space>
-                        <FireOutlined style={{ color: '#ff4d4f' }} />
-                        热门文章
-                      </Space>
-                    }
-                    className="optimized-card h-full"
-                    extra={<Link to="/popular">更多</Link>}
-                  >
-                    {dashboardLoading ? (
-                      <Skeleton active paragraph={{ rows: 3 }} />
-                    ) : (
-                      <div className="space-y-3">
-                        {popularPosts.slice(0, 5).map((post: BlogPost, index: number) => (
-                          <div
-                            key={post.id}
-                            className="flex items-start cursor-pointer hover:text-blue-600 transition-colors duration-200 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800"
-                            onClick={() => navigate(`/post/${post.slug}`)}
-                          >
-                            <span className="font-mono text-xs opacity-50 mr-2 mt-1">
-                              {index + 1}.
-                            </span>
-                            <div className="flex-1">
-                              <div className="font-medium text-sm line-clamp-2">
-                                {post.title}
-                              </div>
-                              <div className="flex items-center text-xs text-gray-500 mt-1">
-                                <EyeOutlined className="mr-1" />
-                                <span>{post.stats?.viewCount || 0}</span>
-                                <LikeOutlined className="ml-2 mr-1" />
-                                <span>{post.stats?.likeCount || 0}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </Card>
-                </Col>
-
-                {/* 最新文章 */}
-                <Col xs={24} lg={8}>
-                  <Card
-                    size="small"
-                    title={
-                      <Space>
-                        <RiseOutlined style={{ color: '#52c41a' }} />
-                        最新文章
-                      </Space>
-                    }
-                    className="optimized-card h-full"
-                    extra={<Link to="/recent">更多</Link>}
-                  >
-                    {dashboardLoading ? (
-                      <Skeleton active paragraph={{ rows: 3 }} />
-                    ) : (
-                      <div className="space-y-3">
-                        {recentPosts.slice(0, 5).map((post: BlogPost) => (
-                          <div
-                            key={post.id}
-                            className="flex items-start cursor-pointer hover:text-blue-600 transition-colors duration-200 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800"
-                            onClick={() => navigate(`/post/${post.slug}`)}
-                          >
-                            <Avatar
-                              size="small"
-                              src={post.author.avatar}
-                              className="mr-2 mt-0.5 flex-shrink-0"
-                            >
-                              {post.author.username[0]}
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="font-medium text-sm line-clamp-2">
-                                {post.title}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {formatDate(post.publishedAt || post.createdAt)}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </Card>
-                </Col>
-
-                {/* 热门标签 */}
-                <Col xs={24} lg={8}>
-                  <Card
-                    size="small"
-                    title={
-                      <Space>
-                        <TagsOutlined style={{ color: '#52c41a' }} />
-                        热门标签
-                      </Space>
-                    }
-                    className="optimized-card h-full"
-                    extra={<Link to="/tags">更多</Link>}
-                  >
-                    {dashboardLoading ? (
-                      <Skeleton active paragraph={{ rows: 2 }} />
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {trendingTags.slice(0, 15).map((tag: string, index: number) => (
-                          <Button
-                            key={tag}
-                            type="default"
-                            size="small"
-                            onClick={() => {
-                              filterByTags([tag]);
-                            }}
-                            className="optimized-button rounded-full"
-                            style={{
-                              fontSize: `${12 + (15 - index)}px`,
-                              opacity: 1 - (index * 0.05)
-                            }}
-                          >
-                            {tag}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
-                  </Card>
-                </Col>
-              </Row>
-            </div>
-          )}
-
-          {/* 使用条件渲染替代showSuggestions状态 */}
-          {suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-10 mt-1">
-              <Card className="optimized-card shadow-lg" size="small">
-                <div className="py-1">
-                  <div className="px-3 py-2 text-xs font-medium text-gray-500">搜索建议</div>
-                  {suggestions.slice(0, 8).map((suggestion: string, index: number) => (
-                    <div
-                      key={index}
-                      className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center"
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                    >
-                      <SearchOutlined className="mr-2 text-gray-400" />
-                      <span>{suggestion}</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* 文章列表 */}
-          <div>
-            {loading || searchLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <Spin size="large" />
-              </div>
-            ) : error ? (
-              <Alert
-                message="加载失败"
-                description={error.message}
-                type="error"
-                showIcon
-                className="optimized-alert"
-              />
-            ) : (
-              <>
-                {currentPosts.length === 0 ? (
-                  <div className="text-center py-12">
-                    <FileTextOutlined className="text-4xl text-gray-300 mb-4" />
-                    <Title level={4} className="text-gray-500">
-                      {searchQuery ? '没有找到相关文章' : '暂无文章'}
-                    </Title>
-                    <Text type="secondary" className="block mt-2">
-                      {searchQuery ? '尝试使用其他关键词搜索' : '还没有发布任何文章'}
-                    </Text>
-                  </div>
-                ) : viewMode === 'grid' ? (
-                  // 网格视图
-                  <Row gutter={[24, 24]}>
-                    {currentPosts.map((post: BlogPost) => (
-                      <Col xs={24} sm={12} lg={8} key={post.id}>
-                        <Card
-                          hoverable
-                          className="optimized-card blog-post-card"
-                          cover={
-                            post.coverImageUrl ? (
-                              <img
-                                alt={post.title}
-                                src={post.coverImageUrl}
-                                className="h-48 object-cover"
-                              />
-                            ) : null
-                          }
-                          actions={[
-                            <EyeOutlined key="view" />,
-                            <LikeOutlined key="like" />,
-                            <Dropdown
-                              key="more"
-                              menu={{ items: getPostMenuItems(post) }}
-                              trigger={['click']}
-                            >
-                              <MoreOutlined />
-                            </Dropdown>,
-                          ]}
-                        >
-                          <Card.Meta
-                            title={
-                              <Link to={`/post/${post.slug}`} className="hover:text-blue-600">
-                                {post.title}
-                              </Link>
-                            }
-                            description={
-                              <div className="mt-2">
-                                <Text type="secondary" className="line-clamp-2 text-sm">
-                                  {post.excerpt || '暂无摘要'}
-                                </Text>
-                                <div className="flex flex-wrap gap-1 mt-3">
-                                  {post.tags?.slice(0, 3).map(tag => (
-                                    <Tag key={tag} className="text-xs">
-                                      {tag}
-                                    </Tag>
-                                  ))}
-                                </div>
-                                <div className="flex items-center justify-between mt-3">
-                                  <div className="flex items-center">
-                                    <Avatar
-                                      size="small"
-                                      src={post.author.avatar}
-                                      className="mr-2"
-                                    >
-                                      {post.author.username[0]}
-                                    </Avatar>
-                                    <Text type="secondary" className="text-xs">
-                                      {post.author.username}
-                                    </Text>
-                                  </div>
-                                  <Text type="secondary" className="text-xs">
-                                    {formatDate(post.publishedAt || post.createdAt)}
-                                  </Text>
-                                </div>
-                                <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                                  <Space size="small">
-                                    <span>
-                                      <EyeOutlined className="mr-1" />
-                                      {post.stats?.viewCount || 0}
-                                    </span>
-                                    <span>
-                                      <LikeOutlined className="mr-1" />
-                                      {post.stats?.likeCount || 0}
-                                    </span>
-                                  </Space>
-                                </div>
-                              </div>
-                            }
-                          />
-                        </Card>
-                      </Col>
-                    ))}
-                  </Row>
-                ) : (
-                  // 列表视图
-                  <List
-                    itemLayout="vertical"
-                    size="large"
-                    dataSource={currentPosts}
-                    renderItem={(post: BlogPost) => (
-                      <List.Item
-                        key={post.id}
-                        actions={[
-                          <span key="view">
-                            <EyeOutlined className="mr-1" />
-                            {post.stats?.viewCount || 0}
-                          </span>,
-                          <span key="like">
-                            <LikeOutlined className="mr-1" />
-                            {post.stats?.likeCount || 0}
-                          </span>,
-                          <Dropdown
-                            key="more"
-                            menu={{ items: getPostMenuItems(post) }}
-                            trigger={['click']}
-                          >
-                            <MoreOutlined />
-                          </Dropdown>,
-                        ]}
-                        extra={
-                          post.coverImageUrl ? (
-                            <img
-                              alt={post.title}
-                              src={post.coverImageUrl}
-                              className="w-48 h-32 object-cover rounded"
-                            />
-                          ) : null
-                        }
-                      >
-                        <List.Item.Meta
-                          title={
-                            <Link to={`/post/${post.slug}`} className="text-xl hover:text-blue-600">
-                              {post.title}
-                            </Link>
-                          }
-                          description={
-                            <div>
-                              <div className="flex items-center mb-2">
-                                <Avatar
-                                  size="small"
-                                  src={post.author.avatar}
-                                  className="mr-2"
-                                >
-                                  {post.author.username[0]}
-                                </Avatar>
-                                <Text type="secondary" className="text-sm">
-                                  {post.author.username}
-                                </Text>
-                                <Text type="secondary" className="mx-2">•</Text>
-                                <Text type="secondary" className="text-sm">
-                                  {formatDate(post.publishedAt || post.createdAt)}
-                                </Text>
-                              </div>
-                              <Text type="secondary" className="block mb-2">
-                                {post.excerpt || '暂无摘要'}
-                              </Text>
-                              <div className="flex flex-wrap gap-1">
-                                {post.tags?.slice(0, 5).map(tag => (
-                                  <Tag key={tag} className="text-xs">
-                                    {tag}
-                                  </Tag>
-                                ))}
-                              </div>
-                            </div>
-                          }
-                        />
-                      </List.Item>
-                    )}
-                  />
-                )}
-              </>
-            )}
           </div>
-        </div>
-      </main>
+        ) : (
+          <ArticleListContainer 
+            posts={filteredPosts}
+            loading={loading}
+            error={error || null}
+            onAction={handlePostAction}
+          />
+        )}
+      </div>
     </div>
   );
 }

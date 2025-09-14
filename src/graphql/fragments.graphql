@@ -55,10 +55,7 @@ fragment BlogPostSummary on BlogPost {
     ...UserSummary
   }
   stats {
-    viewCount
-    likeCount
-    shareCount
-    commentCount
+    ...BlogPostStats
   }
 }
 
@@ -68,13 +65,7 @@ fragment BlogPostDetail on BlogPost {
     ...UserInfo
   }
   stats {
-    id
-    viewCount
-    likeCount
-    shareCount
-    commentCount
-    lastViewedAt
-    updatedAt
+    ...BlogPostStats
   }
   versions {
     id
@@ -111,31 +102,6 @@ fragment BlogPostVersion on BlogPostVersion {
   createdBy {
     ...UserSummary
   }
-}
-
-# File Management Fragments
-fragment FileFolderInfo on FileFolder {
-  name
-  path
-  createdAt
-  fileCount
-}
-
-fragment MarkdownFileInfo on MarkdownFile {
-  name
-  folder
-  content
-  size
-  createdAt
-  updatedAt
-}
-
-fragment MarkdownFileSummary on MarkdownFile {
-  name
-  folder
-  size
-  createdAt
-  updatedAt
 }
 
 # Invite Code Fragment

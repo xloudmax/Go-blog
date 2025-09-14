@@ -11,7 +11,7 @@ import {
     Row,
     Col,
     Typography,
-    message,
+    notification,
     Descriptions,
     Space
 } from 'antd';
@@ -62,9 +62,17 @@ export default function SystemManagement() {
         setOperationLoading('cache');
         try {
             await handleClearCache();
-            message.success('缓存清理成功！');
+            notification.success({
+                message: '成功',
+                description: '缓存清理成功！',
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '清理缓存失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '清理缓存失败',
+                duration: 5,
+            });
         } finally {
             setOperationLoading(null);
         }
@@ -75,9 +83,17 @@ export default function SystemManagement() {
         setOperationLoading('search');
         try {
             await handleRebuildSearchIndex();
-            message.success('搜索索引重建成功！');
+            notification.success({
+                message: '成功',
+                description: '搜索索引重建成功！',
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '重建搜索索引失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '重建搜索索引失败',
+                duration: 5,
+            });
         } finally {
             setOperationLoading(null);
         }
@@ -90,9 +106,17 @@ export default function SystemManagement() {
                 refetchDashboard(),
                 refetchStats()
             ]);
-            message.success('数据刷新成功！');
+            notification.success({
+                message: '成功',
+                description: '数据刷新成功！',
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '数据刷新失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '数据刷新失败',
+                duration: 5,
+            });
         }
     };
 
@@ -112,7 +136,7 @@ export default function SystemManagement() {
     };
 
     return (
-        <div style={{padding: '24px'}}>
+        <div>
             {/* 加载状态 */}
             {loading && (
                 <div style={{textAlign: 'center', padding: '48px'}}>

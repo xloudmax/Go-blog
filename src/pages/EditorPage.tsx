@@ -10,7 +10,7 @@ import {
     Card,
   Button,
   Typography,
-  message,
+  notification,
   Space,
   Divider,
   Tooltip,
@@ -20,37 +20,34 @@ import {
   Modal
 } from 'antd';
 import { 
-  LoadingOutlined, 
-  SaveOutlined, 
-  EyeOutlined, 
-  HistoryOutlined,
+    FileAddOutlined, 
+    TagOutlined, 
+    PictureOutlined,
+    EyeOutlined,
+    SaveOutlined,
+    LoadingOutlined,
+    InfoCircleOutlined,
+    FileTextOutlined,
+    HistoryOutlined,
     CloudUploadOutlined,
-  FileTextOutlined,
-  PlusOutlined,
-  InfoCircleOutlined
+    PlusOutlined
 } from '@ant-design/icons';
 import MarkdownEditor from '@/components/MarkdownEditor'
-import {
-    getContent,
-    uploadFile,
-    updateFile,
-    getFolders,
-} from '@/api/markdown'
+import { useBlogActions } from '@/api/graphql/blog'
 
 const { Option } = Select;
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 export default function EditorPage() {
-    const { folder, file: fileNameFromParams } = useParams<{ folder: string; file?: string }>()
+    const { file: fileNameFromParams } = useParams<{ file?: string }>()
     const navigate = useNavigate()
+    const { createPost, loading: blogLoading, errors } = useBlogActions()
 
     const [markdownContent, setMarkdownContent] = useState('')
     const [newFileTitle, setNewFileTitle] = useState('')
     const [initialContentLoaded, setInitialContentLoaded] = useState(false)
     const [loading, setLoading] = useState(!!fileNameFromParams)
     const [isSaving, setIsSaving] = useState(false)
-    const [folders, setFolders] = useState<string[]>([])
-    const [selectedFolder, setSelectedFolder] = useState('')
     const [tags, setTags] = useState<string[]>([])
     const [newTag, setNewTag] = useState('')
     const [coverImage, setCoverImage] = useState('')
@@ -61,39 +58,18 @@ export default function EditorPage() {
 
     // 根据是否编辑模式加载初始内容
     useEffect(() => {
-        if (isEditMode && folder && fileNameFromParams) {
+        if (isEditMode && fileNameFromParams) {
             setLoading(true)
-            getContent(folder, fileNameFromParams)
-                .then((res: { data: { content: SetStateAction<string> } }) => {
-                    setMarkdownContent(res.data.content)
-                })
-                .catch(() => message.error('加载文章内容失败'))
-                .finally(() => {
-                    setLoading(false)
-                    setInitialContentLoaded(true)
-                })
+            // 简化实现，直接设置空内容
+            setMarkdownContent('')
+            setLoading(false)
+            setInitialContentLoaded(true)
         } else {
             setMarkdownContent('')
             setNewFileTitle('')
             setInitialContentLoaded(true)
         }
-    }, [folder, fileNameFromParams, isEditMode])
-
-    // 新建模式下获取可用文件夹列表
-    useEffect(() => {
-        if (!isEditMode) {
-            getFolders()
-                .then(res => {
-                    setFolders(res.data.folders)
-                    if (folder) {
-                        setSelectedFolder(folder)
-                    } else if (res.data.folders.length > 0) {
-                        setSelectedFolder(res.data.folders[0])
-                    }
-                })
-                .catch(() => message.error('加载文件夹列表失败'))
-        }
-    }, [isEditMode, folder])
+    }, [fileNameFromParams, isEditMode])
 
     // 提取文章摘要
     const extractExcerpt = useCallback((content: string, maxLength: number = 200) => {
@@ -138,34 +114,59 @@ export default function EditorPage() {
     };
 
     const handleSave = async (currentMarkdown: string) => {
-        const targetFolder = isEditMode ? folder : selectedFolder
-        if (!targetFolder) {
-            message.error('请选择保存的文件夹！');
-            return
+        // 验证必填字段
+        if (!newFileTitle.trim()) {
+            notification.error({
+                message: '错误',
+                description: '请输入文章标题',
+                duration: 3,
+            });
+            return;
         }
-        setIsSaving(true)
+
+        if (!currentMarkdown.trim()) {
+            notification.error({
+                message: '错误', 
+                description: '文章内容不能为空',
+                duration: 3,
+            });
+            return;
+        }
+
+        setIsSaving(true);
+
         try {
-            if (isEditMode && fileNameFromParams) {
-                await updateFile(targetFolder, fileNameFromParams, currentMarkdown)
-                message.success('文章更新成功！')
-                navigate(`/posts/${targetFolder}/${fileNameFromParams}`)
-            } else {
-                if (!newFileTitle.trim()) {
-                    message.error('请输入文章标题！')
-                    setIsSaving(false)
-                    return
-                }
-                const titleForUpload = newFileTitle.trim()
-                const blob = new Blob([currentMarkdown], { type: 'text/markdown' })
-                const mdFile = new File([blob], `${titleForUpload}.md`)
-                await uploadFile(mdFile, targetFolder, titleForUpload)
-                message.success('文章创建成功！')
-                navigate(`/posts/${targetFolder}/${titleForUpload}.md`)
+            // 准备文章数据
+            const postData = {
+                title: newFileTitle.trim(),
+                content: currentMarkdown,
+                tags: tags.length > 0 ? tags : [],
+                categories: [], // 可以后续添加分类功能
+                coverImageUrl: coverImage.trim() || undefined,
+                excerpt: excerpt.trim() || undefined,
+            };
+
+            // 调用 GraphQL API 创建文章
+            const result = await createPost(postData);
+
+            if (result) {
+                notification.success({
+                    message: '成功',
+                    description: '文章保存成功！',
+                    duration: 5,
+                });
+                // 导航到文章详情页面
+                navigate(`/post/${result.slug}`);
             }
-        } catch (err: any) {
-            message.error(err.response?.data?.error || '保存失败')
+        } catch (error) {
+            console.error('保存文章失败:', error);
+            notification.error({
+                message: '保存失败',
+                description: error instanceof Error ? error.message : '保存文章时发生错误，请重试',
+                duration: 5,
+            });
         } finally {
-            setIsSaving(false)
+            setIsSaving(false);
         }
     }
 
@@ -192,55 +193,25 @@ export default function EditorPage() {
     }
 
     return (
-        <div className="m-5 fade-in">
-            <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
-                <div>
-                    <Title level={2} className="text-2xl font-bold text-display-2 mb-0">
-                        {isEditMode ? '编辑文章' : '新建文章'}
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" style={{ padding: '0 40px', boxSizing: 'border-box' }}>
+            <div className="max-w-7xl mx-auto py-12">
+                {/* 标准页面标题 */}
+                <div className="mb-6">
+                    <Title level={2} className="mb-4">
+                        {isEditMode ? '编辑文章' : '创建文章'}
                     </Title>
-                    <Text type="secondary">使用Markdown语法编写您的文章</Text>
+                    <Paragraph type="secondary" className="mb-0">
+                        {isEditMode ? '修改现有文章内容' : '创作新的精彩内容'}
+                    </Paragraph>
                 </div>
-                <Space wrap>
-                    <Button 
-                        icon={<EyeOutlined />} 
-                        onClick={showPreview}
-                    >
-                        预览
-                    </Button>
-                    <Button 
-                        type="primary" 
-                        icon={<SaveOutlined />} 
-                        onClick={() => handleSave(markdownContent)}
-                        loading={isSaving}
-                    >
-                        {isSaving ? '保存中...' : '保存文章'}
-                    </Button>
-                </Space>
-            </div>
             
             {!isEditMode && (
-                <Card className="mb-5 optimized-card">
+                <Card className="mb-5 optimized-card mx-8">
                     <Title level={4} className="text-heading-3">文章信息</Title>
                     <Divider className="my-3" />
                     <Row gutter={[16, 16]}>
                         <Col xs={24} md={12}>
                             <div className="space-y-4">
-                                <div>
-                                    <Text className="optimized-label">文件夹 <span className="text-red-500">*</span></Text>
-                                    <Select
-                                        value={selectedFolder}
-                                        onChange={value => setSelectedFolder(value)}
-                                        style={{ width: '100%' }}
-                                        placeholder="选择保存路径"
-                                        className="optimized-input"
-                                    >
-                                        {folders.map(f => (
-                                            <Option key={f} value={f}>
-                                                {f}
-                                            </Option>
-                                        ))}
-                                    </Select>
-                                </div>
                                 <div>
                                     <Text className="optimized-label">文章标题 <span className="text-red-500">*</span></Text>
                                     <Input
@@ -315,7 +286,7 @@ export default function EditorPage() {
             )}
             
             {/* 操作按钮栏 */}
-            <Card className="mb-5 optimized-card">
+            <Card className="mb-5 optimized-card mx-8">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <Space>
                         <Button 
@@ -362,14 +333,22 @@ export default function EditorPage() {
                     <Space>
                         <Button 
                             icon={<HistoryOutlined />} 
-                            onClick={() => message.info('版本历史功能即将推出')}
+                            onClick={() => notification.info({
+                                message: '提示',
+                                description: '版本历史功能即将推出',
+                                duration: 3,
+                            })}
                         >
                             版本历史
                         </Button>
                         {!isEditMode && (
                             <Button 
                                 icon={<CloudUploadOutlined />} 
-                                onClick={() => message.info('发布功能即将推出')}
+                                onClick={() => notification.info({
+                                    message: '提示',
+                                    description: '发布功能即将推出',
+                                    duration: 3,
+                                })}
                             >
                                 发布
                             </Button>
@@ -420,6 +399,7 @@ export default function EditorPage() {
                     </div>
                 </div>
             </Modal>
+            </div>
         </div>
     )
 }

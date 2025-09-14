@@ -8,8 +8,6 @@ import (
 	"io"
 	"strconv"
 	"time"
-
-	"github.com/99designs/gqlgen/graphql"
 )
 
 type AdminCreateUserInput struct {
@@ -48,6 +46,20 @@ type BlogPost struct {
 	IsLiked       bool               `json:"isLiked"`
 }
 
+type BlogPostComment struct {
+	ID          string             `json:"id"`
+	Content     string             `json:"content"`
+	BlogPost    *BlogPost          `json:"blogPost"`
+	User        *User              `json:"user"`
+	Parent      *BlogPostComment   `json:"parent,omitempty"`
+	Replies     []*BlogPostComment `json:"replies"`
+	IsApproved  bool               `json:"isApproved"`
+	LikeCount   int                `json:"likeCount"`
+	ReportCount int                `json:"reportCount"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	UpdatedAt   time.Time          `json:"updatedAt"`
+}
+
 type BlogPostStats struct {
 	ID           string     `json:"id"`
 	ViewCount    int        `json:"viewCount"`
@@ -68,13 +80,31 @@ type BlogPostVersion struct {
 	CreatedBy  *User     `json:"createdBy"`
 }
 
+type CommentFilterInput struct {
+	BlogPostID *string `json:"blogPostId,omitempty"`
+	UserID     *string `json:"userId,omitempty"`
+	IsApproved *bool   `json:"isApproved,omitempty"`
+}
+
+type CommentResult struct {
+	Comments []*BlogPostComment `json:"comments"`
+	Total    int                `json:"total"`
+}
+
+type CommentSortInput struct {
+	Field *string `json:"field,omitempty"`
+	Order *string `json:"order,omitempty"`
+}
+
 type ConfirmPasswordResetInput struct {
 	Token       string `json:"token"`
 	NewPassword string `json:"newPassword"`
 }
 
-type CreateFolderInput struct {
-	Name string `json:"name"`
+type CreateCommentInput struct {
+	Content    string  `json:"content"`
+	BlogPostID string  `json:"blogPostId"`
+	ParentID   *string `json:"parentId,omitempty"`
 }
 
 type CreateInviteCodeInput struct {
@@ -100,18 +130,12 @@ type EmailLoginInput struct {
 	Email string `json:"email"`
 }
 
-type FileFolder struct {
-	Name      string    `json:"name"`
-	Path      string    `json:"path"`
-	CreatedAt time.Time `json:"createdAt"`
-	FileCount int       `json:"fileCount"`
-}
-
-type FileUploadResponse struct {
-	Success  bool    `json:"success"`
-	Message  string  `json:"message"`
-	FilePath *string `json:"filePath,omitempty"`
-	FileName *string `json:"fileName,omitempty"`
+type EnhancedSearchResult struct {
+	Posts       []*BlogPost   `json:"posts"`
+	Total       int           `json:"total"`
+	Took        string        `json:"took"`
+	Suggestions []string      `json:"suggestions"`
+	Facets      *SearchFacets `json:"facets"`
 }
 
 type GeneralResponse struct {
@@ -145,15 +169,6 @@ type LoginInput struct {
 	Identifier string `json:"identifier"`
 	Password   string `json:"password"`
 	Remember   *bool  `json:"remember,omitempty"`
-}
-
-type MarkdownFile struct {
-	Name      string    `json:"name"`
-	Folder    string    `json:"folder"`
-	Content   *string   `json:"content,omitempty"`
-	Size      int       `json:"size"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type Mutation struct {
@@ -193,6 +208,35 @@ type RegisterInput struct {
 
 type RequestPasswordResetInput struct {
 	Email string `json:"email"`
+}
+
+type SearchFacetItem struct {
+	Value string `json:"value"`
+	Count int    `json:"count"`
+}
+
+type SearchFacets struct {
+	Tags       []*SearchFacetItem `json:"tags"`
+	Categories []*SearchFacetItem `json:"categories"`
+	Authors    []*SearchFacetItem `json:"authors"`
+}
+
+type SearchFilters struct {
+	AuthorID   *string    `json:"authorId,omitempty"`
+	Tags       []string   `json:"tags,omitempty"`
+	Categories []string   `json:"categories,omitempty"`
+	DateFrom   *time.Time `json:"dateFrom,omitempty"`
+	DateTo     *time.Time `json:"dateTo,omitempty"`
+	MinViews   *int       `json:"minViews,omitempty"`
+	MinLikes   *int       `json:"minLikes,omitempty"`
+}
+
+type SearchInput struct {
+	Query   string         `json:"query"`
+	Limit   *int           `json:"limit,omitempty"`
+	Offset  *int           `json:"offset,omitempty"`
+	Filters *SearchFilters `json:"filters,omitempty"`
+	SortBy  *string        `json:"sortBy,omitempty"`
 }
 
 type SearchResult struct {
@@ -235,10 +279,8 @@ type ServerMemoryStats struct {
 	HeapSys    string `json:"heapSys"`
 }
 
-type UpdateFileInput struct {
-	Folder   string `json:"folder"`
-	FileName string `json:"fileName"`
-	Content  string `json:"content"`
+type UpdateCommentInput struct {
+	Content string `json:"content"`
 }
 
 type UpdatePostInput struct {
@@ -258,12 +300,6 @@ type UpdateProfileInput struct {
 	Username *string `json:"username,omitempty"`
 	Bio      *string `json:"bio,omitempty"`
 	Avatar   *string `json:"avatar,omitempty"`
-}
-
-type UploadMarkdownFileInput struct {
-	File   graphql.Upload `json:"file"`
-	Folder string         `json:"folder"`
-	Title  string         `json:"title"`
 }
 
 type User struct {

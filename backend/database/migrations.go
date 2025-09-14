@@ -15,6 +15,8 @@ func RunMigrations(db *gorm.DB) error {
 		&models.BlogPostStats{},
 		&models.BlogPostVersion{},
 		&models.BlogPostLike{},
+		&models.BlogPostComment{},     // 添加评论模型
+		&models.BlogPostCommentLike{}, // 添加评论点赞模型
 		&models.InviteCode{},
 	)
 	if err != nil {
@@ -23,6 +25,17 @@ func RunMigrations(db *gorm.DB) error {
 
 	// 创建搜索优化索引
 	if err := createSearchIndexes(db); err != nil {
+		return err
+	}
+
+	// 创建全文搜索索引（如果数据库支持）
+	if err := createFullTextSearchIndexes(db); err != nil {
+		// 如果不支持全文搜索，记录日志但不中断
+		// 可以在这里添加日志记录
+	}
+
+	// 创建评论相关索引
+	if err := createCommentIndexes(db); err != nil {
 		return err
 	}
 
@@ -84,6 +97,87 @@ func createSearchIndexes(db *gorm.DB) error {
 	return nil
 }
 
+// createFullTextSearchIndexes 创建全文搜索索引
+func createFullTextSearchIndexes(db *gorm.DB) error {
+	// 对于 SQLite，我们可以创建虚拟表来支持全文搜索
+	sqliteFullTextIndexes := []string{
+		// 创建全文搜索虚拟表（SQLite FTS5）
+		`CREATE VIRTUAL TABLE IF NOT EXISTS blog_post_fts USING fts5(
+			title, 
+			content, 
+			tags, 
+			categories, 
+			content='blog_post', 
+			content_rowid='id'
+		)`,
+		
+		// 创建触发器保持同步（INSERT）
+		`CREATE TRIGGER IF NOT EXISTS blog_post_ai AFTER INSERT ON blog_post BEGIN
+			INSERT INTO blog_post_fts(rowid, title, content, tags, categories)
+			VALUES (new.id, new.title, new.content, new.tags, new.categories);
+		END`,
+		
+		// 创建触发器保持同步（DELETE）
+		`CREATE TRIGGER IF NOT EXISTS blog_post_ad AFTER DELETE ON blog_post BEGIN
+			INSERT INTO blog_post_fts(blog_post_fts, rowid, title, content, tags, categories)
+			VALUES('delete', old.id, old.title, old.content, old.tags, old.categories);
+		END`,
+		
+		// 创建触发器保持同步（UPDATE）
+		`CREATE TRIGGER IF NOT EXISTS blog_post_au AFTER UPDATE ON blog_post BEGIN
+			INSERT INTO blog_post_fts(blog_post_fts, rowid, title, content, tags, categories)
+			VALUES('delete', old.id, old.title, old.content, old.tags, old.categories);
+			INSERT INTO blog_post_fts(rowid, title, content, tags, categories)
+			VALUES(new.id, new.title, new.content, new.tags, new.categories);
+		END`,
+	}	
+	for _, indexSQL := range sqliteFullTextIndexes {
+		if err := db.Exec(indexSQL).Error; err != nil {
+			// 如果也失败，继续但不报错
+			continue
+		}
+	}
+	
+	return nil
+}
+
+// createCommentIndexes 创建评论相关的数据库索引
+func createCommentIndexes(db *gorm.DB) error {
+	// 为博客文章评论创建索引
+	indexes := []string{
+		// 博客文章ID索引
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_blog_post_id ON blog_post_comment(blog_post_id)",
+		
+		// 用户ID索引
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_user_id ON blog_post_comment(user_id)",
+		
+		// 父评论ID索引
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_parent_id ON blog_post_comment(parent_id)",
+		
+		// 创建时间索引（用于排序）
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_created_at ON blog_post_comment(created_at DESC)",
+		
+		// 是否已审核索引
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_is_approved ON blog_post_comment(is_approved)",
+		
+		// 点赞数索引
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_count ON blog_post_comment(like_count DESC)",
+		
+		// 评论点赞表索引
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_comment_user ON blog_post_comment_like(blog_post_comment_id, user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_created_at ON blog_post_comment_like(created_at DESC)",
+	}
+
+	for _, indexSQL := range indexes {
+		if err := db.Exec(indexSQL).Error; err != nil {
+			// 记录错误但不中断，某些索引可能已存在
+			continue
+		}
+	}
+
+	return nil
+}
+
 // DropSearchIndexes 删除搜索索引（用于回滚）
 func DropSearchIndexes(db *gorm.DB) error {
 	indexes := []string{
@@ -103,10 +197,35 @@ func DropSearchIndexes(db *gorm.DB) error {
 		"DROP INDEX IF EXISTS idx_user_username",
 		"DROP INDEX IF EXISTS idx_user_email",
 		"DROP INDEX IF EXISTS idx_blog_post_status_access_created",
+		"DROP INDEX IF EXISTS idx_blog_post_search_vector",
+		// 评论相关索引
+		"DROP INDEX IF EXISTS idx_blog_post_comment_blog_post_id",
+		"DROP INDEX IF EXISTS idx_blog_post_comment_user_id",
+		"DROP INDEX IF EXISTS idx_blog_post_comment_parent_id",
+		"DROP INDEX IF EXISTS idx_blog_post_comment_created_at",
+		"DROP INDEX IF EXISTS idx_blog_post_comment_is_approved",
+		"DROP INDEX IF EXISTS idx_blog_post_comment_like_count",
+		"DROP INDEX IF EXISTS idx_blog_post_comment_like_comment_user",
+		"DROP INDEX IF EXISTS idx_blog_post_comment_like_created_at",
 	}
 
 	for _, indexSQL := range indexes {
 		db.Exec(indexSQL)
+	}
+	
+	// 删除全文搜索相关的对象
+	fullTextObjects := []string{
+		"DROP TRIGGER IF EXISTS blog_post_search_vector_trigger",
+		"DROP FUNCTION IF EXISTS update_blog_post_search_vector",
+		"ALTER TABLE blog_post DROP COLUMN IF EXISTS search_vector",
+		"DROP TABLE IF EXISTS blog_post_fts",
+		"DROP TRIGGER IF EXISTS blog_post_ai",
+		"DROP TRIGGER IF EXISTS blog_post_ad",
+		"DROP TRIGGER IF EXISTS blog_post_au",
+	}
+	
+	for _, objectSQL := range fullTextObjects {
+		db.Exec(objectSQL)
 	}
 
 	return nil

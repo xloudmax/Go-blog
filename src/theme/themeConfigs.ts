@@ -19,7 +19,7 @@ export const lightTheme: ThemeConfig = {
         colorBgBase: '#ffffff', // 对应原来的 bg-base-100
         colorBgContainer: '#ffffff',
         colorBgElevated: '#ffffff',
-        colorBgLayout: '#f9fafb', // 对应原来的 bg-base-200
+        colorBgLayout: '#ffffff', // 强制Layout背景为白色
 
         // 文字颜色
         colorText: '#111827',

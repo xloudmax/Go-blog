@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"repair-platform/middleware"
 	"repair-platform/models"
 	"strconv"
 	"strings"
@@ -26,11 +27,14 @@ func (s *BlogService) CreatePost(input *models.CreatePostInput, authorID uint) (
 	// 生成slug（简化版）
 	slug := generateSlug(input.Title)
 
-	// 检查slug是否已存在
+	// 检查slug是否已存在，包括软删除的记录，如果存在则添加唯一后缀
 	var existing models.BlogPost
-	if err := s.db.Where("slug = ?", slug).First(&existing).Error; err == nil {
-		// 如果存在，添加时间戳后缀
-		slug = fmt.Sprintf("%s-%d", slug, time.Now().Unix())
+	// 使用Unscoped()来包含软删除的记录
+	if err := s.db.Unscoped().Where("slug = ?", slug).First(&existing).Error; err == nil {
+		// 如果存在，添加唯一后缀确保唯一性
+		// 使用时间戳作为后缀
+		suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+		slug = fmt.Sprintf("%s-%s", slug, suffix)
 	}
 
 	// 创建文章
@@ -67,6 +71,7 @@ func (s *BlogService) CreatePost(input *models.CreatePostInput, authorID uint) (
 	// 保存文章
 	if err := tx.Create(post).Error; err != nil {
 		tx.Rollback()
+		middleware.GetLogger().Errorw("数据库创建文章失败", "error", err, "postTitle", post.Title)
 		return nil, models.ErrInternalServerError
 	}
 
@@ -92,6 +97,33 @@ func (s *BlogService) CreatePost(input *models.CreatePostInput, authorID uint) (
 	}
 
 	return post, nil
+}
+
+// CreatePostFromInput 从GraphQL输入创建博客文章
+func (s *BlogService) CreatePostFromInput(input *models.CreateBlogPostInput, authorID uint) (*models.BlogPost, error) {
+	// 转换输入参数
+	createInput := &models.CreatePostInput{
+		Title:       input.Title,
+		Content:     input.Content,
+		AccessLevel: input.AccessLevel,
+	}
+	
+	// 处理标签和分类
+	if len(input.Tags) > 0 {
+		createInput.Tags = input.Tags
+	}
+	
+	if len(input.Categories) > 0 {
+		createInput.Categories = input.Categories
+	}
+	
+	// 设置封面图片
+	if input.CoverImageURL != "" {
+		coverImageURL := input.CoverImageURL
+		createInput.CoverImageURL = &coverImageURL
+	}
+
+	return s.CreatePost(createInput, authorID)
 }
 
 // UpdatePost 更新博客文章
@@ -162,6 +194,21 @@ func (s *BlogService) UpdatePost(postID uint, input *models.UpdatePostInput, use
 	}
 
 	return &post, nil
+}
+
+// UpdatePostFromInput 从GraphQL输入更新博客文章
+func (s *BlogService) UpdatePostFromInput(postID uint, input *models.UpdateBlogPostInput, userID uint, userRole string) (*models.BlogPost, error) {
+	// 转换输入参数
+	updateInput := &models.UpdatePostInput{
+		Title:         input.Title,
+		Content:       input.Content,
+		AccessLevel:   input.AccessLevel,
+		Tags:          input.Tags,
+		Categories:    input.Categories,
+		CoverImageURL: input.CoverImageURL,
+	}
+
+	return s.UpdatePost(postID, updateInput, userID, userRole)
 }
 
 // DeletePost 删除博客文章

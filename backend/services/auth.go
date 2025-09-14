@@ -42,11 +42,6 @@ func (s *AuthService) Register(input *models.RegisterInput) (*models.User, strin
 	return user, token, nil
 }
 
-// Login 用户登录 (统一接口)
-func (s *AuthService) Login(input *models.LoginInput) (*models.User, string, error) {
-	user, token, _, err := s.LoginUser(input)
-	return user, token, err
-}
 
 // SendEmailLoginCode 发送邮箱登录验证码
 func (s *AuthService) SendEmailLoginCode(email string) error {

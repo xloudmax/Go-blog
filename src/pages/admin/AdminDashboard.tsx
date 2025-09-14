@@ -65,8 +65,8 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      {/* 页面标题 */}
+    <div>
+      {/* 页面标题已经在父组件中处理，这里直接显示内容 */}
 
       {/* 系统健康度 */}
       {systemHealth && (

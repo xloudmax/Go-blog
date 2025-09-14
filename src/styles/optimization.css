@@ -72,28 +72,18 @@ html.dark {
 
 /* 卡片组件优化 */
 .optimized-card {
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-    transition: all 0.3s ease;
-    border: 1px solid var(--color-neutral-200);
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
 }
-
-/*
-.optimized-card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-*/
 
 html.dark .optimized-card {
-    border-color: var(--color-neutral-700);
 }
 
 /* 按钮组件优化 */
 .optimized-button {
     border-radius: var(--radius-md);
     font-weight: 500;
-    transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
 }
@@ -108,7 +98,6 @@ html.dark .optimized-card {
     background: rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
 }
 
 .optimized-button:active::after {
@@ -119,7 +108,6 @@ html.dark .optimized-card {
 /* 表单组件优化 */
 .optimized-input {
     border-radius: var(--radius-md);
-    transition: all 0.2s ease;
 }
 
 .optimized-input:focus {
@@ -129,35 +117,13 @@ html.dark .optimized-card {
 /* 导航栏优化 */
 .optimized-navbar {
     backdrop-filter: blur(10px);
-    background-color: rgba(255, 255, 255, 0.8) !important;
+    background-color: rgba(255, 255, 255, 0.8);
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 html.dark .optimized-navbar {
-    background-color: rgba(31, 31, 31, 0.8) !important;
+    background-color: rgba(31, 31, 31, 0.8);
     border-color: rgba(255, 255, 255, 0.05);
-}
-
-/* 页面过渡动画 */
-.page-transition-enter {
-    opacity: 0;
-    transform: translateX(20px);
-}
-
-.page-transition-enter-active {
-    opacity: 1;
-    transform: translateX(0);
-    transition: opacity 300ms, transform 300ms;
-}
-
-.page-transition-exit {
-    opacity: 1;
-}
-
-.page-transition-exit-active {
-    opacity: 0;
-    transform: translateX(-20px);
-    transition: opacity 300ms, transform 300ms;
 }
 
 /* 交互动效 */
@@ -177,7 +143,6 @@ html.dark .optimized-navbar {
     background: rgba(255, 255, 255, 0.5);
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
 }
 
 .ripple:active::after {
@@ -310,5 +275,3 @@ html.dark .ant-tag[data-color="pink"] {
 html.dark .ant-tag-default {
     color: #fb923c !important;
 }
-
-/* 冲突的CSS规则已移除，使用上面的精细颜色方案 */

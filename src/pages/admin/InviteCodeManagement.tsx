@@ -17,7 +17,7 @@ import {
     Col,
     Typography,
     Popconfirm,
-    message,
+    notification,
     Space
 } from 'antd';
 import {
@@ -113,9 +113,17 @@ export default function InviteCodeManagement() {
                 maxUses: 1,
                 expiresAt: ''
             });
-            message.success('邀请码创建成功');
+            notification.success({
+                message: '成功',
+                description: '邀请码创建成功',
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '创建邀请码失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '创建邀请码失败',
+                duration: 5,
+            });
         }
     };
 
@@ -123,25 +131,45 @@ export default function InviteCodeManagement() {
     const handleDeactivate = async (id: string, code: string) => {
         try {
             await handleDeactivateInviteCode(id);
-            message.success(`邀请码 "${code}" 已停用`);
+            notification.success({
+                message: '成功',
+                description: `邀请码 "${code}" 已停用`,
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '停用邀请码失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '停用邀请码失败',
+                duration: 5,
+            });
         }
     };
 
     // 批量停用
     const handleBatchDeactivateSelected = async () => {
         if (selectedCodes.length === 0) {
-            message.warning('请先选择要停用的邀请码');
+            notification.warning({
+                message: '警告',
+                description: '请先选择要停用的邀请码',
+                duration: 3,
+            });
             return;
         }
 
         try {
             await handleBatchDeactivate(selectedCodes);
             setSelectedCodes([]);
-            message.success(`成功停用 ${selectedCodes.length} 个邀请码`);
+            notification.success({
+                message: '成功',
+                description: `成功停用 ${selectedCodes.length} 个邀请码`,
+                duration: 3,
+            });
         } catch (error: any) {
-            message.error(error.message || '批量停用失败');
+            notification.error({
+                message: '错误',
+                description: error.message || '批量停用失败',
+                duration: 5,
+            });
         }
     };
 
@@ -305,7 +333,7 @@ export default function InviteCodeManagement() {
     };
 
     return (
-        <div style={{padding: '24px'}}>
+        <div>
             {/* 统计信息 */}
             <div style={{marginBottom: '24px'}}>
                 <Row gutter={16}>

@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react'
 import MDEditor from '@uiw/react-md-editor'
 import { ThemeContext } from '@/components/ThemeProvider'
-import { Card, Button, Space, Tooltip, message, Modal } from 'antd'
+import { Card, Button, Space, Tooltip, Modal, notification } from 'antd'
 import {
   SaveOutlined,
   EyeOutlined,
@@ -57,7 +57,11 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
             setShowSaveSuccess(true)
             setTimeout(() => setShowSaveSuccess(false), 3000)
         } catch {
-            message.error('保存失败，请重试')
+            notification.error({
+                message: '保存失败',
+                description: '请重试',
+                duration: 5,
+            })
         } finally {
             setIsSaving(false)
         }
@@ -66,7 +70,11 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
     // 保存前确认
     const confirmSave = useCallback(() => {
         if (!isDirty) {
-            message.info('内容无变化，无需保存')
+            notification.info({
+                message: '提示',
+                description: '内容无变化，无需保存',
+                duration: 3,
+            })
             return
         }
 
@@ -110,13 +118,24 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
 
         const autoSaveTimer = setTimeout(() => {
             if (isDirty && !isSaving) {
-                message.info('正在自动保存...');
+                notification.info({
+                    message: '正在自动保存',
+                    description: '请稍候...',
+                    duration: 3,
+                });
                 handleInternalSave()
                     .then(() => {
-                        message.success('自动保存成功');
+                        notification.success({
+                            message: '自动保存成功',
+                            duration: 3,
+                        });
                     })
                     .catch(() => {
-                        message.error('自动保存失败，将在稍后重试');
+                        notification.error({
+                            message: '自动保存失败',
+                            description: '将在稍后重试',
+                            duration: 5,
+                        });
                         // 可以实现重试机制
                     });
             }
@@ -142,9 +161,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
                 }
             }
             setIsFullscreen(!isFullscreen);
-        } catch (error) {
-            console.warn('全屏操作失败:', error);
-            // 如果全屏 API 调用失败，仍然更新状态以保持 UI 一致性
+        } catch {
+            // Full screen operation failed, still update state for UI consistency
             setIsFullscreen(!isFullscreen);
         }
     };
@@ -177,7 +195,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
         <Card
             ref={editorRef}
             className="optimized-card"
-            bodyStyle={{ padding: '16px' }}
+            styles={{ body: { padding: '16px' } }}
         >
             <div
                 data-color-mode={theme}
@@ -282,7 +300,11 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
                             <Button
                                 size="small"
                                 icon={<HistoryOutlined />}
-                                onClick={() => message.info('版本历史功能即将推出')}
+                                onClick={() => notification.info({
+                                    message: '提示',
+                                    description: '版本历史功能即将推出',
+                                    duration: 3,
+                                })}
                                 className="optimized-button"
                             />
                         </Tooltip>
@@ -316,7 +338,11 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
                     <Space>
                         <Button
                             icon={<EyeOutlined />}
-                            onClick={() => message.info('预览功能已在右侧实时显示')}
+                            onClick={() => notification.info({
+                                message: '提示',
+                                description: '预览功能已在右侧实时显示',
+                                duration: 3,
+                            })}
                             className="optimized-button"
                         >
                             预览
@@ -335,7 +361,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
 
                 {/* 保存成功提示 */}
                 {showSaveSuccess && (
-                    <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-300">
+                    <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg">
                         <CheckCircleOutlined className="mr-2" />
                         文章保存成功！
                     </div>

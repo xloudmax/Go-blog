@@ -1,16 +1,13 @@
 import { gql, useQuery, useLazyQuery } from '@apollo/client';
 import type { 
-  SearchSuggestionsQuery, 
   TrendingSearchesQuery, 
   SearchStatsQuery 
 } from '@/generated/graphql';
-
-// 搜索建议查询
-export const SEARCH_SUGGESTIONS_QUERY = gql`
-  query SearchSuggestions($query: String!, $limit: Int) {
-    getSearchSuggestions(query: $query, limit: $limit)
-  }
-`;
+import type { 
+  UseTrendingSearchesReturn,
+  UseSearchStatsReturn,
+  SearchStats as TypedSearchStats
+} from '@/types';
 
 // 热门搜索词查询
 export const TRENDING_SEARCHES_QUERY = gql`
@@ -38,49 +35,84 @@ export const SEARCH_STATS_QUERY = gql`
   }
 `;
 
-// 搜索建议 Hook
-export const useSearchSuggestions = () => {
-  const [searchSuggestions, { data, loading, error }] = useLazyQuery(SEARCH_SUGGESTIONS_QUERY, {
-    errorPolicy: 'all',
-  });
-
-  const getSuggestions = (query: string, limit?: number) => {
-    return searchSuggestions({
-      variables: { query, limit },
-    });
-  };
-
-  return {
-    getSuggestions,
-    suggestions: data?.getSearchSuggestions || [],
-    loading,
-    error,
-  };
-};
+// 基础搜索查询 - 使用后端现有的searchPosts
+export const BASIC_SEARCH_QUERY = gql`
+  query SearchPosts($query: String!, $limit: Int, $offset: Int) {
+    searchPosts(query: $query, limit: $limit, offset: $offset) {
+      posts {
+        id
+        title
+        slug
+        excerpt
+        tags
+        categories
+        coverImageUrl
+        status
+        publishedAt
+        author {
+          id
+          username
+          avatar
+        }
+        stats {
+          viewCount
+          likeCount
+        }
+      }
+      total
+      took
+    }
+  }
+`;
 
 // 热门搜索词 Hook
-export const useTrendingSearches = (limit: number = 10) => {
+export const useTrendingSearches = (limit: number = 10): UseTrendingSearchesReturn => {
   const { data, loading, error } = useQuery(TRENDING_SEARCHES_QUERY, {
     variables: { limit },
     errorPolicy: 'all',
   });
 
   return {
-    trendingSearches: data?.getTrendingSearches || [],
+    trendingSearches: data?.getTrendingSearches as string[] || [],
     loading,
     error,
   };
 };
 
 // 搜索统计信息 Hook
-export const useSearchStats = () => {
+export const useSearchStats = (): UseSearchStatsReturn => {
   const { data, loading, error } = useQuery(SEARCH_STATS_QUERY, {
     errorPolicy: 'all',
   });
 
   return {
-    searchStats: data?.getSearchStats || null,
+    searchStats: data?.getSearchStats as TypedSearchStats | null,
     loading,
     error,
+  };
+};
+
+// 基础搜索 Hook - 替代增强搜索
+export const useEnhancedSearch = () => {
+  const [searchPosts, { data, loading, error, fetchMore }] = useLazyQuery(BASIC_SEARCH_QUERY, {
+    errorPolicy: 'all',
+  });
+
+  const search = (params: { query: string; limit?: number; offset?: number }) => {
+    return searchPosts({
+      variables: { 
+        query: params.query, 
+        limit: params.limit || 10, 
+        offset: params.offset || 0 
+      },
+    });
+  };
+
+  return {
+    search,
+    results: data?.searchPosts,
+    loading,
+    error,
+    fetchMore,
   };
 };

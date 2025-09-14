@@ -80,12 +80,6 @@ func ConditionalRateLimit(window time.Duration, maxReq int, paths ...string) gin
 	}
 }
 
-// InMemoryRateLimit 返回一个基于内存 map 的限流中间件。
-// 保留原有功能以兼容性，但建议使用 ConditionalRateLimit
-func InMemoryRateLimit(window time.Duration, maxReq int) gin.HandlerFunc {
-	return ConditionalRateLimit(window, maxReq, "/api/register", "/api/login")
-}
-
 // GraphQLRateLimit GraphQL专用限流中间件
 func GraphQLRateLimit(window time.Duration, maxReq int) gin.HandlerFunc {
 	return ConditionalRateLimit(window, maxReq, "/graphql")

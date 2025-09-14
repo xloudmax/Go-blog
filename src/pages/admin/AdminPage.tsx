@@ -1,5 +1,4 @@
 import {
-  Layout, 
   Menu, 
   Typography, 
   Card, 
@@ -12,7 +11,6 @@ import UserManagement from './UserManagement';
 import InviteCodeManagement from './InviteCodeManagement';
 import SystemManagement from './SystemManagement';
 
-const { Header, Content } = Layout;
 const { Title } = Typography;
 
 export default function AdminPage() {
@@ -47,63 +45,75 @@ export default function AdminPage() {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header className="optimized-navbar" style={{ background: 'rgba(255, 255, 255, 0.8)', boxShadow: '0 1px 4px rgba(0,21,41,.08)', backdropFilter: 'blur(10px)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Title level={3} style={{ margin: 0, color: 'rgba(0, 0, 0, 0.85)' }}>管理员控制台</Title>
-          <Menu
-            mode="horizontal"
-            selectedKeys={[currentTab]}
-            items={navigationItems.map(item => ({
-              key: item.id,
-              label: item.label,
-              onClick: () => setCurrentTab(item.id as typeof currentTab)
-            }))}
-            theme="light"
-            style={{
-              backgroundColor: 'transparent',
-              lineHeight: '48px',
-              minWidth: '150px',
-              justifyContent: 'flex-end',
-              flex: 1,
-              marginLeft: '24px'
-            }}
-          />
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" style={{ padding: '0 40px', boxSizing: 'border-box' }}>
+      <div className="max-w-7xl mx-auto py-12">
+        {/* 页面标题在容器外 */}
+        <div className="mb-8">
+          <Title level={2} className="mb-4 text-gray-900 dark:text-gray-100">
+            管理员控制台
+          </Title>
+          <Typography.Paragraph type="secondary" className="mb-0">
+            系统管理和数据维护
+          </Typography.Paragraph>
         </div>
-      </Header>
 
-      <Content style={{ margin: '24px' }}>
-        <Card className="optimized-card">
+        {/* 导航菜单 */}
+        <Card className="mb-6 mx-8">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <Menu
+                mode="horizontal"
+                selectedKeys={[currentTab]}
+                items={navigationItems.map(item => ({
+                  key: item.id,
+                  label: item.label,
+                  onClick: () => setCurrentTab(item.id as typeof currentTab)
+                }))}
+                theme="light"
+                style={{
+                  backgroundColor: 'transparent',
+                  lineHeight: '48px',
+                  minWidth: '150px',
+                  justifyContent: 'flex-start',
+                  flex: 1
+                }}
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* 内容区域 */}
+        <Card className="mx-8">
           {/* 统一的页面标题 */}
           <div style={{ marginBottom: '24px' }}>
             {currentTab === 'dashboard' && (
               <>
-                <Title level={2} style={{ margin: '0 0 8px 0' }}>仪表盘</Title>
+                <Title level={3} style={{ margin: '0 0 8px 0' }}>仪表盘</Title>
                 <Typography.Text type="secondary">系统概览和统计信息</Typography.Text>
               </>
             )}
             {currentTab === 'users' && (
               <>
-                <Title level={2} style={{ margin: '0 0 8px 0' }}>用户管理</Title>
+                <Title level={3} style={{ margin: '0 0 8px 0' }}>用户管理</Title>
                 <Typography.Text type="secondary">管理系统用户和权限</Typography.Text>
               </>
             )}
             {currentTab === 'invites' && (
               <>
-                <Title level={2} style={{ margin: '0 0 8px 0' }}>邀请码管理</Title>
+                <Title level={3} style={{ margin: '0 0 8px 0' }}>邀请码管理</Title>
                 <Typography.Text type="secondary">创建和管理邀请码</Typography.Text>
               </>
             )}
             {currentTab === 'system' && (
               <>
-                <Title level={2} style={{ margin: '0 0 8px 0' }}>系统管理</Title>
+                <Title level={3} style={{ margin: '0 0 8px 0' }}>系统管理</Title>
                 <Typography.Text type="secondary">服务器信息和系统维护操作</Typography.Text>
               </>
             )}
           </div>
           {renderContent()}
         </Card>
-      </Content>
-    </Layout>
+      </div>
+    </div>
   );
 }
