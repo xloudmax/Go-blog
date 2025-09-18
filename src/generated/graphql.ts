@@ -2,7 +2,7 @@ import { DocumentNode } from 'graphql';
 import * as Apollo from '@apollo/client';
 import * as ApolloReactHooks from '@apollo/client';
 export type Maybe<T> = T | null;
-export type InputMaybe<T> = Maybe<T>;
+export type InputMaybe<T> = T | null | undefined;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
@@ -34,7 +34,7 @@ export type AdminCreateUserInput = {
 };
 
 export type AuthPayload = {
-  __typename: 'AuthPayload';
+  __typename?: 'AuthPayload';
   expiresAt: Scalars['Time']['output'];
   refreshToken: Scalars['String']['output'];
   token: Scalars['String']['output'];
@@ -42,7 +42,7 @@ export type AuthPayload = {
 };
 
 export type BlogPost = {
-  __typename: 'BlogPost';
+  __typename?: 'BlogPost';
   accessLevel: AccessLevel;
   author: User;
   categories: Array<Scalars['String']['output']>;
@@ -64,7 +64,7 @@ export type BlogPost = {
 };
 
 export type BlogPostComment = {
-  __typename: 'BlogPostComment';
+  __typename?: 'BlogPostComment';
   blogPost: BlogPost;
   content: Scalars['String']['output'];
   createdAt: Scalars['Time']['output'];
@@ -79,7 +79,7 @@ export type BlogPostComment = {
 };
 
 export type BlogPostStats = {
-  __typename: 'BlogPostStats';
+  __typename?: 'BlogPostStats';
   commentCount: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
   lastViewedAt?: Maybe<Scalars['Time']['output']>;
@@ -90,7 +90,7 @@ export type BlogPostStats = {
 };
 
 export type BlogPostVersion = {
-  __typename: 'BlogPostVersion';
+  __typename?: 'BlogPostVersion';
   changeLog?: Maybe<Scalars['String']['output']>;
   content: Scalars['String']['output'];
   createdAt: Scalars['Time']['output'];
@@ -107,7 +107,7 @@ export type CommentFilterInput = {
 };
 
 export type CommentResult = {
-  __typename: 'CommentResult';
+  __typename?: 'CommentResult';
   comments: Array<BlogPostComment>;
   total: Scalars['Int']['output'];
 };
@@ -152,7 +152,7 @@ export type EmailLoginInput = {
 };
 
 export type EnhancedSearchResult = {
-  __typename: 'EnhancedSearchResult';
+  __typename?: 'EnhancedSearchResult';
   facets: SearchFacets;
   posts: Array<BlogPost>;
   suggestions: Array<Scalars['String']['output']>;
@@ -161,14 +161,14 @@ export type EnhancedSearchResult = {
 };
 
 export type GeneralResponse = {
-  __typename: 'GeneralResponse';
+  __typename?: 'GeneralResponse';
   code?: Maybe<Scalars['String']['output']>;
   message?: Maybe<Scalars['String']['output']>;
   success: Scalars['Boolean']['output'];
 };
 
 export type ImageUploadResponse = {
-  __typename: 'ImageUploadResponse';
+  __typename?: 'ImageUploadResponse';
   deleteUrl?: Maybe<Scalars['String']['output']>;
   filename: Scalars['String']['output'];
   imageUrl: Scalars['String']['output'];
@@ -176,7 +176,7 @@ export type ImageUploadResponse = {
 };
 
 export type InviteCode = {
-  __typename: 'InviteCode';
+  __typename?: 'InviteCode';
   code: Scalars['String']['output'];
   createdAt: Scalars['Time']['output'];
   createdBy: User;
@@ -197,7 +197,7 @@ export type LoginInput = {
 };
 
 export type Mutation = {
-  __typename: 'Mutation';
+  __typename?: 'Mutation';
   adminCreateUser: User;
   adminDeleteUser: GeneralResponse;
   adminUpdateUser: User;
@@ -388,7 +388,7 @@ export type MutationVerifyEmailAndLoginArgs = {
 };
 
 export type PopularQuery = {
-  __typename: 'PopularQuery';
+  __typename?: 'PopularQuery';
   count: Scalars['Int']['output'];
   lastSearched: Scalars['Time']['output'];
   query: Scalars['String']['output'];
@@ -416,7 +416,7 @@ export type PostStatus =
   | 'PUBLISHED';
 
 export type Query = {
-  __typename: 'Query';
+  __typename?: 'Query';
   comment?: Maybe<BlogPostComment>;
   comments: CommentResult;
   enhancedSearch: EnhancedSearchResult;
@@ -541,13 +541,13 @@ export type RequestPasswordResetInput = {
 };
 
 export type SearchFacetItem = {
-  __typename: 'SearchFacetItem';
+  __typename?: 'SearchFacetItem';
   count: Scalars['Int']['output'];
   value: Scalars['String']['output'];
 };
 
 export type SearchFacets = {
-  __typename: 'SearchFacets';
+  __typename?: 'SearchFacets';
   authors: Array<SearchFacetItem>;
   categories: Array<SearchFacetItem>;
   tags: Array<SearchFacetItem>;
@@ -572,28 +572,28 @@ export type SearchInput = {
 };
 
 export type SearchResult = {
-  __typename: 'SearchResult';
+  __typename?: 'SearchResult';
   posts: Array<BlogPost>;
   took: Scalars['String']['output'];
   total: Scalars['Int']['output'];
 };
 
 export type SearchStats = {
-  __typename: 'SearchStats';
+  __typename?: 'SearchStats';
   popularQueries: Array<PopularQuery>;
   searchTrends: Array<SearchTrend>;
   totalSearches: Scalars['Int']['output'];
 };
 
 export type SearchTrend = {
-  __typename: 'SearchTrend';
+  __typename?: 'SearchTrend';
   date: Scalars['String']['output'];
   searchCount: Scalars['Int']['output'];
   topQueries: Array<Scalars['String']['output']>;
 };
 
 export type ServerDashboard = {
-  __typename: 'ServerDashboard';
+  __typename?: 'ServerDashboard';
   cpuCount: Scalars['Int']['output'];
   goVersion: Scalars['String']['output'];
   goroutines: Scalars['Int']['output'];
@@ -608,7 +608,7 @@ export type ServerDashboard = {
 };
 
 export type ServerMemoryStats = {
-  __typename: 'ServerMemoryStats';
+  __typename?: 'ServerMemoryStats';
   alloc: Scalars['String']['output'];
   heapAlloc: Scalars['String']['output'];
   heapSys: Scalars['String']['output'];
@@ -640,7 +640,7 @@ export type UpdateProfileInput = {
 };
 
 export type User = {
-  __typename: 'User';
+  __typename?: 'User';
   avatar?: Maybe<Scalars['String']['output']>;
   bio?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['Time']['output'];
@@ -678,146 +678,6 @@ export type VerifyEmailInput = {
   type: VerificationType;
 };
 
-export type CommentsQuery_comments_CommentResult_comments_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type CommentsQuery_comments_CommentResult_comments_BlogPostComment_parent_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type CommentsQuery_comments_CommentResult_comments_BlogPostComment_parent_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, createdAt: string, user: CommentsQuery_comments_CommentResult_comments_BlogPostComment_parent_BlogPostComment_user_User };
-
-export type CommentsQuery_comments_CommentResult_comments_BlogPostComment_replies_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type CommentsQuery_comments_CommentResult_comments_BlogPostComment_replies_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: CommentsQuery_comments_CommentResult_comments_BlogPostComment_replies_BlogPostComment_user_User };
-
-export type CommentsQuery_comments_CommentResult_comments_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: CommentsQuery_comments_CommentResult_comments_BlogPostComment_user_User, parent?: CommentsQuery_comments_CommentResult_comments_BlogPostComment_parent_BlogPostComment | null, replies: Array<CommentsQuery_comments_CommentResult_comments_BlogPostComment_replies_BlogPostComment> };
-
-export type CommentsQuery_comments_CommentResult = { __typename: 'CommentResult', total: number, comments: Array<CommentsQuery_comments_CommentResult_comments_BlogPostComment> };
-
-export type CommentsQuery_Query = { __typename: 'Query', comments: CommentsQuery_comments_CommentResult };
-
-
-export type CommentsQueryVariables = Exact<{
-  blogPostId: Scalars['ID']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  filter?: InputMaybe<CommentFilterInput>;
-  sort?: InputMaybe<CommentSortInput>;
-}>;
-
-
-export type CommentsQueryResult = CommentsQuery_Query;
-
-export type CommentQuery_comment_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type CommentQuery_comment_BlogPostComment_parent_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type CommentQuery_comment_BlogPostComment_parent_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, createdAt: string, user: CommentQuery_comment_BlogPostComment_parent_BlogPostComment_user_User };
-
-export type CommentQuery_comment_BlogPostComment_replies_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type CommentQuery_comment_BlogPostComment_replies_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: CommentQuery_comment_BlogPostComment_replies_BlogPostComment_user_User };
-
-export type CommentQuery_comment_BlogPostComment_blogPost_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string };
-
-export type CommentQuery_comment_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: CommentQuery_comment_BlogPostComment_user_User, parent?: CommentQuery_comment_BlogPostComment_parent_BlogPostComment | null, replies: Array<CommentQuery_comment_BlogPostComment_replies_BlogPostComment>, blogPost: CommentQuery_comment_BlogPostComment_blogPost_BlogPost };
-
-export type CommentQuery_Query = { __typename: 'Query', comment?: CommentQuery_comment_BlogPostComment | null };
-
-
-export type CommentQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-
-export type CommentQueryResult = CommentQuery_Query;
-
-export type CreateCommentMutation_createComment_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type CreateCommentMutation_createComment_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: CreateCommentMutation_createComment_BlogPostComment_user_User };
-
-export type CreateCommentMutation_Mutation = { __typename: 'Mutation', createComment: CreateCommentMutation_createComment_BlogPostComment };
-
-
-export type CreateCommentMutationVariables = Exact<{
-  input: CreateCommentInput;
-}>;
-
-
-export type CreateCommentMutationResult = CreateCommentMutation_Mutation;
-
-export type UpdateCommentMutation_updateComment_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type UpdateCommentMutation_updateComment_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: UpdateCommentMutation_updateComment_BlogPostComment_user_User };
-
-export type UpdateCommentMutation_Mutation = { __typename: 'Mutation', updateComment: UpdateCommentMutation_updateComment_BlogPostComment };
-
-
-export type UpdateCommentMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  input: UpdateCommentInput;
-}>;
-
-
-export type UpdateCommentMutationResult = UpdateCommentMutation_Mutation;
-
-export type DeleteCommentMutation_deleteComment_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type DeleteCommentMutation_Mutation = { __typename: 'Mutation', deleteComment: DeleteCommentMutation_deleteComment_GeneralResponse };
-
-
-export type DeleteCommentMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-
-export type DeleteCommentMutationResult = DeleteCommentMutation_Mutation;
-
-export type LikeCommentMutation_likeComment_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type LikeCommentMutation_likeComment_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: LikeCommentMutation_likeComment_BlogPostComment_user_User };
-
-export type LikeCommentMutation_Mutation = { __typename: 'Mutation', likeComment: LikeCommentMutation_likeComment_BlogPostComment };
-
-
-export type LikeCommentMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-
-export type LikeCommentMutationResult = LikeCommentMutation_Mutation;
-
-export type UnlikeCommentMutation_unlikeComment_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type UnlikeCommentMutation_unlikeComment_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: UnlikeCommentMutation_unlikeComment_BlogPostComment_user_User };
-
-export type UnlikeCommentMutation_Mutation = { __typename: 'Mutation', unlikeComment: UnlikeCommentMutation_unlikeComment_BlogPostComment };
-
-
-export type UnlikeCommentMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-
-export type UnlikeCommentMutationResult = UnlikeCommentMutation_Mutation;
-
-export type ReportCommentMutation_reportComment_BlogPostComment_user_User = { __typename: 'User', id: string, username: string, avatar?: string | null };
-
-export type ReportCommentMutation_reportComment_BlogPostComment = { __typename: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: ReportCommentMutation_reportComment_BlogPostComment_user_User };
-
-export type ReportCommentMutation_Mutation = { __typename: 'Mutation', reportComment: ReportCommentMutation_reportComment_BlogPostComment };
-
-
-export type ReportCommentMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-
-export type ReportCommentMutationResult = ReportCommentMutation_Mutation;
-
-export type UsersQuery_users_User = { __typename: 'User', postsCount: number, id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string };
-
-export type UsersQuery_Query = { __typename: 'Query', users: Array<UsersQuery_users_User> };
-
-
 export type UsersQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -827,28 +687,12 @@ export type UsersQueryVariables = Exact<{
 }>;
 
 
-export type UsersQueryResult = UsersQuery_Query;
-
-export type ServerDashboardQuery_serverDashboard_ServerDashboard_memory_ServerMemoryStats = { __typename: 'ServerMemoryStats', alloc: string, totalAlloc: string, sys: string, heapAlloc: string, heapSys: string };
-
-export type ServerDashboardQuery_serverDashboard_ServerDashboard = { __typename: 'ServerDashboard', serverTime: string, hostname: string, goVersion: string, cpuCount: number, goroutines: number, uptime: string, userCount: number, postCount: number, todayRegistrations: number, todayPosts: number, memory: ServerDashboardQuery_serverDashboard_ServerDashboard_memory_ServerMemoryStats };
-
-export type ServerDashboardQuery_Query = { __typename: 'Query', serverDashboard: ServerDashboardQuery_serverDashboard_ServerDashboard };
-
+export type UsersQueryData = { __typename?: 'Query', users: Array<{ __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, createdAt: string, postsCount: number }> };
 
 export type ServerDashboardQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ServerDashboardQueryResult = ServerDashboardQuery_Query;
-
-export type InviteCodesQuery_inviteCodes_InviteCode_createdBy_User = { __typename: 'User', id: string, username: string, avatar?: string | null, role: UserRole };
-
-export type InviteCodesQuery_inviteCodes_InviteCode_usedBy_User = { __typename: 'User', id: string, username: string, avatar?: string | null, role: UserRole };
-
-export type InviteCodesQuery_inviteCodes_InviteCode = { __typename: 'InviteCode', id: string, code: string, usedAt?: string | null, expiresAt: string, maxUses: number, currentUses: number, isActive: boolean, description?: string | null, createdAt: string, createdBy: InviteCodesQuery_inviteCodes_InviteCode_createdBy_User, usedBy?: InviteCodesQuery_inviteCodes_InviteCode_usedBy_User | null };
-
-export type InviteCodesQuery_Query = { __typename: 'Query', inviteCodes: Array<InviteCodesQuery_inviteCodes_InviteCode> };
-
+export type ServerDashboardQueryData = { __typename?: 'Query', serverDashboard: { __typename?: 'ServerDashboard', serverTime: string, hostname: string, goVersion: string, cpuCount: number, goroutines: number, uptime: string, userCount: number, postCount: number, todayRegistrations: number, todayPosts: number, memory: { __typename?: 'ServerMemoryStats', alloc: string, totalAlloc: string, sys: string, heapAlloc: string, heapSys: string } } };
 
 export type InviteCodesQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -857,24 +701,14 @@ export type InviteCodesQueryVariables = Exact<{
 }>;
 
 
-export type InviteCodesQueryResult = InviteCodesQuery_Query;
-
-export type AdminCreateUserMutation_adminCreateUser_User = { __typename: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string };
-
-export type AdminCreateUserMutation_Mutation = { __typename: 'Mutation', adminCreateUser: AdminCreateUserMutation_adminCreateUser_User };
-
+export type InviteCodesQueryData = { __typename?: 'Query', inviteCodes: Array<{ __typename?: 'InviteCode', id: string, code: string, usedAt?: string | null, expiresAt: string, maxUses: number, currentUses: number, isActive: boolean, description?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, usedBy?: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } | null }> };
 
 export type AdminCreateUserMutationVariables = Exact<{
   input: AdminCreateUserInput;
 }>;
 
 
-export type AdminCreateUserMutationResult = AdminCreateUserMutation_Mutation;
-
-export type AdminUpdateUserMutation_adminUpdateUser_User = { __typename: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string };
-
-export type AdminUpdateUserMutation_Mutation = { __typename: 'Mutation', adminUpdateUser: AdminUpdateUserMutation_adminUpdateUser_User };
-
+export type AdminCreateUserMutationData = { __typename?: 'Mutation', adminCreateUser: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, createdAt: string } };
 
 export type AdminUpdateUserMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -886,138 +720,88 @@ export type AdminUpdateUserMutationVariables = Exact<{
 }>;
 
 
-export type AdminUpdateUserMutationResult = AdminUpdateUserMutation_Mutation;
-
-export type AdminDeleteUserMutation_adminDeleteUser_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type AdminDeleteUserMutation_Mutation = { __typename: 'Mutation', adminDeleteUser: AdminDeleteUserMutation_adminDeleteUser_GeneralResponse };
-
+export type AdminUpdateUserMutationData = { __typename?: 'Mutation', adminUpdateUser: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, updatedAt: string } };
 
 export type AdminDeleteUserMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type AdminDeleteUserMutationResult = AdminDeleteUserMutation_Mutation;
-
-export type CreateInviteCodeMutation_createInviteCode_InviteCode = { __typename: 'InviteCode', id: string, code: string, usedAt?: string | null, expiresAt: string, maxUses: number, currentUses: number, isActive: boolean, description?: string | null, createdAt: string, createdBy: InviteCodesQuery_inviteCodes_InviteCode_createdBy_User, usedBy?: InviteCodesQuery_inviteCodes_InviteCode_usedBy_User | null };
-
-export type CreateInviteCodeMutation_Mutation = { __typename: 'Mutation', createInviteCode: CreateInviteCodeMutation_createInviteCode_InviteCode };
-
+export type AdminDeleteUserMutationData = { __typename?: 'Mutation', adminDeleteUser: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type CreateInviteCodeMutationVariables = Exact<{
   input: CreateInviteCodeInput;
 }>;
 
 
-export type CreateInviteCodeMutationResult = CreateInviteCodeMutation_Mutation;
-
-export type DeactivateInviteCodeMutation_deactivateInviteCode_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type DeactivateInviteCodeMutation_Mutation = { __typename: 'Mutation', deactivateInviteCode: DeactivateInviteCodeMutation_deactivateInviteCode_GeneralResponse };
-
+export type CreateInviteCodeMutationData = { __typename?: 'Mutation', createInviteCode: { __typename?: 'InviteCode', id: string, code: string, usedAt?: string | null, expiresAt: string, maxUses: number, currentUses: number, isActive: boolean, description?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, usedBy?: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } | null } };
 
 export type DeactivateInviteCodeMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type DeactivateInviteCodeMutationResult = DeactivateInviteCodeMutation_Mutation;
-
-export type ClearCacheMutation_clearCache_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type ClearCacheMutation_Mutation = { __typename: 'Mutation', clearCache: ClearCacheMutation_clearCache_GeneralResponse };
-
+export type DeactivateInviteCodeMutationData = { __typename?: 'Mutation', deactivateInviteCode: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type ClearCacheMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ClearCacheMutationResult = ClearCacheMutation_Mutation;
-
-export type RebuildSearchIndexMutation_rebuildSearchIndex_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type RebuildSearchIndexMutation_Mutation = { __typename: 'Mutation', rebuildSearchIndex: RebuildSearchIndexMutation_rebuildSearchIndex_GeneralResponse };
-
+export type ClearCacheMutationData = { __typename?: 'Mutation', clearCache: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type RebuildSearchIndexMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type RebuildSearchIndexMutationResult = RebuildSearchIndexMutation_Mutation;
+export type RebuildSearchIndexMutationData = { __typename?: 'Mutation', rebuildSearchIndex: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
-export type RegisterMutation_register_AuthPayload_user_User = { __typename: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string };
+export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
-export type RegisterMutation_register_AuthPayload = { __typename: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: RegisterMutation_register_AuthPayload_user_User };
 
-export type RegisterMutation_Mutation = { __typename: 'Mutation', register: RegisterMutation_register_AuthPayload };
+export type MeQueryData = { __typename?: 'Query', me?: { __typename?: 'User', postsCount: number, id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string, posts: Array<{ __typename?: 'BlogPost', id: string, title: string, slug: string, status: PostStatus, publishedAt?: string | null }> } | null };
 
+export type UserQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type UserQueryData = { __typename?: 'Query', user?: { __typename?: 'User', postsCount: number, id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string, posts: Array<{ __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string } }> } | null };
 
 export type RegisterMutationVariables = Exact<{
   input: RegisterInput;
 }>;
 
 
-export type RegisterMutationResult = RegisterMutation_Mutation;
-
-export type LoginMutation_login_AuthPayload = { __typename: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: RegisterMutation_register_AuthPayload_user_User };
-
-export type LoginMutation_Mutation = { __typename: 'Mutation', login: LoginMutation_login_AuthPayload };
-
+export type RegisterMutationData = { __typename?: 'Mutation', register: { __typename?: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string } } };
 
 export type LoginMutationVariables = Exact<{
   input: LoginInput;
 }>;
 
 
-export type LoginMutationResult = LoginMutation_Mutation;
-
-export type EmailLoginMutation_emailLogin_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type EmailLoginMutation_Mutation = { __typename: 'Mutation', emailLogin: EmailLoginMutation_emailLogin_GeneralResponse };
-
+export type LoginMutationData = { __typename?: 'Mutation', login: { __typename?: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string } } };
 
 export type EmailLoginMutationVariables = Exact<{
   input: EmailLoginInput;
 }>;
 
 
-export type EmailLoginMutationResult = EmailLoginMutation_Mutation;
-
-export type VerifyEmailAndLoginMutation_verifyEmailAndLogin_AuthPayload = { __typename: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: RegisterMutation_register_AuthPayload_user_User };
-
-export type VerifyEmailAndLoginMutation_Mutation = { __typename: 'Mutation', verifyEmailAndLogin: VerifyEmailAndLoginMutation_verifyEmailAndLogin_AuthPayload };
-
+export type EmailLoginMutationData = { __typename?: 'Mutation', emailLogin: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type VerifyEmailAndLoginMutationVariables = Exact<{
   input: VerifyEmailInput;
 }>;
 
 
-export type VerifyEmailAndLoginMutationResult = VerifyEmailAndLoginMutation_Mutation;
-
-export type LogoutMutation_logout_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type LogoutMutation_Mutation = { __typename: 'Mutation', logout: LogoutMutation_logout_GeneralResponse };
-
+export type VerifyEmailAndLoginMutationData = { __typename?: 'Mutation', verifyEmailAndLogin: { __typename?: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string } } };
 
 export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type LogoutMutationResult = LogoutMutation_Mutation;
-
-export type RefreshTokenMutation_refreshToken_AuthPayload = { __typename: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: RegisterMutation_register_AuthPayload_user_User };
-
-export type RefreshTokenMutation_Mutation = { __typename: 'Mutation', refreshToken: RefreshTokenMutation_refreshToken_AuthPayload };
-
+export type LogoutMutationData = { __typename?: 'Mutation', logout: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type RefreshTokenMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type RefreshTokenMutationResult = RefreshTokenMutation_Mutation;
-
-export type SendVerificationCodeMutation_sendVerificationCode_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type SendVerificationCodeMutation_Mutation = { __typename: 'Mutation', sendVerificationCode: SendVerificationCodeMutation_sendVerificationCode_GeneralResponse };
-
+export type RefreshTokenMutationData = { __typename?: 'Mutation', refreshToken: { __typename?: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string } } };
 
 export type SendVerificationCodeMutationVariables = Exact<{
   email: Scalars['String']['input'];
@@ -1025,60 +809,35 @@ export type SendVerificationCodeMutationVariables = Exact<{
 }>;
 
 
-export type SendVerificationCodeMutationResult = SendVerificationCodeMutation_Mutation;
-
-export type VerifyEmailMutation_verifyEmail_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type VerifyEmailMutation_Mutation = { __typename: 'Mutation', verifyEmail: VerifyEmailMutation_verifyEmail_GeneralResponse };
-
+export type SendVerificationCodeMutationData = { __typename?: 'Mutation', sendVerificationCode: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type VerifyEmailMutationVariables = Exact<{
   input: VerifyEmailInput;
 }>;
 
 
-export type VerifyEmailMutationResult = VerifyEmailMutation_Mutation;
-
-export type RequestPasswordResetMutation_requestPasswordReset_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type RequestPasswordResetMutation_Mutation = { __typename: 'Mutation', requestPasswordReset: RequestPasswordResetMutation_requestPasswordReset_GeneralResponse };
-
+export type VerifyEmailMutationData = { __typename?: 'Mutation', verifyEmail: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type RequestPasswordResetMutationVariables = Exact<{
   input: RequestPasswordResetInput;
 }>;
 
 
-export type RequestPasswordResetMutationResult = RequestPasswordResetMutation_Mutation;
-
-export type ConfirmPasswordResetMutation_confirmPasswordReset_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type ConfirmPasswordResetMutation_Mutation = { __typename: 'Mutation', confirmPasswordReset: ConfirmPasswordResetMutation_confirmPasswordReset_GeneralResponse };
-
+export type RequestPasswordResetMutationData = { __typename?: 'Mutation', requestPasswordReset: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type ConfirmPasswordResetMutationVariables = Exact<{
   input: ConfirmPasswordResetInput;
 }>;
 
 
-export type ConfirmPasswordResetMutationResult = ConfirmPasswordResetMutation_Mutation;
-
-export type UpdateProfileMutation_updateProfile_User = { __typename: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string };
-
-export type UpdateProfileMutation_Mutation = { __typename: 'Mutation', updateProfile: UpdateProfileMutation_updateProfile_User };
-
+export type ConfirmPasswordResetMutationData = { __typename?: 'Mutation', confirmPasswordReset: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type UpdateProfileMutationVariables = Exact<{
   input: UpdateProfileInput;
 }>;
 
 
-export type UpdateProfileMutationResult = UpdateProfileMutation_Mutation;
-
-export type ChangePasswordMutation_changePassword_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type ChangePasswordMutation_Mutation = { __typename: 'Mutation', changePassword: ChangePasswordMutation_changePassword_GeneralResponse };
-
+export type UpdateProfileMutationData = { __typename?: 'Mutation', updateProfile: { __typename?: 'User', id: string, username: string, email: string, bio?: string | null, avatar?: string | null, updatedAt: string } };
 
 export type ChangePasswordMutationVariables = Exact<{
   currentPassword: Scalars['String']['input'];
@@ -1086,42 +845,7 @@ export type ChangePasswordMutationVariables = Exact<{
 }>;
 
 
-export type ChangePasswordMutationResult = ChangePasswordMutation_Mutation;
-
-export type MeQuery_me_User_posts_BlogPost_author_User = { __typename: 'User', id: string, username: string, avatar?: string | null, role: UserRole };
-
-export type MeQuery_me_User_posts_BlogPost_stats_BlogPostStats = { __typename: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string };
-
-export type MeQuery_me_User_posts_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: MeQuery_me_User_posts_BlogPost_author_User, stats: MeQuery_me_User_posts_BlogPost_stats_BlogPostStats };
-
-export type MeQuery_me_User = { __typename: 'User', postsCount: number, id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string, posts: Array<MeQuery_me_User_posts_BlogPost> };
-
-export type MeQuery_Query = { __typename: 'Query', me?: MeQuery_me_User | null };
-
-
-export type MeQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type MeQueryResult = MeQuery_Query;
-
-export type UserQuery_user_User_posts_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: MeQuery_me_User_posts_BlogPost_author_User, stats: MeQuery_me_User_posts_BlogPost_stats_BlogPostStats };
-
-export type UserQuery_user_User = { __typename: 'User', postsCount: number, id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string, posts: Array<UserQuery_user_User_posts_BlogPost> };
-
-export type UserQuery_Query = { __typename: 'Query', user?: UserQuery_user_User | null };
-
-
-export type UserQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-
-export type UserQueryResult = UserQuery_Query;
-
-export type PostsQuery_posts_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: MeQuery_me_User_posts_BlogPost_author_User, stats: MeQuery_me_User_posts_BlogPost_stats_BlogPostStats };
-
-export type PostsQuery_Query = { __typename: 'Query', posts: Array<PostsQuery_posts_BlogPost> };
-
+export type ChangePasswordMutationData = { __typename?: 'Mutation', changePassword: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type PostsQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -1131,20 +855,7 @@ export type PostsQueryVariables = Exact<{
 }>;
 
 
-export type PostsQueryResult = PostsQuery_Query;
-
-export type PostQuery_post_BlogPost_author_User = { __typename: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string };
-
-export type PostQuery_post_BlogPost_stats_BlogPostStats = { __typename: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string };
-
-export type PostQuery_post_BlogPost_versions_BlogPostVersion_createdBy_User = { __typename: 'User', id: string, username: string, avatar?: string | null, role: UserRole };
-
-export type PostQuery_post_BlogPost_versions_BlogPostVersion = { __typename: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: PostQuery_post_BlogPost_versions_BlogPostVersion_createdBy_User };
-
-export type PostQuery_post_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: PostQuery_post_BlogPost_author_User, stats: PostQuery_post_BlogPost_stats_BlogPostStats, versions: Array<PostQuery_post_BlogPost_versions_BlogPostVersion> };
-
-export type PostQuery_Query = { __typename: 'Query', post?: PostQuery_post_BlogPost | null };
-
+export type PostsQueryData = { __typename?: 'Query', posts: Array<{ __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string } }> };
 
 export type PostQueryVariables = Exact<{
   id?: InputMaybe<Scalars['ID']['input']>;
@@ -1152,28 +863,14 @@ export type PostQueryVariables = Exact<{
 }>;
 
 
-export type PostQueryResult = PostQuery_Query;
-
-export type PostVersionsQuery_postVersions_BlogPostVersion_createdBy_User = { __typename: 'User', id: string, username: string, avatar?: string | null, role: UserRole };
-
-export type PostVersionsQuery_postVersions_BlogPostVersion = { __typename: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: PostVersionsQuery_postVersions_BlogPostVersion_createdBy_User };
-
-export type PostVersionsQuery_Query = { __typename: 'Query', postVersions: Array<PostVersionsQuery_postVersions_BlogPostVersion> };
-
+export type PostQueryData = { __typename?: 'Query', post?: { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string }, versions: Array<{ __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } }> } | null };
 
 export type PostVersionsQueryVariables = Exact<{
   postId: Scalars['ID']['input'];
 }>;
 
 
-export type PostVersionsQueryResult = PostVersionsQuery_Query;
-
-export type SearchPostsQuery_searchPosts_SearchResult_posts_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: MeQuery_me_User_posts_BlogPost_author_User, stats: MeQuery_me_User_posts_BlogPost_stats_BlogPostStats };
-
-export type SearchPostsQuery_searchPosts_SearchResult = { __typename: 'SearchResult', total: number, took: string, posts: Array<SearchPostsQuery_searchPosts_SearchResult_posts_BlogPost> };
-
-export type SearchPostsQuery_Query = { __typename: 'Query', searchPosts: SearchPostsQuery_searchPosts_SearchResult };
-
+export type PostVersionsQueryData = { __typename?: 'Query', postVersions: Array<{ __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } }> };
 
 export type SearchPostsQueryVariables = Exact<{
   query: Scalars['String']['input'];
@@ -1182,58 +879,35 @@ export type SearchPostsQueryVariables = Exact<{
 }>;
 
 
-export type SearchPostsQueryResult = SearchPostsQuery_Query;
-
-export type PopularPostsQuery_getPopularPosts_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: MeQuery_me_User_posts_BlogPost_author_User, stats: MeQuery_me_User_posts_BlogPost_stats_BlogPostStats };
-
-export type PopularPostsQuery_Query = { __typename: 'Query', getPopularPosts: Array<PopularPostsQuery_getPopularPosts_BlogPost> };
-
+export type SearchPostsQueryData = { __typename?: 'Query', searchPosts: { __typename?: 'SearchResult', total: number, took: string, posts: Array<{ __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string } }> } };
 
 export type PopularPostsQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
-export type PopularPostsQueryResult = PopularPostsQuery_Query;
-
-export type RecentPostsQuery_getRecentPosts_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: MeQuery_me_User_posts_BlogPost_author_User, stats: MeQuery_me_User_posts_BlogPost_stats_BlogPostStats };
-
-export type RecentPostsQuery_Query = { __typename: 'Query', getRecentPosts: Array<RecentPostsQuery_getRecentPosts_BlogPost> };
-
+export type PopularPostsQueryData = { __typename?: 'Query', getPopularPosts: Array<{ __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string } }> };
 
 export type RecentPostsQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
-export type RecentPostsQueryResult = RecentPostsQuery_Query;
-
-export type TrendingTagsQuery_Query = { __typename: 'Query', getTrendingTags: Array<string> };
-
+export type RecentPostsQueryData = { __typename?: 'Query', getRecentPosts: Array<{ __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string } }> };
 
 export type TrendingTagsQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
-export type TrendingTagsQueryResult = TrendingTagsQuery_Query;
-
-export type CreatePostMutation_createPost_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: PostQuery_post_BlogPost_author_User, stats: PostQuery_post_BlogPost_stats_BlogPostStats, versions: Array<PostQuery_post_BlogPost_versions_BlogPostVersion> };
-
-export type CreatePostMutation_Mutation = { __typename: 'Mutation', createPost: CreatePostMutation_createPost_BlogPost };
-
+export type TrendingTagsQueryData = { __typename?: 'Query', getTrendingTags: Array<string> };
 
 export type CreatePostMutationVariables = Exact<{
   input: CreatePostInput;
 }>;
 
 
-export type CreatePostMutationResult = CreatePostMutation_Mutation;
-
-export type UpdatePostMutation_updatePost_BlogPost = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: PostQuery_post_BlogPost_author_User, stats: PostQuery_post_BlogPost_stats_BlogPostStats, versions: Array<PostQuery_post_BlogPost_versions_BlogPostVersion> };
-
-export type UpdatePostMutation_Mutation = { __typename: 'Mutation', updatePost: UpdatePostMutation_updatePost_BlogPost };
-
+export type CreatePostMutationData = { __typename?: 'Mutation', createPost: { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string }, versions: Array<{ __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } }> } };
 
 export type UpdatePostMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1241,96 +915,132 @@ export type UpdatePostMutationVariables = Exact<{
 }>;
 
 
-export type UpdatePostMutationResult = UpdatePostMutation_Mutation;
-
-export type DeletePostMutation_deletePost_GeneralResponse = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
-
-export type DeletePostMutation_Mutation = { __typename: 'Mutation', deletePost: DeletePostMutation_deletePost_GeneralResponse };
-
+export type UpdatePostMutationData = { __typename?: 'Mutation', updatePost: { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string }, versions: Array<{ __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } }> } };
 
 export type DeletePostMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type DeletePostMutationResult = DeletePostMutation_Mutation;
-
-export type PublishPostMutation_publishPost_BlogPost = { __typename: 'BlogPost', id: string, status: PostStatus, publishedAt?: string | null };
-
-export type PublishPostMutation_Mutation = { __typename: 'Mutation', publishPost: PublishPostMutation_publishPost_BlogPost };
-
+export type DeletePostMutationData = { __typename?: 'Mutation', deletePost: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type PublishPostMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type PublishPostMutationResult = PublishPostMutation_Mutation;
-
-export type ArchivePostMutation_archivePost_BlogPost = { __typename: 'BlogPost', id: string, status: PostStatus };
-
-export type ArchivePostMutation_Mutation = { __typename: 'Mutation', archivePost: ArchivePostMutation_archivePost_BlogPost };
-
+export type PublishPostMutationData = { __typename?: 'Mutation', publishPost: { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string }, versions: Array<{ __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } }> } };
 
 export type ArchivePostMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type ArchivePostMutationResult = ArchivePostMutation_Mutation;
-
-export type LikePostMutation_likePost_BlogPost_stats_BlogPostStats = { __typename: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string };
-
-export type LikePostMutation_likePost_BlogPost = { __typename: 'BlogPost', id: string, stats: LikePostMutation_likePost_BlogPost_stats_BlogPostStats };
-
-export type LikePostMutation_Mutation = { __typename: 'Mutation', likePost: LikePostMutation_likePost_BlogPost };
-
+export type ArchivePostMutationData = { __typename?: 'Mutation', archivePost: { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string }, versions: Array<{ __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } }> } };
 
 export type LikePostMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type LikePostMutationResult = LikePostMutation_Mutation;
-
-export type UnlikePostMutation_unlikePost_BlogPost_stats_BlogPostStats = { __typename: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string };
-
-export type UnlikePostMutation_unlikePost_BlogPost = { __typename: 'BlogPost', id: string, stats: UnlikePostMutation_unlikePost_BlogPost_stats_BlogPostStats };
-
-export type UnlikePostMutation_Mutation = { __typename: 'Mutation', unlikePost: UnlikePostMutation_unlikePost_BlogPost };
-
+export type LikePostMutationData = { __typename?: 'Mutation', likePost: { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string }, versions: Array<{ __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } }> } };
 
 export type UnlikePostMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type UnlikePostMutationResult = UnlikePostMutation_Mutation;
+export type UnlikePostMutationData = { __typename?: 'Mutation', unlikePost: { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string }, versions: Array<{ __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } }> } };
 
-export type UserInfoFragment = { __typename: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string };
+export type CommentsQueryVariables = Exact<{
+  blogPostId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  filter?: InputMaybe<CommentFilterInput>;
+  sort?: InputMaybe<CommentSortInput>;
+}>;
 
-export type UserSummaryFragment = { __typename: 'User', id: string, username: string, avatar?: string | null, role: UserRole };
 
-export type BlogPostInfoFragment = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string };
+export type CommentsQueryData = { __typename?: 'Query', comments: { __typename?: 'CommentResult', total: number, comments: Array<{ __typename?: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null }, parent?: { __typename?: 'BlogPostComment', id: string, content: string, createdAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null } } | null, replies: Array<{ __typename?: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null } }>, blogPost: { __typename?: 'BlogPost', id: string, title: string, slug: string } }> } };
 
-export type BlogPostSummaryFragment = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: MeQuery_me_User_posts_BlogPost_author_User, stats: MeQuery_me_User_posts_BlogPost_stats_BlogPostStats };
+export type CommentQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
 
-export type BlogPostDetailFragment = { __typename: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: PostQuery_post_BlogPost_author_User, stats: PostQuery_post_BlogPost_stats_BlogPostStats, versions: Array<PostQuery_post_BlogPost_versions_BlogPostVersion> };
 
-export type BlogPostStatsFragment = { __typename: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string };
+export type CommentQueryData = { __typename?: 'Query', comment?: { __typename?: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null }, parent?: { __typename?: 'BlogPostComment', id: string, content: string, createdAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null } } | null, replies: Array<{ __typename?: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null } }>, blogPost: { __typename?: 'BlogPost', id: string, title: string, slug: string } } | null };
 
-export type BlogPostVersionFragment = { __typename: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: PostVersionsQuery_postVersions_BlogPostVersion_createdBy_User };
+export type CreateCommentMutationVariables = Exact<{
+  input: CreateCommentInput;
+}>;
 
-export type InviteCodeInfoFragment = { __typename: 'InviteCode', id: string, code: string, usedAt?: string | null, expiresAt: string, maxUses: number, currentUses: number, isActive: boolean, description?: string | null, createdAt: string, createdBy: InviteCodesQuery_inviteCodes_InviteCode_createdBy_User, usedBy?: InviteCodesQuery_inviteCodes_InviteCode_usedBy_User | null };
 
-export type AuthPayloadInfoFragment = { __typename: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: RegisterMutation_register_AuthPayload_user_User };
+export type CreateCommentMutationData = { __typename?: 'Mutation', createComment: { __typename?: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null } } };
 
-export type ServerDashboardInfoFragment = { __typename: 'ServerDashboard', serverTime: string, hostname: string, goVersion: string, cpuCount: number, goroutines: number, uptime: string, userCount: number, postCount: number, todayRegistrations: number, todayPosts: number, memory: ServerDashboardQuery_serverDashboard_ServerDashboard_memory_ServerMemoryStats };
+export type UpdateCommentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateCommentInput;
+}>;
 
-export type GeneralResponseInfoFragment = { __typename: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
 
-export type SearchSuggestionsQuery_Query = { __typename: 'Query', getSearchSuggestions: Array<string> };
+export type UpdateCommentMutationData = { __typename?: 'Mutation', updateComment: { __typename?: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null } } };
 
+export type DeleteCommentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteCommentMutationData = { __typename?: 'Mutation', deleteComment: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
+
+export type LikeCommentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type LikeCommentMutationData = { __typename?: 'Mutation', likeComment: { __typename?: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null } } };
+
+export type UnlikeCommentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type UnlikeCommentMutationData = { __typename?: 'Mutation', unlikeComment: { __typename?: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null } } };
+
+export type ReportCommentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ReportCommentMutationData = { __typename?: 'Mutation', reportComment: { __typename?: 'BlogPostComment', id: string, content: string, isApproved: boolean, likeCount: number, reportCount: number, createdAt: string, updatedAt: string, user: { __typename?: 'User', id: string, username: string, avatar?: string | null } } };
+
+export type UserInfoFragment = { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string };
+
+export type UserSummaryFragment = { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole };
+
+export type BlogPostInfoFragment = { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string };
+
+export type BlogPostSummaryFragment = { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string } };
+
+export type BlogPostDetailFragment = { __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, content: string, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, accessLevel: AccessLevel, status: PostStatus, publishedAt?: string | null, lastEditedAt?: string | null, createdAt: string, updatedAt: string, author: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string }, versions: Array<{ __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } }> };
+
+export type BlogPostStatsFragment = { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string };
+
+export type BlogPostVersionFragment = { __typename?: 'BlogPostVersion', id: string, versionNum: number, title: string, content: string, changeLog?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } };
+
+export type InviteCodeInfoFragment = { __typename?: 'InviteCode', id: string, code: string, usedAt?: string | null, expiresAt: string, maxUses: number, currentUses: number, isActive: boolean, description?: string | null, createdAt: string, createdBy: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, usedBy?: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole } | null };
+
+export type AuthPayloadInfoFragment = { __typename?: 'AuthPayload', token: string, refreshToken: string, expiresAt: string, user: { __typename?: 'User', id: string, username: string, email: string, role: UserRole, isVerified: boolean, isActive: boolean, avatar?: string | null, bio?: string | null, lastLoginAt?: string | null, emailVerifiedAt?: string | null, createdAt: string, updatedAt: string } };
+
+export type ServerDashboardInfoFragment = { __typename?: 'ServerDashboard', serverTime: string, hostname: string, goVersion: string, cpuCount: number, goroutines: number, uptime: string, userCount: number, postCount: number, todayRegistrations: number, todayPosts: number, memory: { __typename?: 'ServerMemoryStats', alloc: string, totalAlloc: string, sys: string, heapAlloc: string, heapSys: string } };
+
+export type GeneralResponseInfoFragment = { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
+
+export type EnhancedSearchQueryVariables = Exact<{
+  input: SearchInput;
+}>;
+
+
+export type EnhancedSearchQueryData = { __typename?: 'Query', enhancedSearch: { __typename?: 'EnhancedSearchResult', total: number, took: string, suggestions: Array<string>, posts: Array<{ __typename?: 'BlogPost', id: string, title: string, slug: string, excerpt?: string | null, tags: Array<string>, categories: Array<string>, coverImageUrl?: string | null, status: PostStatus, publishedAt?: string | null, author: { __typename?: 'User', id: string, username: string, avatar?: string | null, role: UserRole }, stats: { __typename?: 'BlogPostStats', id: string, viewCount: number, likeCount: number, shareCount: number, commentCount: number, lastViewedAt?: string | null, updatedAt: string } }>, facets: { __typename?: 'SearchFacets', tags: Array<{ __typename?: 'SearchFacetItem', value: string, count: number }>, categories: Array<{ __typename?: 'SearchFacetItem', value: string, count: number }>, authors: Array<{ __typename?: 'SearchFacetItem', value: string, count: number }> } } };
 
 export type SearchSuggestionsQueryVariables = Exact<{
   query: Scalars['String']['input'];
@@ -1338,31 +1048,19 @@ export type SearchSuggestionsQueryVariables = Exact<{
 }>;
 
 
-export type SearchSuggestionsQueryResult = SearchSuggestionsQuery_Query;
-
-export type TrendingSearchesQuery_Query = { __typename: 'Query', getTrendingSearches: Array<string> };
-
+export type SearchSuggestionsQueryData = { __typename?: 'Query', getSearchSuggestions: Array<string> };
 
 export type TrendingSearchesQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
-export type TrendingSearchesQueryResult = TrendingSearchesQuery_Query;
-
-export type SearchStatsQuery_getSearchStats_SearchStats_popularQueries_PopularQuery = { __typename: 'PopularQuery', query: string, count: number, lastSearched: string };
-
-export type SearchStatsQuery_getSearchStats_SearchStats_searchTrends_SearchTrend = { __typename: 'SearchTrend', date: string, searchCount: number, topQueries: Array<string> };
-
-export type SearchStatsQuery_getSearchStats_SearchStats = { __typename: 'SearchStats', totalSearches: number, popularQueries: Array<SearchStatsQuery_getSearchStats_SearchStats_popularQueries_PopularQuery>, searchTrends: Array<SearchStatsQuery_getSearchStats_SearchStats_searchTrends_SearchTrend> };
-
-export type SearchStatsQuery_Query = { __typename: 'Query', getSearchStats: SearchStatsQuery_getSearchStats_SearchStats };
-
+export type TrendingSearchesQueryData = { __typename?: 'Query', getTrendingSearches: Array<string> };
 
 export type SearchStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type SearchStatsQueryResult = SearchStatsQuery_Query;
+export type SearchStatsQueryData = { __typename?: 'Query', getSearchStats: { __typename?: 'SearchStats', totalSearches: number, popularQueries: Array<{ __typename?: 'PopularQuery', query: string, count: number, lastSearched: string }>, searchTrends: Array<{ __typename?: 'SearchTrend', date: string, searchCount: number, topQueries: Array<string> }> } };
 
 export const UserSummaryFragmentDoc = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]} as unknown as DocumentNode;
 export const BlogPostStatsFragmentDoc = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
@@ -1375,1464 +1073,597 @@ export const InviteCodeInfoFragmentDoc = /*#__PURE__*/ {"kind":"Document","defin
 export const AuthPayloadInfoFragmentDoc = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
 export const ServerDashboardInfoFragmentDoc = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ServerDashboardInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ServerDashboard"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"serverTime"}},{"kind":"Field","name":{"kind":"Name","value":"hostname"}},{"kind":"Field","name":{"kind":"Name","value":"goVersion"}},{"kind":"Field","name":{"kind":"Name","value":"cpuCount"}},{"kind":"Field","name":{"kind":"Name","value":"goroutines"}},{"kind":"Field","name":{"kind":"Name","value":"memory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alloc"}},{"kind":"Field","name":{"kind":"Name","value":"totalAlloc"}},{"kind":"Field","name":{"kind":"Name","value":"sys"}},{"kind":"Field","name":{"kind":"Name","value":"heapAlloc"}},{"kind":"Field","name":{"kind":"Name","value":"heapSys"}}]}},{"kind":"Field","name":{"kind":"Name","value":"uptime"}},{"kind":"Field","name":{"kind":"Name","value":"userCount"}},{"kind":"Field","name":{"kind":"Name","value":"postCount"}},{"kind":"Field","name":{"kind":"Name","value":"todayRegistrations"}},{"kind":"Field","name":{"kind":"Name","value":"todayPosts"}}]}}]} as unknown as DocumentNode;
 export const GeneralResponseInfoFragmentDoc = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export const CommentsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Comments"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"blogPostId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CommentFilterInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sort"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CommentSortInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"comments"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"blogPostId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"blogPostId"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sort"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"comments"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"parent"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"replies"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"total"}}]}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useCommentsQuery__
- *
- * To run a query within a React component, call `useCommentsQuery` and pass it any options that fit your needs.
- * When your component renders, `useCommentsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useCommentsQuery({
- *   variables: {
- *      blogPostId: // value for 'blogPostId'
- *      limit: // value for 'limit'
- *      offset: // value for 'offset'
- *      filter: // value for 'filter'
- *      sort: // value for 'sort'
- *   },
- * });
- */
-export function useCommentsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CommentsQueryResult, CommentsQueryVariables> & ({ variables: CommentsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+export const UsersDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Users"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"role"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"UserRole"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}},{"kind":"Argument","name":{"kind":"Name","value":"role"},"value":{"kind":"Variable","name":{"kind":"Name","value":"role"}}},{"kind":"Argument","name":{"kind":"Name","value":"isVerified"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"postsCount"}}]}}]}}]} as unknown as DocumentNode;
+export function useUsersQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<UsersQueryData, UsersQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<CommentsQueryResult, CommentsQueryVariables>(CommentsDocument, options);
+        return ApolloReactHooks.useQuery<UsersQueryData, UsersQueryVariables>(UsersDocument, options);
       }
-export function useCommentsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CommentsQueryResult, CommentsQueryVariables>) {
+export function useUsersLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<UsersQueryData, UsersQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<CommentsQueryResult, CommentsQueryVariables>(CommentsDocument, options);
+          return ApolloReactHooks.useLazyQuery<UsersQueryData, UsersQueryVariables>(UsersDocument, options);
         }
-export function useCommentsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommentsQueryResult, CommentsQueryVariables>) {
+export function useUsersSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<UsersQueryData, UsersQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<CommentsQueryResult, CommentsQueryVariables>(CommentsDocument, options);
-        }
-export type CommentsQueryHookResult = ReturnType<typeof useCommentsQuery>;
-export type CommentsLazyQueryHookResult = ReturnType<typeof useCommentsLazyQuery>;
-export type CommentsSuspenseQueryHookResult = ReturnType<typeof useCommentsSuspenseQuery>;
-export type CommentsQueryResult = Apollo.QueryResult<CommentsQueryResult, CommentsQueryVariables>;
-export const CommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Comment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"comment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"parent"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"replies"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"blogPost"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}}]}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useCommentQuery__
- *
- * To run a query within a React component, call `useCommentQuery` and pass it any options that fit your needs.
- * When your component renders, `useCommentQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useCommentQuery({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useCommentQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CommentQueryResult, CommentQueryVariables> & ({ variables: CommentQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<CommentQueryResult, CommentQueryVariables>(CommentDocument, options);
-      }
-export function useCommentLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CommentQueryResult, CommentQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<CommentQueryResult, CommentQueryVariables>(CommentDocument, options);
-        }
-export function useCommentSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommentQueryResult, CommentQueryVariables>) {
-          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<CommentQueryResult, CommentQueryVariables>(CommentDocument, options);
-        }
-export type CommentQueryHookResult = ReturnType<typeof useCommentQuery>;
-export type CommentLazyQueryHookResult = ReturnType<typeof useCommentLazyQuery>;
-export type CommentSuspenseQueryHookResult = ReturnType<typeof useCommentSuspenseQuery>;
-export type CommentQueryResult = Apollo.QueryResult<CommentQueryResult, CommentQueryVariables>;
-export const CreateCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateCommentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
-export type CreateCommentMutationFn = Apollo.MutationFunction<CreateCommentMutationResult, CreateCommentMutationVariables>;
-
-/**
- * __useCreateCommentMutation__
- *
- * To run a mutation, you first call `useCreateCommentMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useCreateCommentMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [createCommentMutation, { data, loading, error }] = useCreateCommentMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useCreateCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateCommentMutationResult, CreateCommentMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<CreateCommentMutationResult, CreateCommentMutationVariables>(CreateCommentDocument, options);
-      }
-export type CreateCommentMutationHookResult = ReturnType<typeof useCreateCommentMutation>;
-export type CreateCommentMutationResult = Apollo.MutationResult<CreateCommentMutationResult>;
-export type CreateCommentMutationOptions = Apollo.BaseMutationOptions<CreateCommentMutationResult, CreateCommentMutationVariables>;
-export const UpdateCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateCommentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
-export type UpdateCommentMutationFn = Apollo.MutationFunction<UpdateCommentMutationResult, UpdateCommentMutationVariables>;
-
-/**
- * __useUpdateCommentMutation__
- *
- * To run a mutation, you first call `useUpdateCommentMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUpdateCommentMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [updateCommentMutation, { data, loading, error }] = useUpdateCommentMutation({
- *   variables: {
- *      id: // value for 'id'
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useUpdateCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateCommentMutationResult, UpdateCommentMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<UpdateCommentMutationResult, UpdateCommentMutationVariables>(UpdateCommentDocument, options);
-      }
-export type UpdateCommentMutationHookResult = ReturnType<typeof useUpdateCommentMutation>;
-export type UpdateCommentMutationResult = Apollo.MutationResult<UpdateCommentMutationResult>;
-export type UpdateCommentMutationOptions = Apollo.BaseMutationOptions<UpdateCommentMutationResult, UpdateCommentMutationVariables>;
-export const DeleteCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]} as unknown as DocumentNode;
-export type DeleteCommentMutationFn = Apollo.MutationFunction<DeleteCommentMutationResult, DeleteCommentMutationVariables>;
-
-/**
- * __useDeleteCommentMutation__
- *
- * To run a mutation, you first call `useDeleteCommentMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useDeleteCommentMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [deleteCommentMutation, { data, loading, error }] = useDeleteCommentMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useDeleteCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteCommentMutationResult, DeleteCommentMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<DeleteCommentMutationResult, DeleteCommentMutationVariables>(DeleteCommentDocument, options);
-      }
-export type DeleteCommentMutationHookResult = ReturnType<typeof useDeleteCommentMutation>;
-export type DeleteCommentMutationResult = Apollo.MutationResult<DeleteCommentMutationResult>;
-export type DeleteCommentMutationOptions = Apollo.BaseMutationOptions<DeleteCommentMutationResult, DeleteCommentMutationVariables>;
-export const LikeCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"LikeComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"likeComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
-export type LikeCommentMutationFn = Apollo.MutationFunction<LikeCommentMutationResult, LikeCommentMutationVariables>;
-
-/**
- * __useLikeCommentMutation__
- *
- * To run a mutation, you first call `useLikeCommentMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useLikeCommentMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [likeCommentMutation, { data, loading, error }] = useLikeCommentMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useLikeCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<LikeCommentMutationResult, LikeCommentMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<LikeCommentMutationResult, LikeCommentMutationVariables>(LikeCommentDocument, options);
-      }
-export type LikeCommentMutationHookResult = ReturnType<typeof useLikeCommentMutation>;
-export type LikeCommentMutationResult = Apollo.MutationResult<LikeCommentMutationResult>;
-export type LikeCommentMutationOptions = Apollo.BaseMutationOptions<LikeCommentMutationResult, LikeCommentMutationVariables>;
-export const UnlikeCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UnlikeComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unlikeComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
-export type UnlikeCommentMutationFn = Apollo.MutationFunction<UnlikeCommentMutationResult, UnlikeCommentMutationVariables>;
-
-/**
- * __useUnlikeCommentMutation__
- *
- * To run a mutation, you first call `useUnlikeCommentMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUnlikeCommentMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [unlikeCommentMutation, { data, loading, error }] = useUnlikeCommentMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useUnlikeCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UnlikeCommentMutationResult, UnlikeCommentMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<UnlikeCommentMutationResult, UnlikeCommentMutationVariables>(UnlikeCommentDocument, options);
-      }
-export type UnlikeCommentMutationHookResult = ReturnType<typeof useUnlikeCommentMutation>;
-export type UnlikeCommentMutationResult = Apollo.MutationResult<UnlikeCommentMutationResult>;
-export type UnlikeCommentMutationOptions = Apollo.BaseMutationOptions<UnlikeCommentMutationResult, UnlikeCommentMutationVariables>;
-export const ReportCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReportComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reportComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
-export type ReportCommentMutationFn = Apollo.MutationFunction<ReportCommentMutationResult, ReportCommentMutationVariables>;
-
-/**
- * __useReportCommentMutation__
- *
- * To run a mutation, you first call `useReportCommentMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useReportCommentMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [reportCommentMutation, { data, loading, error }] = useReportCommentMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useReportCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ReportCommentMutationResult, ReportCommentMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<ReportCommentMutationResult, ReportCommentMutationVariables>(ReportCommentDocument, options);
-      }
-export type ReportCommentMutationHookResult = ReturnType<typeof useReportCommentMutation>;
-export type ReportCommentMutationResult = Apollo.MutationResult<ReportCommentMutationResult>;
-export type ReportCommentMutationOptions = Apollo.BaseMutationOptions<ReportCommentMutationResult, ReportCommentMutationVariables>;
-export const UsersDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Users"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"role"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"UserRole"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}},{"kind":"Argument","name":{"kind":"Name","value":"role"},"value":{"kind":"Variable","name":{"kind":"Name","value":"role"}}},{"kind":"Argument","name":{"kind":"Name","value":"isVerified"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}},{"kind":"Field","name":{"kind":"Name","value":"postsCount"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useUsersQuery__
- *
- * To run a query within a React component, call `useUsersQuery` and pass it any options that fit your needs.
- * When your component renders, `useUsersQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useUsersQuery({
- *   variables: {
- *      limit: // value for 'limit'
- *      offset: // value for 'offset'
- *      search: // value for 'search'
- *      role: // value for 'role'
- *      isVerified: // value for 'isVerified'
- *   },
- * });
- */
-export function useUsersQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<UsersQueryResult, UsersQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<UsersQueryResult, UsersQueryVariables>(UsersDocument, options);
-      }
-export function useUsersLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<UsersQueryResult, UsersQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<UsersQueryResult, UsersQueryVariables>(UsersDocument, options);
-        }
-export function useUsersSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<UsersQueryResult, UsersQueryVariables>) {
-          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<UsersQueryResult, UsersQueryVariables>(UsersDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<UsersQueryData, UsersQueryVariables>(UsersDocument, options);
         }
 export type UsersQueryHookResult = ReturnType<typeof useUsersQuery>;
 export type UsersLazyQueryHookResult = ReturnType<typeof useUsersLazyQuery>;
 export type UsersSuspenseQueryHookResult = ReturnType<typeof useUsersSuspenseQuery>;
-export type UsersQueryResult = Apollo.QueryResult<UsersQueryResult, UsersQueryVariables>;
+export type UsersQueryResult = Apollo.QueryResult<UsersQueryData, UsersQueryVariables>;
 export const ServerDashboardDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ServerDashboard"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"serverDashboard"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ServerDashboardInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ServerDashboardInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ServerDashboard"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"serverTime"}},{"kind":"Field","name":{"kind":"Name","value":"hostname"}},{"kind":"Field","name":{"kind":"Name","value":"goVersion"}},{"kind":"Field","name":{"kind":"Name","value":"cpuCount"}},{"kind":"Field","name":{"kind":"Name","value":"goroutines"}},{"kind":"Field","name":{"kind":"Name","value":"memory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alloc"}},{"kind":"Field","name":{"kind":"Name","value":"totalAlloc"}},{"kind":"Field","name":{"kind":"Name","value":"sys"}},{"kind":"Field","name":{"kind":"Name","value":"heapAlloc"}},{"kind":"Field","name":{"kind":"Name","value":"heapSys"}}]}},{"kind":"Field","name":{"kind":"Name","value":"uptime"}},{"kind":"Field","name":{"kind":"Name","value":"userCount"}},{"kind":"Field","name":{"kind":"Name","value":"postCount"}},{"kind":"Field","name":{"kind":"Name","value":"todayRegistrations"}},{"kind":"Field","name":{"kind":"Name","value":"todayPosts"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useServerDashboardQuery__
- *
- * To run a query within a React component, call `useServerDashboardQuery` and pass it any options that fit your needs.
- * When your component renders, `useServerDashboardQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useServerDashboardQuery({
- *   variables: {
- *   },
- * });
- */
-export function useServerDashboardQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ServerDashboardQueryResult, ServerDashboardQueryVariables>) {
+export function useServerDashboardQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ServerDashboardQueryData, ServerDashboardQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<ServerDashboardQueryResult, ServerDashboardQueryVariables>(ServerDashboardDocument, options);
+        return ApolloReactHooks.useQuery<ServerDashboardQueryData, ServerDashboardQueryVariables>(ServerDashboardDocument, options);
       }
-export function useServerDashboardLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ServerDashboardQueryResult, ServerDashboardQueryVariables>) {
+export function useServerDashboardLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ServerDashboardQueryData, ServerDashboardQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<ServerDashboardQueryResult, ServerDashboardQueryVariables>(ServerDashboardDocument, options);
+          return ApolloReactHooks.useLazyQuery<ServerDashboardQueryData, ServerDashboardQueryVariables>(ServerDashboardDocument, options);
         }
-export function useServerDashboardSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ServerDashboardQueryResult, ServerDashboardQueryVariables>) {
+export function useServerDashboardSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ServerDashboardQueryData, ServerDashboardQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<ServerDashboardQueryResult, ServerDashboardQueryVariables>(ServerDashboardDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<ServerDashboardQueryData, ServerDashboardQueryVariables>(ServerDashboardDocument, options);
         }
 export type ServerDashboardQueryHookResult = ReturnType<typeof useServerDashboardQuery>;
 export type ServerDashboardLazyQueryHookResult = ReturnType<typeof useServerDashboardLazyQuery>;
 export type ServerDashboardSuspenseQueryHookResult = ReturnType<typeof useServerDashboardSuspenseQuery>;
-export type ServerDashboardQueryResult = Apollo.QueryResult<ServerDashboardQueryResult, ServerDashboardQueryVariables>;
+export type ServerDashboardQueryResult = Apollo.QueryResult<ServerDashboardQueryData, ServerDashboardQueryVariables>;
 export const InviteCodesDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"InviteCodes"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isActive"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"inviteCodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"isActive"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isActive"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"InviteCodeInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"InviteCodeInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InviteCode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"usedBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"usedAt"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"maxUses"}},{"kind":"Field","name":{"kind":"Name","value":"currentUses"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useInviteCodesQuery__
- *
- * To run a query within a React component, call `useInviteCodesQuery` and pass it any options that fit your needs.
- * When your component renders, `useInviteCodesQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useInviteCodesQuery({
- *   variables: {
- *      limit: // value for 'limit'
- *      offset: // value for 'offset'
- *      isActive: // value for 'isActive'
- *   },
- * });
- */
-export function useInviteCodesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<InviteCodesQueryResult, InviteCodesQueryVariables>) {
+export function useInviteCodesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<InviteCodesQueryData, InviteCodesQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<InviteCodesQueryResult, InviteCodesQueryVariables>(InviteCodesDocument, options);
+        return ApolloReactHooks.useQuery<InviteCodesQueryData, InviteCodesQueryVariables>(InviteCodesDocument, options);
       }
-export function useInviteCodesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<InviteCodesQueryResult, InviteCodesQueryVariables>) {
+export function useInviteCodesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<InviteCodesQueryData, InviteCodesQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<InviteCodesQueryResult, InviteCodesQueryVariables>(InviteCodesDocument, options);
+          return ApolloReactHooks.useLazyQuery<InviteCodesQueryData, InviteCodesQueryVariables>(InviteCodesDocument, options);
         }
-export function useInviteCodesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<InviteCodesQueryResult, InviteCodesQueryVariables>) {
+export function useInviteCodesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<InviteCodesQueryData, InviteCodesQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<InviteCodesQueryResult, InviteCodesQueryVariables>(InviteCodesDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<InviteCodesQueryData, InviteCodesQueryVariables>(InviteCodesDocument, options);
         }
 export type InviteCodesQueryHookResult = ReturnType<typeof useInviteCodesQuery>;
 export type InviteCodesLazyQueryHookResult = ReturnType<typeof useInviteCodesLazyQuery>;
 export type InviteCodesSuspenseQueryHookResult = ReturnType<typeof useInviteCodesSuspenseQuery>;
-export type InviteCodesQueryResult = Apollo.QueryResult<InviteCodesQueryResult, InviteCodesQueryVariables>;
-export const AdminCreateUserDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AdminCreateUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AdminCreateUserInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminCreateUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-export type AdminCreateUserMutationFn = Apollo.MutationFunction<AdminCreateUserMutationResult, AdminCreateUserMutationVariables>;
-
-/**
- * __useAdminCreateUserMutation__
- *
- * To run a mutation, you first call `useAdminCreateUserMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useAdminCreateUserMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [adminCreateUserMutation, { data, loading, error }] = useAdminCreateUserMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useAdminCreateUserMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AdminCreateUserMutationResult, AdminCreateUserMutationVariables>) {
+export type InviteCodesQueryResult = Apollo.QueryResult<InviteCodesQueryData, InviteCodesQueryVariables>;
+export const AdminCreateUserDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AdminCreateUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AdminCreateUserInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminCreateUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode;
+export type AdminCreateUserMutationFn = Apollo.MutationFunction<AdminCreateUserMutationData, AdminCreateUserMutationVariables>;
+export function useAdminCreateUserMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AdminCreateUserMutationData, AdminCreateUserMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<AdminCreateUserMutationResult, AdminCreateUserMutationVariables>(AdminCreateUserDocument, options);
+        return ApolloReactHooks.useMutation<AdminCreateUserMutationData, AdminCreateUserMutationVariables>(AdminCreateUserDocument, options);
       }
 export type AdminCreateUserMutationHookResult = ReturnType<typeof useAdminCreateUserMutation>;
-export type AdminCreateUserMutationResult = Apollo.MutationResult<AdminCreateUserMutationResult>;
-export type AdminCreateUserMutationOptions = Apollo.BaseMutationOptions<AdminCreateUserMutationResult, AdminCreateUserMutationVariables>;
-export const AdminUpdateUserDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AdminUpdateUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"username"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"email"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"role"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"UserRole"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isActive"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminUpdateUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"username"},"value":{"kind":"Variable","name":{"kind":"Name","value":"username"}}},{"kind":"Argument","name":{"kind":"Name","value":"email"},"value":{"kind":"Variable","name":{"kind":"Name","value":"email"}}},{"kind":"Argument","name":{"kind":"Name","value":"role"},"value":{"kind":"Variable","name":{"kind":"Name","value":"role"}}},{"kind":"Argument","name":{"kind":"Name","value":"isVerified"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}}},{"kind":"Argument","name":{"kind":"Name","value":"isActive"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isActive"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-export type AdminUpdateUserMutationFn = Apollo.MutationFunction<AdminUpdateUserMutationResult, AdminUpdateUserMutationVariables>;
-
-/**
- * __useAdminUpdateUserMutation__
- *
- * To run a mutation, you first call `useAdminUpdateUserMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useAdminUpdateUserMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [adminUpdateUserMutation, { data, loading, error }] = useAdminUpdateUserMutation({
- *   variables: {
- *      id: // value for 'id'
- *      username: // value for 'username'
- *      email: // value for 'email'
- *      role: // value for 'role'
- *      isVerified: // value for 'isVerified'
- *      isActive: // value for 'isActive'
- *   },
- * });
- */
-export function useAdminUpdateUserMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AdminUpdateUserMutationResult, AdminUpdateUserMutationVariables>) {
+export type AdminCreateUserMutationResult = Apollo.MutationResult<AdminCreateUserMutationData>;
+export type AdminCreateUserMutationOptions = Apollo.BaseMutationOptions<AdminCreateUserMutationData, AdminCreateUserMutationVariables>;
+export const AdminUpdateUserDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AdminUpdateUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"username"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"email"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"role"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"UserRole"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isActive"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminUpdateUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"username"},"value":{"kind":"Variable","name":{"kind":"Name","value":"username"}}},{"kind":"Argument","name":{"kind":"Name","value":"email"},"value":{"kind":"Variable","name":{"kind":"Name","value":"email"}}},{"kind":"Argument","name":{"kind":"Name","value":"role"},"value":{"kind":"Variable","name":{"kind":"Name","value":"role"}}},{"kind":"Argument","name":{"kind":"Name","value":"isVerified"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}}},{"kind":"Argument","name":{"kind":"Name","value":"isActive"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isActive"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode;
+export type AdminUpdateUserMutationFn = Apollo.MutationFunction<AdminUpdateUserMutationData, AdminUpdateUserMutationVariables>;
+export function useAdminUpdateUserMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AdminUpdateUserMutationData, AdminUpdateUserMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<AdminUpdateUserMutationResult, AdminUpdateUserMutationVariables>(AdminUpdateUserDocument, options);
+        return ApolloReactHooks.useMutation<AdminUpdateUserMutationData, AdminUpdateUserMutationVariables>(AdminUpdateUserDocument, options);
       }
 export type AdminUpdateUserMutationHookResult = ReturnType<typeof useAdminUpdateUserMutation>;
-export type AdminUpdateUserMutationResult = Apollo.MutationResult<AdminUpdateUserMutationResult>;
-export type AdminUpdateUserMutationOptions = Apollo.BaseMutationOptions<AdminUpdateUserMutationResult, AdminUpdateUserMutationVariables>;
+export type AdminUpdateUserMutationResult = Apollo.MutationResult<AdminUpdateUserMutationData>;
+export type AdminUpdateUserMutationOptions = Apollo.BaseMutationOptions<AdminUpdateUserMutationData, AdminUpdateUserMutationVariables>;
 export const AdminDeleteUserDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AdminDeleteUser"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminDeleteUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type AdminDeleteUserMutationFn = Apollo.MutationFunction<AdminDeleteUserMutationResult, AdminDeleteUserMutationVariables>;
-
-/**
- * __useAdminDeleteUserMutation__
- *
- * To run a mutation, you first call `useAdminDeleteUserMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useAdminDeleteUserMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [adminDeleteUserMutation, { data, loading, error }] = useAdminDeleteUserMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useAdminDeleteUserMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AdminDeleteUserMutationResult, AdminDeleteUserMutationVariables>) {
+export type AdminDeleteUserMutationFn = Apollo.MutationFunction<AdminDeleteUserMutationData, AdminDeleteUserMutationVariables>;
+export function useAdminDeleteUserMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AdminDeleteUserMutationData, AdminDeleteUserMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<AdminDeleteUserMutationResult, AdminDeleteUserMutationVariables>(AdminDeleteUserDocument, options);
+        return ApolloReactHooks.useMutation<AdminDeleteUserMutationData, AdminDeleteUserMutationVariables>(AdminDeleteUserDocument, options);
       }
 export type AdminDeleteUserMutationHookResult = ReturnType<typeof useAdminDeleteUserMutation>;
-export type AdminDeleteUserMutationResult = Apollo.MutationResult<AdminDeleteUserMutationResult>;
-export type AdminDeleteUserMutationOptions = Apollo.BaseMutationOptions<AdminDeleteUserMutationResult, AdminDeleteUserMutationVariables>;
+export type AdminDeleteUserMutationResult = Apollo.MutationResult<AdminDeleteUserMutationData>;
+export type AdminDeleteUserMutationOptions = Apollo.BaseMutationOptions<AdminDeleteUserMutationData, AdminDeleteUserMutationVariables>;
 export const CreateInviteCodeDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateInviteCode"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateInviteCodeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createInviteCode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"InviteCodeInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"InviteCodeInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InviteCode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"usedBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"usedAt"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"maxUses"}},{"kind":"Field","name":{"kind":"Name","value":"currentUses"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode;
-export type CreateInviteCodeMutationFn = Apollo.MutationFunction<CreateInviteCodeMutationResult, CreateInviteCodeMutationVariables>;
-
-/**
- * __useCreateInviteCodeMutation__
- *
- * To run a mutation, you first call `useCreateInviteCodeMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useCreateInviteCodeMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [createInviteCodeMutation, { data, loading, error }] = useCreateInviteCodeMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useCreateInviteCodeMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateInviteCodeMutationResult, CreateInviteCodeMutationVariables>) {
+export type CreateInviteCodeMutationFn = Apollo.MutationFunction<CreateInviteCodeMutationData, CreateInviteCodeMutationVariables>;
+export function useCreateInviteCodeMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateInviteCodeMutationData, CreateInviteCodeMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<CreateInviteCodeMutationResult, CreateInviteCodeMutationVariables>(CreateInviteCodeDocument, options);
+        return ApolloReactHooks.useMutation<CreateInviteCodeMutationData, CreateInviteCodeMutationVariables>(CreateInviteCodeDocument, options);
       }
 export type CreateInviteCodeMutationHookResult = ReturnType<typeof useCreateInviteCodeMutation>;
-export type CreateInviteCodeMutationResult = Apollo.MutationResult<CreateInviteCodeMutationResult>;
-export type CreateInviteCodeMutationOptions = Apollo.BaseMutationOptions<CreateInviteCodeMutationResult, CreateInviteCodeMutationVariables>;
+export type CreateInviteCodeMutationResult = Apollo.MutationResult<CreateInviteCodeMutationData>;
+export type CreateInviteCodeMutationOptions = Apollo.BaseMutationOptions<CreateInviteCodeMutationData, CreateInviteCodeMutationVariables>;
 export const DeactivateInviteCodeDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeactivateInviteCode"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deactivateInviteCode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type DeactivateInviteCodeMutationFn = Apollo.MutationFunction<DeactivateInviteCodeMutationResult, DeactivateInviteCodeMutationVariables>;
-
-/**
- * __useDeactivateInviteCodeMutation__
- *
- * To run a mutation, you first call `useDeactivateInviteCodeMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useDeactivateInviteCodeMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [deactivateInviteCodeMutation, { data, loading, error }] = useDeactivateInviteCodeMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useDeactivateInviteCodeMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeactivateInviteCodeMutationResult, DeactivateInviteCodeMutationVariables>) {
+export type DeactivateInviteCodeMutationFn = Apollo.MutationFunction<DeactivateInviteCodeMutationData, DeactivateInviteCodeMutationVariables>;
+export function useDeactivateInviteCodeMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeactivateInviteCodeMutationData, DeactivateInviteCodeMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<DeactivateInviteCodeMutationResult, DeactivateInviteCodeMutationVariables>(DeactivateInviteCodeDocument, options);
+        return ApolloReactHooks.useMutation<DeactivateInviteCodeMutationData, DeactivateInviteCodeMutationVariables>(DeactivateInviteCodeDocument, options);
       }
 export type DeactivateInviteCodeMutationHookResult = ReturnType<typeof useDeactivateInviteCodeMutation>;
-export type DeactivateInviteCodeMutationResult = Apollo.MutationResult<DeactivateInviteCodeMutationResult>;
-export type DeactivateInviteCodeMutationOptions = Apollo.BaseMutationOptions<DeactivateInviteCodeMutationResult, DeactivateInviteCodeMutationVariables>;
+export type DeactivateInviteCodeMutationResult = Apollo.MutationResult<DeactivateInviteCodeMutationData>;
+export type DeactivateInviteCodeMutationOptions = Apollo.BaseMutationOptions<DeactivateInviteCodeMutationData, DeactivateInviteCodeMutationVariables>;
 export const ClearCacheDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ClearCache"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"clearCache"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type ClearCacheMutationFn = Apollo.MutationFunction<ClearCacheMutationResult, ClearCacheMutationVariables>;
-
-/**
- * __useClearCacheMutation__
- *
- * To run a mutation, you first call `useClearCacheMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useClearCacheMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [clearCacheMutation, { data, loading, error }] = useClearCacheMutation({
- *   variables: {
- *   },
- * });
- */
-export function useClearCacheMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ClearCacheMutationResult, ClearCacheMutationVariables>) {
+export type ClearCacheMutationFn = Apollo.MutationFunction<ClearCacheMutationData, ClearCacheMutationVariables>;
+export function useClearCacheMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ClearCacheMutationData, ClearCacheMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<ClearCacheMutationResult, ClearCacheMutationVariables>(ClearCacheDocument, options);
+        return ApolloReactHooks.useMutation<ClearCacheMutationData, ClearCacheMutationVariables>(ClearCacheDocument, options);
       }
 export type ClearCacheMutationHookResult = ReturnType<typeof useClearCacheMutation>;
-export type ClearCacheMutationResult = Apollo.MutationResult<ClearCacheMutationResult>;
-export type ClearCacheMutationOptions = Apollo.BaseMutationOptions<ClearCacheMutationResult, ClearCacheMutationVariables>;
+export type ClearCacheMutationResult = Apollo.MutationResult<ClearCacheMutationData>;
+export type ClearCacheMutationOptions = Apollo.BaseMutationOptions<ClearCacheMutationData, ClearCacheMutationVariables>;
 export const RebuildSearchIndexDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RebuildSearchIndex"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rebuildSearchIndex"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type RebuildSearchIndexMutationFn = Apollo.MutationFunction<RebuildSearchIndexMutationResult, RebuildSearchIndexMutationVariables>;
-
-/**
- * __useRebuildSearchIndexMutation__
- *
- * To run a mutation, you first call `useRebuildSearchIndexMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useRebuildSearchIndexMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [rebuildSearchIndexMutation, { data, loading, error }] = useRebuildSearchIndexMutation({
- *   variables: {
- *   },
- * });
- */
-export function useRebuildSearchIndexMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RebuildSearchIndexMutationResult, RebuildSearchIndexMutationVariables>) {
+export type RebuildSearchIndexMutationFn = Apollo.MutationFunction<RebuildSearchIndexMutationData, RebuildSearchIndexMutationVariables>;
+export function useRebuildSearchIndexMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RebuildSearchIndexMutationData, RebuildSearchIndexMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<RebuildSearchIndexMutationResult, RebuildSearchIndexMutationVariables>(RebuildSearchIndexDocument, options);
+        return ApolloReactHooks.useMutation<RebuildSearchIndexMutationData, RebuildSearchIndexMutationVariables>(RebuildSearchIndexDocument, options);
       }
 export type RebuildSearchIndexMutationHookResult = ReturnType<typeof useRebuildSearchIndexMutation>;
-export type RebuildSearchIndexMutationResult = Apollo.MutationResult<RebuildSearchIndexMutationResult>;
-export type RebuildSearchIndexMutationOptions = Apollo.BaseMutationOptions<RebuildSearchIndexMutationResult, RebuildSearchIndexMutationVariables>;
-export const RegisterDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Register"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RegisterInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"register"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AuthPayloadInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}}]} as unknown as DocumentNode;
-export type RegisterMutationFn = Apollo.MutationFunction<RegisterMutationResult, RegisterMutationVariables>;
-
-/**
- * __useRegisterMutation__
- *
- * To run a mutation, you first call `useRegisterMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useRegisterMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [registerMutation, { data, loading, error }] = useRegisterMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useRegisterMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RegisterMutationResult, RegisterMutationVariables>) {
+export type RebuildSearchIndexMutationResult = Apollo.MutationResult<RebuildSearchIndexMutationData>;
+export type RebuildSearchIndexMutationOptions = Apollo.BaseMutationOptions<RebuildSearchIndexMutationData, RebuildSearchIndexMutationVariables>;
+export const MeDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}},{"kind":"Field","name":{"kind":"Name","value":"posts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"5"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"postsCount"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
+export function useMeQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<MeQueryData, MeQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<RegisterMutationResult, RegisterMutationVariables>(RegisterDocument, options);
+        return ApolloReactHooks.useQuery<MeQueryData, MeQueryVariables>(MeDocument, options);
       }
-export type RegisterMutationHookResult = ReturnType<typeof useRegisterMutation>;
-export type RegisterMutationResult = Apollo.MutationResult<RegisterMutationResult>;
-export type RegisterMutationOptions = Apollo.BaseMutationOptions<RegisterMutationResult, RegisterMutationVariables>;
-export const LoginDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Login"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LoginInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"login"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AuthPayloadInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}}]} as unknown as DocumentNode;
-export type LoginMutationFn = Apollo.MutationFunction<LoginMutationResult, LoginMutationVariables>;
-
-/**
- * __useLoginMutation__
- *
- * To run a mutation, you first call `useLoginMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useLoginMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [loginMutation, { data, loading, error }] = useLoginMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useLoginMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<LoginMutationResult, LoginMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<LoginMutationResult, LoginMutationVariables>(LoginDocument, options);
-      }
-export type LoginMutationHookResult = ReturnType<typeof useLoginMutation>;
-export type LoginMutationResult = Apollo.MutationResult<LoginMutationResult>;
-export type LoginMutationOptions = Apollo.BaseMutationOptions<LoginMutationResult, LoginMutationVariables>;
-export const EmailLoginDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"EmailLogin"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"EmailLoginInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"emailLogin"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type EmailLoginMutationFn = Apollo.MutationFunction<EmailLoginMutationResult, EmailLoginMutationVariables>;
-
-/**
- * __useEmailLoginMutation__
- *
- * To run a mutation, you first call `useEmailLoginMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useEmailLoginMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [emailLoginMutation, { data, loading, error }] = useEmailLoginMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useEmailLoginMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<EmailLoginMutationResult, EmailLoginMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<EmailLoginMutationResult, EmailLoginMutationVariables>(EmailLoginDocument, options);
-      }
-export type EmailLoginMutationHookResult = ReturnType<typeof useEmailLoginMutation>;
-export type EmailLoginMutationResult = Apollo.MutationResult<EmailLoginMutationResult>;
-export type EmailLoginMutationOptions = Apollo.BaseMutationOptions<EmailLoginMutationResult, EmailLoginMutationVariables>;
-export const VerifyEmailAndLoginDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"VerifyEmailAndLogin"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"VerifyEmailInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"verifyEmailAndLogin"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AuthPayloadInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}}]} as unknown as DocumentNode;
-export type VerifyEmailAndLoginMutationFn = Apollo.MutationFunction<VerifyEmailAndLoginMutationResult, VerifyEmailAndLoginMutationVariables>;
-
-/**
- * __useVerifyEmailAndLoginMutation__
- *
- * To run a mutation, you first call `useVerifyEmailAndLoginMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useVerifyEmailAndLoginMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [verifyEmailAndLoginMutation, { data, loading, error }] = useVerifyEmailAndLoginMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useVerifyEmailAndLoginMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<VerifyEmailAndLoginMutationResult, VerifyEmailAndLoginMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<VerifyEmailAndLoginMutationResult, VerifyEmailAndLoginMutationVariables>(VerifyEmailAndLoginDocument, options);
-      }
-export type VerifyEmailAndLoginMutationHookResult = ReturnType<typeof useVerifyEmailAndLoginMutation>;
-export type VerifyEmailAndLoginMutationResult = Apollo.MutationResult<VerifyEmailAndLoginMutationResult>;
-export type VerifyEmailAndLoginMutationOptions = Apollo.BaseMutationOptions<VerifyEmailAndLoginMutationResult, VerifyEmailAndLoginMutationVariables>;
-export const LogoutDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Logout"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"logout"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type LogoutMutationFn = Apollo.MutationFunction<LogoutMutationResult, LogoutMutationVariables>;
-
-/**
- * __useLogoutMutation__
- *
- * To run a mutation, you first call `useLogoutMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useLogoutMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [logoutMutation, { data, loading, error }] = useLogoutMutation({
- *   variables: {
- *   },
- * });
- */
-export function useLogoutMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<LogoutMutationResult, LogoutMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<LogoutMutationResult, LogoutMutationVariables>(LogoutDocument, options);
-      }
-export type LogoutMutationHookResult = ReturnType<typeof useLogoutMutation>;
-export type LogoutMutationResult = Apollo.MutationResult<LogoutMutationResult>;
-export type LogoutMutationOptions = Apollo.BaseMutationOptions<LogoutMutationResult, LogoutMutationVariables>;
-export const RefreshTokenDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RefreshToken"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"refreshToken"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AuthPayloadInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}}]} as unknown as DocumentNode;
-export type RefreshTokenMutationFn = Apollo.MutationFunction<RefreshTokenMutationResult, RefreshTokenMutationVariables>;
-
-/**
- * __useRefreshTokenMutation__
- *
- * To run a mutation, you first call `useRefreshTokenMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useRefreshTokenMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [refreshTokenMutation, { data, loading, error }] = useRefreshTokenMutation({
- *   variables: {
- *   },
- * });
- */
-export function useRefreshTokenMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RefreshTokenMutationResult, RefreshTokenMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<RefreshTokenMutationResult, RefreshTokenMutationVariables>(RefreshTokenDocument, options);
-      }
-export type RefreshTokenMutationHookResult = ReturnType<typeof useRefreshTokenMutation>;
-export type RefreshTokenMutationResult = Apollo.MutationResult<RefreshTokenMutationResult>;
-export type RefreshTokenMutationOptions = Apollo.BaseMutationOptions<RefreshTokenMutationResult, RefreshTokenMutationVariables>;
-export const SendVerificationCodeDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SendVerificationCode"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"email"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"VerificationType"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sendVerificationCode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"email"},"value":{"kind":"Variable","name":{"kind":"Name","value":"email"}}},{"kind":"Argument","name":{"kind":"Name","value":"type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type SendVerificationCodeMutationFn = Apollo.MutationFunction<SendVerificationCodeMutationResult, SendVerificationCodeMutationVariables>;
-
-/**
- * __useSendVerificationCodeMutation__
- *
- * To run a mutation, you first call `useSendVerificationCodeMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useSendVerificationCodeMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [sendVerificationCodeMutation, { data, loading, error }] = useSendVerificationCodeMutation({
- *   variables: {
- *      email: // value for 'email'
- *      type: // value for 'type'
- *   },
- * });
- */
-export function useSendVerificationCodeMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SendVerificationCodeMutationResult, SendVerificationCodeMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<SendVerificationCodeMutationResult, SendVerificationCodeMutationVariables>(SendVerificationCodeDocument, options);
-      }
-export type SendVerificationCodeMutationHookResult = ReturnType<typeof useSendVerificationCodeMutation>;
-export type SendVerificationCodeMutationResult = Apollo.MutationResult<SendVerificationCodeMutationResult>;
-export type SendVerificationCodeMutationOptions = Apollo.BaseMutationOptions<SendVerificationCodeMutationResult, SendVerificationCodeMutationVariables>;
-export const VerifyEmailDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"VerifyEmail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"VerifyEmailInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"verifyEmail"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type VerifyEmailMutationFn = Apollo.MutationFunction<VerifyEmailMutationResult, VerifyEmailMutationVariables>;
-
-/**
- * __useVerifyEmailMutation__
- *
- * To run a mutation, you first call `useVerifyEmailMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useVerifyEmailMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [verifyEmailMutation, { data, loading, error }] = useVerifyEmailMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useVerifyEmailMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<VerifyEmailMutationResult, VerifyEmailMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<VerifyEmailMutationResult, VerifyEmailMutationVariables>(VerifyEmailDocument, options);
-      }
-export type VerifyEmailMutationHookResult = ReturnType<typeof useVerifyEmailMutation>;
-export type VerifyEmailMutationResult = Apollo.MutationResult<VerifyEmailMutationResult>;
-export type VerifyEmailMutationOptions = Apollo.BaseMutationOptions<VerifyEmailMutationResult, VerifyEmailMutationVariables>;
-export const RequestPasswordResetDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RequestPasswordReset"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RequestPasswordResetInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"requestPasswordReset"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type RequestPasswordResetMutationFn = Apollo.MutationFunction<RequestPasswordResetMutationResult, RequestPasswordResetMutationVariables>;
-
-/**
- * __useRequestPasswordResetMutation__
- *
- * To run a mutation, you first call `useRequestPasswordResetMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useRequestPasswordResetMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [requestPasswordResetMutation, { data, loading, error }] = useRequestPasswordResetMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useRequestPasswordResetMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RequestPasswordResetMutationResult, RequestPasswordResetMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<RequestPasswordResetMutationResult, RequestPasswordResetMutationVariables>(RequestPasswordResetDocument, options);
-      }
-export type RequestPasswordResetMutationHookResult = ReturnType<typeof useRequestPasswordResetMutation>;
-export type RequestPasswordResetMutationResult = Apollo.MutationResult<RequestPasswordResetMutationResult>;
-export type RequestPasswordResetMutationOptions = Apollo.BaseMutationOptions<RequestPasswordResetMutationResult, RequestPasswordResetMutationVariables>;
-export const ConfirmPasswordResetDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfirmPasswordReset"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConfirmPasswordResetInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"confirmPasswordReset"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type ConfirmPasswordResetMutationFn = Apollo.MutationFunction<ConfirmPasswordResetMutationResult, ConfirmPasswordResetMutationVariables>;
-
-/**
- * __useConfirmPasswordResetMutation__
- *
- * To run a mutation, you first call `useConfirmPasswordResetMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useConfirmPasswordResetMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [confirmPasswordResetMutation, { data, loading, error }] = useConfirmPasswordResetMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useConfirmPasswordResetMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ConfirmPasswordResetMutationResult, ConfirmPasswordResetMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<ConfirmPasswordResetMutationResult, ConfirmPasswordResetMutationVariables>(ConfirmPasswordResetDocument, options);
-      }
-export type ConfirmPasswordResetMutationHookResult = ReturnType<typeof useConfirmPasswordResetMutation>;
-export type ConfirmPasswordResetMutationResult = Apollo.MutationResult<ConfirmPasswordResetMutationResult>;
-export type ConfirmPasswordResetMutationOptions = Apollo.BaseMutationOptions<ConfirmPasswordResetMutationResult, ConfirmPasswordResetMutationVariables>;
-export const UpdateProfileDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProfile"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProfileInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProfile"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-export type UpdateProfileMutationFn = Apollo.MutationFunction<UpdateProfileMutationResult, UpdateProfileMutationVariables>;
-
-/**
- * __useUpdateProfileMutation__
- *
- * To run a mutation, you first call `useUpdateProfileMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUpdateProfileMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [updateProfileMutation, { data, loading, error }] = useUpdateProfileMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useUpdateProfileMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateProfileMutationResult, UpdateProfileMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<UpdateProfileMutationResult, UpdateProfileMutationVariables>(UpdateProfileDocument, options);
-      }
-export type UpdateProfileMutationHookResult = ReturnType<typeof useUpdateProfileMutation>;
-export type UpdateProfileMutationResult = Apollo.MutationResult<UpdateProfileMutationResult>;
-export type UpdateProfileMutationOptions = Apollo.BaseMutationOptions<UpdateProfileMutationResult, UpdateProfileMutationVariables>;
-export const ChangePasswordDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ChangePassword"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"currentPassword"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"newPassword"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"changePassword"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"currentPassword"},"value":{"kind":"Variable","name":{"kind":"Name","value":"currentPassword"}}},{"kind":"Argument","name":{"kind":"Name","value":"newPassword"},"value":{"kind":"Variable","name":{"kind":"Name","value":"newPassword"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type ChangePasswordMutationFn = Apollo.MutationFunction<ChangePasswordMutationResult, ChangePasswordMutationVariables>;
-
-/**
- * __useChangePasswordMutation__
- *
- * To run a mutation, you first call `useChangePasswordMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useChangePasswordMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [changePasswordMutation, { data, loading, error }] = useChangePasswordMutation({
- *   variables: {
- *      currentPassword: // value for 'currentPassword'
- *      newPassword: // value for 'newPassword'
- *   },
- * });
- */
-export function useChangePasswordMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ChangePasswordMutationResult, ChangePasswordMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<ChangePasswordMutationResult, ChangePasswordMutationVariables>(ChangePasswordDocument, options);
-      }
-export type ChangePasswordMutationHookResult = ReturnType<typeof useChangePasswordMutation>;
-export type ChangePasswordMutationResult = Apollo.MutationResult<ChangePasswordMutationResult>;
-export type ChangePasswordMutationOptions = Apollo.BaseMutationOptions<ChangePasswordMutationResult, ChangePasswordMutationVariables>;
-export const MeDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}},{"kind":"Field","name":{"kind":"Name","value":"posts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"5"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"postsCount"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useMeQuery__
- *
- * To run a query within a React component, call `useMeQuery` and pass it any options that fit your needs.
- * When your component renders, `useMeQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useMeQuery({
- *   variables: {
- *   },
- * });
- */
-export function useMeQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<MeQueryResult, MeQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<MeQueryResult, MeQueryVariables>(MeDocument, options);
-      }
-export function useMeLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<MeQueryResult, MeQueryVariables>) {
+export function useMeLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<MeQueryData, MeQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<MeQueryResult, MeQueryVariables>(MeDocument, options);
+          return ApolloReactHooks.useLazyQuery<MeQueryData, MeQueryVariables>(MeDocument, options);
         }
-export function useMeSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MeQueryResult, MeQueryVariables>) {
+export function useMeSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MeQueryData, MeQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<MeQueryResult, MeQueryVariables>(MeDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<MeQueryData, MeQueryVariables>(MeDocument, options);
         }
 export type MeQueryHookResult = ReturnType<typeof useMeQuery>;
 export type MeLazyQueryHookResult = ReturnType<typeof useMeLazyQuery>;
 export type MeSuspenseQueryHookResult = ReturnType<typeof useMeSuspenseQuery>;
-export type MeQueryResult = Apollo.QueryResult<MeQueryResult, MeQueryVariables>;
+export type MeQueryResult = Apollo.QueryResult<MeQueryData, MeQueryVariables>;
 export const UserDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"User"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}},{"kind":"Field","name":{"kind":"Name","value":"posts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"postsCount"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useUserQuery__
- *
- * To run a query within a React component, call `useUserQuery` and pass it any options that fit your needs.
- * When your component renders, `useUserQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useUserQuery({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useUserQuery(baseOptions: ApolloReactHooks.QueryHookOptions<UserQueryResult, UserQueryVariables> & ({ variables: UserQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+export function useUserQuery(baseOptions: ApolloReactHooks.QueryHookOptions<UserQueryData, UserQueryVariables> & ({ variables: UserQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<UserQueryResult, UserQueryVariables>(UserDocument, options);
+        return ApolloReactHooks.useQuery<UserQueryData, UserQueryVariables>(UserDocument, options);
       }
-export function useUserLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<UserQueryResult, UserQueryVariables>) {
+export function useUserLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<UserQueryData, UserQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<UserQueryResult, UserQueryVariables>(UserDocument, options);
+          return ApolloReactHooks.useLazyQuery<UserQueryData, UserQueryVariables>(UserDocument, options);
         }
-export function useUserSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<UserQueryResult, UserQueryVariables>) {
+export function useUserSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<UserQueryData, UserQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<UserQueryResult, UserQueryVariables>(UserDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<UserQueryData, UserQueryVariables>(UserDocument, options);
         }
 export type UserQueryHookResult = ReturnType<typeof useUserQuery>;
 export type UserLazyQueryHookResult = ReturnType<typeof useUserLazyQuery>;
 export type UserSuspenseQueryHookResult = ReturnType<typeof useUserSuspenseQuery>;
-export type UserQueryResult = Apollo.QueryResult<UserQueryResult, UserQueryVariables>;
-export const PostsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Posts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"PostFilterInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sort"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"PostSortInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"posts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sort"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostSummary"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __usePostsQuery__
- *
- * To run a query within a React component, call `usePostsQuery` and pass it any options that fit your needs.
- * When your component renders, `usePostsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = usePostsQuery({
- *   variables: {
- *      limit: // value for 'limit'
- *      offset: // value for 'offset'
- *      filter: // value for 'filter'
- *      sort: // value for 'sort'
- *   },
- * });
- */
-export function usePostsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<PostsQueryResult, PostsQueryVariables>) {
+export type UserQueryResult = Apollo.QueryResult<UserQueryData, UserQueryVariables>;
+export const RegisterDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Register"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RegisterInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"register"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AuthPayloadInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}}]} as unknown as DocumentNode;
+export type RegisterMutationFn = Apollo.MutationFunction<RegisterMutationData, RegisterMutationVariables>;
+export function useRegisterMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RegisterMutationData, RegisterMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<PostsQueryResult, PostsQueryVariables>(PostsDocument, options);
+        return ApolloReactHooks.useMutation<RegisterMutationData, RegisterMutationVariables>(RegisterDocument, options);
       }
-export function usePostsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PostsQueryResult, PostsQueryVariables>) {
+export type RegisterMutationHookResult = ReturnType<typeof useRegisterMutation>;
+export type RegisterMutationResult = Apollo.MutationResult<RegisterMutationData>;
+export type RegisterMutationOptions = Apollo.BaseMutationOptions<RegisterMutationData, RegisterMutationVariables>;
+export const LoginDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Login"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LoginInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"login"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AuthPayloadInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}}]} as unknown as DocumentNode;
+export type LoginMutationFn = Apollo.MutationFunction<LoginMutationData, LoginMutationVariables>;
+export function useLoginMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<LoginMutationData, LoginMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<LoginMutationData, LoginMutationVariables>(LoginDocument, options);
+      }
+export type LoginMutationHookResult = ReturnType<typeof useLoginMutation>;
+export type LoginMutationResult = Apollo.MutationResult<LoginMutationData>;
+export type LoginMutationOptions = Apollo.BaseMutationOptions<LoginMutationData, LoginMutationVariables>;
+export const EmailLoginDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"EmailLogin"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"EmailLoginInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"emailLogin"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
+export type EmailLoginMutationFn = Apollo.MutationFunction<EmailLoginMutationData, EmailLoginMutationVariables>;
+export function useEmailLoginMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<EmailLoginMutationData, EmailLoginMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<EmailLoginMutationData, EmailLoginMutationVariables>(EmailLoginDocument, options);
+      }
+export type EmailLoginMutationHookResult = ReturnType<typeof useEmailLoginMutation>;
+export type EmailLoginMutationResult = Apollo.MutationResult<EmailLoginMutationData>;
+export type EmailLoginMutationOptions = Apollo.BaseMutationOptions<EmailLoginMutationData, EmailLoginMutationVariables>;
+export const VerifyEmailAndLoginDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"VerifyEmailAndLogin"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"VerifyEmailInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"verifyEmailAndLogin"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AuthPayloadInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}}]} as unknown as DocumentNode;
+export type VerifyEmailAndLoginMutationFn = Apollo.MutationFunction<VerifyEmailAndLoginMutationData, VerifyEmailAndLoginMutationVariables>;
+export function useVerifyEmailAndLoginMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<VerifyEmailAndLoginMutationData, VerifyEmailAndLoginMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<VerifyEmailAndLoginMutationData, VerifyEmailAndLoginMutationVariables>(VerifyEmailAndLoginDocument, options);
+      }
+export type VerifyEmailAndLoginMutationHookResult = ReturnType<typeof useVerifyEmailAndLoginMutation>;
+export type VerifyEmailAndLoginMutationResult = Apollo.MutationResult<VerifyEmailAndLoginMutationData>;
+export type VerifyEmailAndLoginMutationOptions = Apollo.BaseMutationOptions<VerifyEmailAndLoginMutationData, VerifyEmailAndLoginMutationVariables>;
+export const LogoutDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Logout"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"logout"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
+export type LogoutMutationFn = Apollo.MutationFunction<LogoutMutationData, LogoutMutationVariables>;
+export function useLogoutMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<LogoutMutationData, LogoutMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<LogoutMutationData, LogoutMutationVariables>(LogoutDocument, options);
+      }
+export type LogoutMutationHookResult = ReturnType<typeof useLogoutMutation>;
+export type LogoutMutationResult = Apollo.MutationResult<LogoutMutationData>;
+export type LogoutMutationOptions = Apollo.BaseMutationOptions<LogoutMutationData, LogoutMutationVariables>;
+export const RefreshTokenDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RefreshToken"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"refreshToken"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AuthPayloadInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}}]} as unknown as DocumentNode;
+export type RefreshTokenMutationFn = Apollo.MutationFunction<RefreshTokenMutationData, RefreshTokenMutationVariables>;
+export function useRefreshTokenMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RefreshTokenMutationData, RefreshTokenMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<RefreshTokenMutationData, RefreshTokenMutationVariables>(RefreshTokenDocument, options);
+      }
+export type RefreshTokenMutationHookResult = ReturnType<typeof useRefreshTokenMutation>;
+export type RefreshTokenMutationResult = Apollo.MutationResult<RefreshTokenMutationData>;
+export type RefreshTokenMutationOptions = Apollo.BaseMutationOptions<RefreshTokenMutationData, RefreshTokenMutationVariables>;
+export const SendVerificationCodeDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SendVerificationCode"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"email"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"VerificationType"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sendVerificationCode"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"email"},"value":{"kind":"Variable","name":{"kind":"Name","value":"email"}}},{"kind":"Argument","name":{"kind":"Name","value":"type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
+export type SendVerificationCodeMutationFn = Apollo.MutationFunction<SendVerificationCodeMutationData, SendVerificationCodeMutationVariables>;
+export function useSendVerificationCodeMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SendVerificationCodeMutationData, SendVerificationCodeMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SendVerificationCodeMutationData, SendVerificationCodeMutationVariables>(SendVerificationCodeDocument, options);
+      }
+export type SendVerificationCodeMutationHookResult = ReturnType<typeof useSendVerificationCodeMutation>;
+export type SendVerificationCodeMutationResult = Apollo.MutationResult<SendVerificationCodeMutationData>;
+export type SendVerificationCodeMutationOptions = Apollo.BaseMutationOptions<SendVerificationCodeMutationData, SendVerificationCodeMutationVariables>;
+export const VerifyEmailDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"VerifyEmail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"VerifyEmailInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"verifyEmail"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
+export type VerifyEmailMutationFn = Apollo.MutationFunction<VerifyEmailMutationData, VerifyEmailMutationVariables>;
+export function useVerifyEmailMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<VerifyEmailMutationData, VerifyEmailMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<VerifyEmailMutationData, VerifyEmailMutationVariables>(VerifyEmailDocument, options);
+      }
+export type VerifyEmailMutationHookResult = ReturnType<typeof useVerifyEmailMutation>;
+export type VerifyEmailMutationResult = Apollo.MutationResult<VerifyEmailMutationData>;
+export type VerifyEmailMutationOptions = Apollo.BaseMutationOptions<VerifyEmailMutationData, VerifyEmailMutationVariables>;
+export const RequestPasswordResetDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RequestPasswordReset"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RequestPasswordResetInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"requestPasswordReset"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
+export type RequestPasswordResetMutationFn = Apollo.MutationFunction<RequestPasswordResetMutationData, RequestPasswordResetMutationVariables>;
+export function useRequestPasswordResetMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RequestPasswordResetMutationData, RequestPasswordResetMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<RequestPasswordResetMutationData, RequestPasswordResetMutationVariables>(RequestPasswordResetDocument, options);
+      }
+export type RequestPasswordResetMutationHookResult = ReturnType<typeof useRequestPasswordResetMutation>;
+export type RequestPasswordResetMutationResult = Apollo.MutationResult<RequestPasswordResetMutationData>;
+export type RequestPasswordResetMutationOptions = Apollo.BaseMutationOptions<RequestPasswordResetMutationData, RequestPasswordResetMutationVariables>;
+export const ConfirmPasswordResetDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfirmPasswordReset"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConfirmPasswordResetInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"confirmPasswordReset"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
+export type ConfirmPasswordResetMutationFn = Apollo.MutationFunction<ConfirmPasswordResetMutationData, ConfirmPasswordResetMutationVariables>;
+export function useConfirmPasswordResetMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ConfirmPasswordResetMutationData, ConfirmPasswordResetMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ConfirmPasswordResetMutationData, ConfirmPasswordResetMutationVariables>(ConfirmPasswordResetDocument, options);
+      }
+export type ConfirmPasswordResetMutationHookResult = ReturnType<typeof useConfirmPasswordResetMutation>;
+export type ConfirmPasswordResetMutationResult = Apollo.MutationResult<ConfirmPasswordResetMutationData>;
+export type ConfirmPasswordResetMutationOptions = Apollo.BaseMutationOptions<ConfirmPasswordResetMutationData, ConfirmPasswordResetMutationVariables>;
+export const UpdateProfileDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateProfile"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateProfileInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateProfile"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode;
+export type UpdateProfileMutationFn = Apollo.MutationFunction<UpdateProfileMutationData, UpdateProfileMutationVariables>;
+export function useUpdateProfileMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateProfileMutationData, UpdateProfileMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateProfileMutationData, UpdateProfileMutationVariables>(UpdateProfileDocument, options);
+      }
+export type UpdateProfileMutationHookResult = ReturnType<typeof useUpdateProfileMutation>;
+export type UpdateProfileMutationResult = Apollo.MutationResult<UpdateProfileMutationData>;
+export type UpdateProfileMutationOptions = Apollo.BaseMutationOptions<UpdateProfileMutationData, UpdateProfileMutationVariables>;
+export const ChangePasswordDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ChangePassword"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"currentPassword"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"newPassword"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"changePassword"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"currentPassword"},"value":{"kind":"Variable","name":{"kind":"Name","value":"currentPassword"}}},{"kind":"Argument","name":{"kind":"Name","value":"newPassword"},"value":{"kind":"Variable","name":{"kind":"Name","value":"newPassword"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
+export type ChangePasswordMutationFn = Apollo.MutationFunction<ChangePasswordMutationData, ChangePasswordMutationVariables>;
+export function useChangePasswordMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ChangePasswordMutationData, ChangePasswordMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ChangePasswordMutationData, ChangePasswordMutationVariables>(ChangePasswordDocument, options);
+      }
+export type ChangePasswordMutationHookResult = ReturnType<typeof useChangePasswordMutation>;
+export type ChangePasswordMutationResult = Apollo.MutationResult<ChangePasswordMutationData>;
+export type ChangePasswordMutationOptions = Apollo.BaseMutationOptions<ChangePasswordMutationData, ChangePasswordMutationVariables>;
+export const PostsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Posts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"PostFilterInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sort"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"PostSortInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"posts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sort"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostSummary"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
+export function usePostsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<PostsQueryData, PostsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<PostsQueryData, PostsQueryVariables>(PostsDocument, options);
+      }
+export function usePostsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PostsQueryData, PostsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<PostsQueryResult, PostsQueryVariables>(PostsDocument, options);
+          return ApolloReactHooks.useLazyQuery<PostsQueryData, PostsQueryVariables>(PostsDocument, options);
         }
-export function usePostsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PostsQueryResult, PostsQueryVariables>) {
+export function usePostsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PostsQueryData, PostsQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<PostsQueryResult, PostsQueryVariables>(PostsDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<PostsQueryData, PostsQueryVariables>(PostsDocument, options);
         }
 export type PostsQueryHookResult = ReturnType<typeof usePostsQuery>;
 export type PostsLazyQueryHookResult = ReturnType<typeof usePostsLazyQuery>;
 export type PostsSuspenseQueryHookResult = ReturnType<typeof usePostsSuspenseQuery>;
-export type PostsQueryResult = Apollo.QueryResult<PostsQueryResult, PostsQueryVariables>;
+export type PostsQueryResult = Apollo.QueryResult<PostsQueryData, PostsQueryVariables>;
 export const PostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Post"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"slug"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"post"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"slug"},"value":{"kind":"Variable","name":{"kind":"Name","value":"slug"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostDetail"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"accessLevel"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastEditedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostDetail"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostInfo"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}},{"kind":"Field","name":{"kind":"Name","value":"versions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"versionNum"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"changeLog"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __usePostQuery__
- *
- * To run a query within a React component, call `usePostQuery` and pass it any options that fit your needs.
- * When your component renders, `usePostQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = usePostQuery({
- *   variables: {
- *      id: // value for 'id'
- *      slug: // value for 'slug'
- *   },
- * });
- */
-export function usePostQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<PostQueryResult, PostQueryVariables>) {
+export function usePostQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<PostQueryData, PostQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<PostQueryResult, PostQueryVariables>(PostDocument, options);
+        return ApolloReactHooks.useQuery<PostQueryData, PostQueryVariables>(PostDocument, options);
       }
-export function usePostLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PostQueryResult, PostQueryVariables>) {
+export function usePostLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PostQueryData, PostQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<PostQueryResult, PostQueryVariables>(PostDocument, options);
+          return ApolloReactHooks.useLazyQuery<PostQueryData, PostQueryVariables>(PostDocument, options);
         }
-export function usePostSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PostQueryResult, PostQueryVariables>) {
+export function usePostSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PostQueryData, PostQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<PostQueryResult, PostQueryVariables>(PostDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<PostQueryData, PostQueryVariables>(PostDocument, options);
         }
 export type PostQueryHookResult = ReturnType<typeof usePostQuery>;
 export type PostLazyQueryHookResult = ReturnType<typeof usePostLazyQuery>;
 export type PostSuspenseQueryHookResult = ReturnType<typeof usePostSuspenseQuery>;
-export type PostQueryResult = Apollo.QueryResult<PostQueryResult, PostQueryVariables>;
+export type PostQueryResult = Apollo.QueryResult<PostQueryData, PostQueryVariables>;
 export const PostVersionsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PostVersions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"postId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"postVersions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"postId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"postId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostVersion"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostVersion"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostVersion"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"versionNum"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"changeLog"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}}]}}]} as unknown as DocumentNode;
-
-/**
- * __usePostVersionsQuery__
- *
- * To run a query within a React component, call `usePostVersionsQuery` and pass it any options that fit your needs.
- * When your component renders, `usePostVersionsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = usePostVersionsQuery({
- *   variables: {
- *      postId: // value for 'postId'
- *   },
- * });
- */
-export function usePostVersionsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<PostVersionsQueryResult, PostVersionsQueryVariables> & ({ variables: PostVersionsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+export function usePostVersionsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<PostVersionsQueryData, PostVersionsQueryVariables> & ({ variables: PostVersionsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<PostVersionsQueryResult, PostVersionsQueryVariables>(PostVersionsDocument, options);
+        return ApolloReactHooks.useQuery<PostVersionsQueryData, PostVersionsQueryVariables>(PostVersionsDocument, options);
       }
-export function usePostVersionsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PostVersionsQueryResult, PostVersionsQueryVariables>) {
+export function usePostVersionsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PostVersionsQueryData, PostVersionsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<PostVersionsQueryResult, PostVersionsQueryVariables>(PostVersionsDocument, options);
+          return ApolloReactHooks.useLazyQuery<PostVersionsQueryData, PostVersionsQueryVariables>(PostVersionsDocument, options);
         }
-export function usePostVersionsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PostVersionsQueryResult, PostVersionsQueryVariables>) {
+export function usePostVersionsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PostVersionsQueryData, PostVersionsQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<PostVersionsQueryResult, PostVersionsQueryVariables>(PostVersionsDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<PostVersionsQueryData, PostVersionsQueryVariables>(PostVersionsDocument, options);
         }
 export type PostVersionsQueryHookResult = ReturnType<typeof usePostVersionsQuery>;
 export type PostVersionsLazyQueryHookResult = ReturnType<typeof usePostVersionsLazyQuery>;
 export type PostVersionsSuspenseQueryHookResult = ReturnType<typeof usePostVersionsSuspenseQuery>;
-export type PostVersionsQueryResult = Apollo.QueryResult<PostVersionsQueryResult, PostVersionsQueryVariables>;
+export type PostVersionsQueryResult = Apollo.QueryResult<PostVersionsQueryData, PostVersionsQueryVariables>;
 export const SearchPostsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchPosts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"searchPosts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"posts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"took"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useSearchPostsQuery__
- *
- * To run a query within a React component, call `useSearchPostsQuery` and pass it any options that fit your needs.
- * When your component renders, `useSearchPostsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useSearchPostsQuery({
- *   variables: {
- *      query: // value for 'query'
- *      limit: // value for 'limit'
- *      offset: // value for 'offset'
- *   },
- * });
- */
-export function useSearchPostsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<SearchPostsQueryResult, SearchPostsQueryVariables> & ({ variables: SearchPostsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+export function useSearchPostsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<SearchPostsQueryData, SearchPostsQueryVariables> & ({ variables: SearchPostsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<SearchPostsQueryResult, SearchPostsQueryVariables>(SearchPostsDocument, options);
+        return ApolloReactHooks.useQuery<SearchPostsQueryData, SearchPostsQueryVariables>(SearchPostsDocument, options);
       }
-export function useSearchPostsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<SearchPostsQueryResult, SearchPostsQueryVariables>) {
+export function useSearchPostsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<SearchPostsQueryData, SearchPostsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<SearchPostsQueryResult, SearchPostsQueryVariables>(SearchPostsDocument, options);
+          return ApolloReactHooks.useLazyQuery<SearchPostsQueryData, SearchPostsQueryVariables>(SearchPostsDocument, options);
         }
-export function useSearchPostsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<SearchPostsQueryResult, SearchPostsQueryVariables>) {
+export function useSearchPostsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<SearchPostsQueryData, SearchPostsQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<SearchPostsQueryResult, SearchPostsQueryVariables>(SearchPostsDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<SearchPostsQueryData, SearchPostsQueryVariables>(SearchPostsDocument, options);
         }
 export type SearchPostsQueryHookResult = ReturnType<typeof useSearchPostsQuery>;
 export type SearchPostsLazyQueryHookResult = ReturnType<typeof useSearchPostsLazyQuery>;
 export type SearchPostsSuspenseQueryHookResult = ReturnType<typeof useSearchPostsSuspenseQuery>;
-export type SearchPostsQueryResult = Apollo.QueryResult<SearchPostsQueryResult, SearchPostsQueryVariables>;
+export type SearchPostsQueryResult = Apollo.QueryResult<SearchPostsQueryData, SearchPostsQueryVariables>;
 export const PopularPostsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PopularPosts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getPopularPosts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostSummary"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __usePopularPostsQuery__
- *
- * To run a query within a React component, call `usePopularPostsQuery` and pass it any options that fit your needs.
- * When your component renders, `usePopularPostsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = usePopularPostsQuery({
- *   variables: {
- *      limit: // value for 'limit'
- *   },
- * });
- */
-export function usePopularPostsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<PopularPostsQueryResult, PopularPostsQueryVariables>) {
+export function usePopularPostsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<PopularPostsQueryData, PopularPostsQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<PopularPostsQueryResult, PopularPostsQueryVariables>(PopularPostsDocument, options);
+        return ApolloReactHooks.useQuery<PopularPostsQueryData, PopularPostsQueryVariables>(PopularPostsDocument, options);
       }
-export function usePopularPostsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PopularPostsQueryResult, PopularPostsQueryVariables>) {
+export function usePopularPostsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PopularPostsQueryData, PopularPostsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<PopularPostsQueryResult, PopularPostsQueryVariables>(PopularPostsDocument, options);
+          return ApolloReactHooks.useLazyQuery<PopularPostsQueryData, PopularPostsQueryVariables>(PopularPostsDocument, options);
         }
-export function usePopularPostsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PopularPostsQueryResult, PopularPostsQueryVariables>) {
+export function usePopularPostsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PopularPostsQueryData, PopularPostsQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<PopularPostsQueryResult, PopularPostsQueryVariables>(PopularPostsDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<PopularPostsQueryData, PopularPostsQueryVariables>(PopularPostsDocument, options);
         }
 export type PopularPostsQueryHookResult = ReturnType<typeof usePopularPostsQuery>;
 export type PopularPostsLazyQueryHookResult = ReturnType<typeof usePopularPostsLazyQuery>;
 export type PopularPostsSuspenseQueryHookResult = ReturnType<typeof usePopularPostsSuspenseQuery>;
-export type PopularPostsQueryResult = Apollo.QueryResult<PopularPostsQueryResult, PopularPostsQueryVariables>;
+export type PopularPostsQueryResult = Apollo.QueryResult<PopularPostsQueryData, PopularPostsQueryVariables>;
 export const RecentPostsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RecentPosts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getRecentPosts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostSummary"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useRecentPostsQuery__
- *
- * To run a query within a React component, call `useRecentPostsQuery` and pass it any options that fit your needs.
- * When your component renders, `useRecentPostsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useRecentPostsQuery({
- *   variables: {
- *      limit: // value for 'limit'
- *   },
- * });
- */
-export function useRecentPostsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<RecentPostsQueryResult, RecentPostsQueryVariables>) {
+export function useRecentPostsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<RecentPostsQueryData, RecentPostsQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<RecentPostsQueryResult, RecentPostsQueryVariables>(RecentPostsDocument, options);
+        return ApolloReactHooks.useQuery<RecentPostsQueryData, RecentPostsQueryVariables>(RecentPostsDocument, options);
       }
-export function useRecentPostsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<RecentPostsQueryResult, RecentPostsQueryVariables>) {
+export function useRecentPostsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<RecentPostsQueryData, RecentPostsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<RecentPostsQueryResult, RecentPostsQueryVariables>(RecentPostsDocument, options);
+          return ApolloReactHooks.useLazyQuery<RecentPostsQueryData, RecentPostsQueryVariables>(RecentPostsDocument, options);
         }
-export function useRecentPostsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<RecentPostsQueryResult, RecentPostsQueryVariables>) {
+export function useRecentPostsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<RecentPostsQueryData, RecentPostsQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<RecentPostsQueryResult, RecentPostsQueryVariables>(RecentPostsDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<RecentPostsQueryData, RecentPostsQueryVariables>(RecentPostsDocument, options);
         }
 export type RecentPostsQueryHookResult = ReturnType<typeof useRecentPostsQuery>;
 export type RecentPostsLazyQueryHookResult = ReturnType<typeof useRecentPostsLazyQuery>;
 export type RecentPostsSuspenseQueryHookResult = ReturnType<typeof useRecentPostsSuspenseQuery>;
-export type RecentPostsQueryResult = Apollo.QueryResult<RecentPostsQueryResult, RecentPostsQueryVariables>;
+export type RecentPostsQueryResult = Apollo.QueryResult<RecentPostsQueryData, RecentPostsQueryVariables>;
 export const TrendingTagsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TrendingTags"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTrendingTags"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}]}]}}]} as unknown as DocumentNode;
-
-/**
- * __useTrendingTagsQuery__
- *
- * To run a query within a React component, call `useTrendingTagsQuery` and pass it any options that fit your needs.
- * When your component renders, `useTrendingTagsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useTrendingTagsQuery({
- *   variables: {
- *      limit: // value for 'limit'
- *   },
- * });
- */
-export function useTrendingTagsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<TrendingTagsQueryResult, TrendingTagsQueryVariables>) {
+export function useTrendingTagsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<TrendingTagsQueryData, TrendingTagsQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<TrendingTagsQueryResult, TrendingTagsQueryVariables>(TrendingTagsDocument, options);
+        return ApolloReactHooks.useQuery<TrendingTagsQueryData, TrendingTagsQueryVariables>(TrendingTagsDocument, options);
       }
-export function useTrendingTagsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<TrendingTagsQueryResult, TrendingTagsQueryVariables>) {
+export function useTrendingTagsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<TrendingTagsQueryData, TrendingTagsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<TrendingTagsQueryResult, TrendingTagsQueryVariables>(TrendingTagsDocument, options);
+          return ApolloReactHooks.useLazyQuery<TrendingTagsQueryData, TrendingTagsQueryVariables>(TrendingTagsDocument, options);
         }
-export function useTrendingTagsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<TrendingTagsQueryResult, TrendingTagsQueryVariables>) {
+export function useTrendingTagsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<TrendingTagsQueryData, TrendingTagsQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<TrendingTagsQueryResult, TrendingTagsQueryVariables>(TrendingTagsDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<TrendingTagsQueryData, TrendingTagsQueryVariables>(TrendingTagsDocument, options);
         }
 export type TrendingTagsQueryHookResult = ReturnType<typeof useTrendingTagsQuery>;
 export type TrendingTagsLazyQueryHookResult = ReturnType<typeof useTrendingTagsLazyQuery>;
 export type TrendingTagsSuspenseQueryHookResult = ReturnType<typeof useTrendingTagsSuspenseQuery>;
-export type TrendingTagsQueryResult = Apollo.QueryResult<TrendingTagsQueryResult, TrendingTagsQueryVariables>;
+export type TrendingTagsQueryResult = Apollo.QueryResult<TrendingTagsQueryData, TrendingTagsQueryVariables>;
 export const CreatePostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreatePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreatePostInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createPost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostDetail"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"accessLevel"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastEditedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostDetail"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostInfo"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}},{"kind":"Field","name":{"kind":"Name","value":"versions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"versionNum"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"changeLog"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-export type CreatePostMutationFn = Apollo.MutationFunction<CreatePostMutationResult, CreatePostMutationVariables>;
-
-/**
- * __useCreatePostMutation__
- *
- * To run a mutation, you first call `useCreatePostMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useCreatePostMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [createPostMutation, { data, loading, error }] = useCreatePostMutation({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useCreatePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreatePostMutationResult, CreatePostMutationVariables>) {
+export type CreatePostMutationFn = Apollo.MutationFunction<CreatePostMutationData, CreatePostMutationVariables>;
+export function useCreatePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreatePostMutationData, CreatePostMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<CreatePostMutationResult, CreatePostMutationVariables>(CreatePostDocument, options);
+        return ApolloReactHooks.useMutation<CreatePostMutationData, CreatePostMutationVariables>(CreatePostDocument, options);
       }
 export type CreatePostMutationHookResult = ReturnType<typeof useCreatePostMutation>;
-export type CreatePostMutationResult = Apollo.MutationResult<CreatePostMutationResult>;
-export type CreatePostMutationOptions = Apollo.BaseMutationOptions<CreatePostMutationResult, CreatePostMutationVariables>;
+export type CreatePostMutationResult = Apollo.MutationResult<CreatePostMutationData>;
+export type CreatePostMutationOptions = Apollo.BaseMutationOptions<CreatePostMutationData, CreatePostMutationVariables>;
 export const UpdatePostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdatePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdatePostInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updatePost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostDetail"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"accessLevel"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastEditedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostDetail"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostInfo"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}},{"kind":"Field","name":{"kind":"Name","value":"versions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"versionNum"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"changeLog"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-export type UpdatePostMutationFn = Apollo.MutationFunction<UpdatePostMutationResult, UpdatePostMutationVariables>;
-
-/**
- * __useUpdatePostMutation__
- *
- * To run a mutation, you first call `useUpdatePostMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUpdatePostMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [updatePostMutation, { data, loading, error }] = useUpdatePostMutation({
- *   variables: {
- *      id: // value for 'id'
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useUpdatePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdatePostMutationResult, UpdatePostMutationVariables>) {
+export type UpdatePostMutationFn = Apollo.MutationFunction<UpdatePostMutationData, UpdatePostMutationVariables>;
+export function useUpdatePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdatePostMutationData, UpdatePostMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<UpdatePostMutationResult, UpdatePostMutationVariables>(UpdatePostDocument, options);
+        return ApolloReactHooks.useMutation<UpdatePostMutationData, UpdatePostMutationVariables>(UpdatePostDocument, options);
       }
 export type UpdatePostMutationHookResult = ReturnType<typeof useUpdatePostMutation>;
-export type UpdatePostMutationResult = Apollo.MutationResult<UpdatePostMutationResult>;
-export type UpdatePostMutationOptions = Apollo.BaseMutationOptions<UpdatePostMutationResult, UpdatePostMutationVariables>;
+export type UpdatePostMutationResult = Apollo.MutationResult<UpdatePostMutationData>;
+export type UpdatePostMutationOptions = Apollo.BaseMutationOptions<UpdatePostMutationData, UpdatePostMutationVariables>;
 export const DeletePostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeletePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deletePost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
-export type DeletePostMutationFn = Apollo.MutationFunction<DeletePostMutationResult, DeletePostMutationVariables>;
-
-/**
- * __useDeletePostMutation__
- *
- * To run a mutation, you first call `useDeletePostMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useDeletePostMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [deletePostMutation, { data, loading, error }] = useDeletePostMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useDeletePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeletePostMutationResult, DeletePostMutationVariables>) {
+export type DeletePostMutationFn = Apollo.MutationFunction<DeletePostMutationData, DeletePostMutationVariables>;
+export function useDeletePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeletePostMutationData, DeletePostMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<DeletePostMutationResult, DeletePostMutationVariables>(DeletePostDocument, options);
+        return ApolloReactHooks.useMutation<DeletePostMutationData, DeletePostMutationVariables>(DeletePostDocument, options);
       }
 export type DeletePostMutationHookResult = ReturnType<typeof useDeletePostMutation>;
-export type DeletePostMutationResult = Apollo.MutationResult<DeletePostMutationResult>;
-export type DeletePostMutationOptions = Apollo.BaseMutationOptions<DeletePostMutationResult, DeletePostMutationVariables>;
-export const PublishPostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"PublishPost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publishPost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}}]}}]}}]} as unknown as DocumentNode;
-export type PublishPostMutationFn = Apollo.MutationFunction<PublishPostMutationResult, PublishPostMutationVariables>;
-
-/**
- * __usePublishPostMutation__
- *
- * To run a mutation, you first call `usePublishPostMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `usePublishPostMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [publishPostMutation, { data, loading, error }] = usePublishPostMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function usePublishPostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<PublishPostMutationResult, PublishPostMutationVariables>) {
+export type DeletePostMutationResult = Apollo.MutationResult<DeletePostMutationData>;
+export type DeletePostMutationOptions = Apollo.BaseMutationOptions<DeletePostMutationData, DeletePostMutationVariables>;
+export const PublishPostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"PublishPost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publishPost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostDetail"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"accessLevel"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastEditedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostDetail"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostInfo"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}},{"kind":"Field","name":{"kind":"Name","value":"versions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"versionNum"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"changeLog"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
+export type PublishPostMutationFn = Apollo.MutationFunction<PublishPostMutationData, PublishPostMutationVariables>;
+export function usePublishPostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<PublishPostMutationData, PublishPostMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<PublishPostMutationResult, PublishPostMutationVariables>(PublishPostDocument, options);
+        return ApolloReactHooks.useMutation<PublishPostMutationData, PublishPostMutationVariables>(PublishPostDocument, options);
       }
 export type PublishPostMutationHookResult = ReturnType<typeof usePublishPostMutation>;
-export type PublishPostMutationResult = Apollo.MutationResult<PublishPostMutationResult>;
-export type PublishPostMutationOptions = Apollo.BaseMutationOptions<PublishPostMutationResult, PublishPostMutationVariables>;
-export const ArchivePostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchivePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archivePost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode;
-export type ArchivePostMutationFn = Apollo.MutationFunction<ArchivePostMutationResult, ArchivePostMutationVariables>;
-
-/**
- * __useArchivePostMutation__
- *
- * To run a mutation, you first call `useArchivePostMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useArchivePostMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [archivePostMutation, { data, loading, error }] = useArchivePostMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useArchivePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ArchivePostMutationResult, ArchivePostMutationVariables>) {
+export type PublishPostMutationResult = Apollo.MutationResult<PublishPostMutationData>;
+export type PublishPostMutationOptions = Apollo.BaseMutationOptions<PublishPostMutationData, PublishPostMutationVariables>;
+export const ArchivePostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ArchivePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"archivePost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostDetail"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"accessLevel"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastEditedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostDetail"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostInfo"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}},{"kind":"Field","name":{"kind":"Name","value":"versions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"versionNum"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"changeLog"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
+export type ArchivePostMutationFn = Apollo.MutationFunction<ArchivePostMutationData, ArchivePostMutationVariables>;
+export function useArchivePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ArchivePostMutationData, ArchivePostMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<ArchivePostMutationResult, ArchivePostMutationVariables>(ArchivePostDocument, options);
+        return ApolloReactHooks.useMutation<ArchivePostMutationData, ArchivePostMutationVariables>(ArchivePostDocument, options);
       }
 export type ArchivePostMutationHookResult = ReturnType<typeof useArchivePostMutation>;
-export type ArchivePostMutationResult = Apollo.MutationResult<ArchivePostMutationResult>;
-export type ArchivePostMutationOptions = Apollo.BaseMutationOptions<ArchivePostMutationResult, ArchivePostMutationVariables>;
-export const LikePostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"LikePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"likePost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-export type LikePostMutationFn = Apollo.MutationFunction<LikePostMutationResult, LikePostMutationVariables>;
-
-/**
- * __useLikePostMutation__
- *
- * To run a mutation, you first call `useLikePostMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useLikePostMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [likePostMutation, { data, loading, error }] = useLikePostMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useLikePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<LikePostMutationResult, LikePostMutationVariables>) {
+export type ArchivePostMutationResult = Apollo.MutationResult<ArchivePostMutationData>;
+export type ArchivePostMutationOptions = Apollo.BaseMutationOptions<ArchivePostMutationData, ArchivePostMutationVariables>;
+export const LikePostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"LikePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"likePost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostDetail"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"accessLevel"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastEditedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostDetail"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostInfo"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}},{"kind":"Field","name":{"kind":"Name","value":"versions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"versionNum"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"changeLog"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
+export type LikePostMutationFn = Apollo.MutationFunction<LikePostMutationData, LikePostMutationVariables>;
+export function useLikePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<LikePostMutationData, LikePostMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<LikePostMutationResult, LikePostMutationVariables>(LikePostDocument, options);
+        return ApolloReactHooks.useMutation<LikePostMutationData, LikePostMutationVariables>(LikePostDocument, options);
       }
 export type LikePostMutationHookResult = ReturnType<typeof useLikePostMutation>;
-export type LikePostMutationResult = Apollo.MutationResult<LikePostMutationResult>;
-export type LikePostMutationOptions = Apollo.BaseMutationOptions<LikePostMutationResult, LikePostMutationVariables>;
-export const UnlikePostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UnlikePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unlikePost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
-export type UnlikePostMutationFn = Apollo.MutationFunction<UnlikePostMutationResult, UnlikePostMutationVariables>;
-
-/**
- * __useUnlikePostMutation__
- *
- * To run a mutation, you first call `useUnlikePostMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUnlikePostMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [unlikePostMutation, { data, loading, error }] = useUnlikePostMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useUnlikePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UnlikePostMutationResult, UnlikePostMutationVariables>) {
+export type LikePostMutationResult = Apollo.MutationResult<LikePostMutationData>;
+export type LikePostMutationOptions = Apollo.BaseMutationOptions<LikePostMutationData, LikePostMutationVariables>;
+export const UnlikePostDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UnlikePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unlikePost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostDetail"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"accessLevel"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastEditedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostDetail"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostInfo"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}},{"kind":"Field","name":{"kind":"Name","value":"versions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"versionNum"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"changeLog"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
+export type UnlikePostMutationFn = Apollo.MutationFunction<UnlikePostMutationData, UnlikePostMutationVariables>;
+export function useUnlikePostMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UnlikePostMutationData, UnlikePostMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<UnlikePostMutationResult, UnlikePostMutationVariables>(UnlikePostDocument, options);
+        return ApolloReactHooks.useMutation<UnlikePostMutationData, UnlikePostMutationVariables>(UnlikePostDocument, options);
       }
 export type UnlikePostMutationHookResult = ReturnType<typeof useUnlikePostMutation>;
-export type UnlikePostMutationResult = Apollo.MutationResult<UnlikePostMutationResult>;
-export type UnlikePostMutationOptions = Apollo.BaseMutationOptions<UnlikePostMutationResult, UnlikePostMutationVariables>;
-export const SearchSuggestionsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchSuggestions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getSearchSuggestions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}]}]}}]} as unknown as DocumentNode;
-
-/**
- * __useSearchSuggestionsQuery__
- *
- * To run a query within a React component, call `useSearchSuggestionsQuery` and pass it any options that fit your needs.
- * When your component renders, `useSearchSuggestionsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useSearchSuggestionsQuery({
- *   variables: {
- *      query: // value for 'query'
- *      limit: // value for 'limit'
- *   },
- * });
- */
-export function useSearchSuggestionsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<SearchSuggestionsQueryResult, SearchSuggestionsQueryVariables> & ({ variables: SearchSuggestionsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+export type UnlikePostMutationResult = Apollo.MutationResult<UnlikePostMutationData>;
+export type UnlikePostMutationOptions = Apollo.BaseMutationOptions<UnlikePostMutationData, UnlikePostMutationVariables>;
+export const CommentsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Comments"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"blogPostId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CommentFilterInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sort"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CommentSortInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"comments"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"blogPostId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"blogPostId"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sort"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"comments"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"parent"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"replies"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"blogPost"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"total"}}]}}]}}]} as unknown as DocumentNode;
+export function useCommentsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CommentsQueryData, CommentsQueryVariables> & ({ variables: CommentsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<SearchSuggestionsQueryResult, SearchSuggestionsQueryVariables>(SearchSuggestionsDocument, options);
+        return ApolloReactHooks.useQuery<CommentsQueryData, CommentsQueryVariables>(CommentsDocument, options);
       }
-export function useSearchSuggestionsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<SearchSuggestionsQueryResult, SearchSuggestionsQueryVariables>) {
+export function useCommentsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CommentsQueryData, CommentsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<SearchSuggestionsQueryResult, SearchSuggestionsQueryVariables>(SearchSuggestionsDocument, options);
+          return ApolloReactHooks.useLazyQuery<CommentsQueryData, CommentsQueryVariables>(CommentsDocument, options);
         }
-export function useSearchSuggestionsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<SearchSuggestionsQueryResult, SearchSuggestionsQueryVariables>) {
+export function useCommentsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommentsQueryData, CommentsQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<SearchSuggestionsQueryResult, SearchSuggestionsQueryVariables>(SearchSuggestionsDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<CommentsQueryData, CommentsQueryVariables>(CommentsDocument, options);
+        }
+export type CommentsQueryHookResult = ReturnType<typeof useCommentsQuery>;
+export type CommentsLazyQueryHookResult = ReturnType<typeof useCommentsLazyQuery>;
+export type CommentsSuspenseQueryHookResult = ReturnType<typeof useCommentsSuspenseQuery>;
+export type CommentsQueryResult = Apollo.QueryResult<CommentsQueryData, CommentsQueryVariables>;
+export const CommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Comment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"comment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"parent"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"replies"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"blogPost"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}}]}}]}}]} as unknown as DocumentNode;
+export function useCommentQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CommentQueryData, CommentQueryVariables> & ({ variables: CommentQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CommentQueryData, CommentQueryVariables>(CommentDocument, options);
+      }
+export function useCommentLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CommentQueryData, CommentQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CommentQueryData, CommentQueryVariables>(CommentDocument, options);
+        }
+export function useCommentSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommentQueryData, CommentQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CommentQueryData, CommentQueryVariables>(CommentDocument, options);
+        }
+export type CommentQueryHookResult = ReturnType<typeof useCommentQuery>;
+export type CommentLazyQueryHookResult = ReturnType<typeof useCommentLazyQuery>;
+export type CommentSuspenseQueryHookResult = ReturnType<typeof useCommentSuspenseQuery>;
+export type CommentQueryResult = Apollo.QueryResult<CommentQueryData, CommentQueryVariables>;
+export const CreateCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateCommentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
+export type CreateCommentMutationFn = Apollo.MutationFunction<CreateCommentMutationData, CreateCommentMutationVariables>;
+export function useCreateCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateCommentMutationData, CreateCommentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateCommentMutationData, CreateCommentMutationVariables>(CreateCommentDocument, options);
+      }
+export type CreateCommentMutationHookResult = ReturnType<typeof useCreateCommentMutation>;
+export type CreateCommentMutationResult = Apollo.MutationResult<CreateCommentMutationData>;
+export type CreateCommentMutationOptions = Apollo.BaseMutationOptions<CreateCommentMutationData, CreateCommentMutationVariables>;
+export const UpdateCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateCommentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
+export type UpdateCommentMutationFn = Apollo.MutationFunction<UpdateCommentMutationData, UpdateCommentMutationVariables>;
+export function useUpdateCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateCommentMutationData, UpdateCommentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateCommentMutationData, UpdateCommentMutationVariables>(UpdateCommentDocument, options);
+      }
+export type UpdateCommentMutationHookResult = ReturnType<typeof useUpdateCommentMutation>;
+export type UpdateCommentMutationResult = Apollo.MutationResult<UpdateCommentMutationData>;
+export type UpdateCommentMutationOptions = Apollo.BaseMutationOptions<UpdateCommentMutationData, UpdateCommentMutationVariables>;
+export const DeleteCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GeneralResponseInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
+export type DeleteCommentMutationFn = Apollo.MutationFunction<DeleteCommentMutationData, DeleteCommentMutationVariables>;
+export function useDeleteCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteCommentMutationData, DeleteCommentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<DeleteCommentMutationData, DeleteCommentMutationVariables>(DeleteCommentDocument, options);
+      }
+export type DeleteCommentMutationHookResult = ReturnType<typeof useDeleteCommentMutation>;
+export type DeleteCommentMutationResult = Apollo.MutationResult<DeleteCommentMutationData>;
+export type DeleteCommentMutationOptions = Apollo.BaseMutationOptions<DeleteCommentMutationData, DeleteCommentMutationVariables>;
+export const LikeCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"LikeComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"likeComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
+export type LikeCommentMutationFn = Apollo.MutationFunction<LikeCommentMutationData, LikeCommentMutationVariables>;
+export function useLikeCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<LikeCommentMutationData, LikeCommentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<LikeCommentMutationData, LikeCommentMutationVariables>(LikeCommentDocument, options);
+      }
+export type LikeCommentMutationHookResult = ReturnType<typeof useLikeCommentMutation>;
+export type LikeCommentMutationResult = Apollo.MutationResult<LikeCommentMutationData>;
+export type LikeCommentMutationOptions = Apollo.BaseMutationOptions<LikeCommentMutationData, LikeCommentMutationVariables>;
+export const UnlikeCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UnlikeComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unlikeComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
+export type UnlikeCommentMutationFn = Apollo.MutationFunction<UnlikeCommentMutationData, UnlikeCommentMutationVariables>;
+export function useUnlikeCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UnlikeCommentMutationData, UnlikeCommentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UnlikeCommentMutationData, UnlikeCommentMutationVariables>(UnlikeCommentDocument, options);
+      }
+export type UnlikeCommentMutationHookResult = ReturnType<typeof useUnlikeCommentMutation>;
+export type UnlikeCommentMutationResult = Apollo.MutationResult<UnlikeCommentMutationData>;
+export type UnlikeCommentMutationOptions = Apollo.BaseMutationOptions<UnlikeCommentMutationData, UnlikeCommentMutationVariables>;
+export const ReportCommentDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReportComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reportComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isApproved"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
+export type ReportCommentMutationFn = Apollo.MutationFunction<ReportCommentMutationData, ReportCommentMutationVariables>;
+export function useReportCommentMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ReportCommentMutationData, ReportCommentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ReportCommentMutationData, ReportCommentMutationVariables>(ReportCommentDocument, options);
+      }
+export type ReportCommentMutationHookResult = ReturnType<typeof useReportCommentMutation>;
+export type ReportCommentMutationResult = Apollo.MutationResult<ReportCommentMutationData>;
+export type ReportCommentMutationOptions = Apollo.BaseMutationOptions<ReportCommentMutationData, ReportCommentMutationVariables>;
+export const EnhancedSearchDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EnhancedSearch"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"enhancedSearch"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"posts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"took"}},{"kind":"Field","name":{"kind":"Name","value":"suggestions"}},{"kind":"Field","name":{"kind":"Name","value":"facets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"categories"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
+export function useEnhancedSearchQuery(baseOptions: ApolloReactHooks.QueryHookOptions<EnhancedSearchQueryData, EnhancedSearchQueryVariables> & ({ variables: EnhancedSearchQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<EnhancedSearchQueryData, EnhancedSearchQueryVariables>(EnhancedSearchDocument, options);
+      }
+export function useEnhancedSearchLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<EnhancedSearchQueryData, EnhancedSearchQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<EnhancedSearchQueryData, EnhancedSearchQueryVariables>(EnhancedSearchDocument, options);
+        }
+export function useEnhancedSearchSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<EnhancedSearchQueryData, EnhancedSearchQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<EnhancedSearchQueryData, EnhancedSearchQueryVariables>(EnhancedSearchDocument, options);
+        }
+export type EnhancedSearchQueryHookResult = ReturnType<typeof useEnhancedSearchQuery>;
+export type EnhancedSearchLazyQueryHookResult = ReturnType<typeof useEnhancedSearchLazyQuery>;
+export type EnhancedSearchSuspenseQueryHookResult = ReturnType<typeof useEnhancedSearchSuspenseQuery>;
+export type EnhancedSearchQueryResult = Apollo.QueryResult<EnhancedSearchQueryData, EnhancedSearchQueryVariables>;
+export const SearchSuggestionsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchSuggestions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getSearchSuggestions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}]}]}}]} as unknown as DocumentNode;
+export function useSearchSuggestionsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<SearchSuggestionsQueryData, SearchSuggestionsQueryVariables> & ({ variables: SearchSuggestionsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<SearchSuggestionsQueryData, SearchSuggestionsQueryVariables>(SearchSuggestionsDocument, options);
+      }
+export function useSearchSuggestionsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<SearchSuggestionsQueryData, SearchSuggestionsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<SearchSuggestionsQueryData, SearchSuggestionsQueryVariables>(SearchSuggestionsDocument, options);
+        }
+export function useSearchSuggestionsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<SearchSuggestionsQueryData, SearchSuggestionsQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<SearchSuggestionsQueryData, SearchSuggestionsQueryVariables>(SearchSuggestionsDocument, options);
         }
 export type SearchSuggestionsQueryHookResult = ReturnType<typeof useSearchSuggestionsQuery>;
 export type SearchSuggestionsLazyQueryHookResult = ReturnType<typeof useSearchSuggestionsLazyQuery>;
 export type SearchSuggestionsSuspenseQueryHookResult = ReturnType<typeof useSearchSuggestionsSuspenseQuery>;
-export type SearchSuggestionsQueryResult = Apollo.QueryResult<SearchSuggestionsQueryResult, SearchSuggestionsQueryVariables>;
+export type SearchSuggestionsQueryResult = Apollo.QueryResult<SearchSuggestionsQueryData, SearchSuggestionsQueryVariables>;
 export const TrendingSearchesDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TrendingSearches"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTrendingSearches"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}]}]}}]} as unknown as DocumentNode;
-
-/**
- * __useTrendingSearchesQuery__
- *
- * To run a query within a React component, call `useTrendingSearchesQuery` and pass it any options that fit your needs.
- * When your component renders, `useTrendingSearchesQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useTrendingSearchesQuery({
- *   variables: {
- *      limit: // value for 'limit'
- *   },
- * });
- */
-export function useTrendingSearchesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<TrendingSearchesQueryResult, TrendingSearchesQueryVariables>) {
+export function useTrendingSearchesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<TrendingSearchesQueryData, TrendingSearchesQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<TrendingSearchesQueryResult, TrendingSearchesQueryVariables>(TrendingSearchesDocument, options);
+        return ApolloReactHooks.useQuery<TrendingSearchesQueryData, TrendingSearchesQueryVariables>(TrendingSearchesDocument, options);
       }
-export function useTrendingSearchesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<TrendingSearchesQueryResult, TrendingSearchesQueryVariables>) {
+export function useTrendingSearchesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<TrendingSearchesQueryData, TrendingSearchesQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<TrendingSearchesQueryResult, TrendingSearchesQueryVariables>(TrendingSearchesDocument, options);
+          return ApolloReactHooks.useLazyQuery<TrendingSearchesQueryData, TrendingSearchesQueryVariables>(TrendingSearchesDocument, options);
         }
-export function useTrendingSearchesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<TrendingSearchesQueryResult, TrendingSearchesQueryVariables>) {
+export function useTrendingSearchesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<TrendingSearchesQueryData, TrendingSearchesQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<TrendingSearchesQueryResult, TrendingSearchesQueryVariables>(TrendingSearchesDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<TrendingSearchesQueryData, TrendingSearchesQueryVariables>(TrendingSearchesDocument, options);
         }
 export type TrendingSearchesQueryHookResult = ReturnType<typeof useTrendingSearchesQuery>;
 export type TrendingSearchesLazyQueryHookResult = ReturnType<typeof useTrendingSearchesLazyQuery>;
 export type TrendingSearchesSuspenseQueryHookResult = ReturnType<typeof useTrendingSearchesSuspenseQuery>;
-export type TrendingSearchesQueryResult = Apollo.QueryResult<TrendingSearchesQueryResult, TrendingSearchesQueryVariables>;
+export type TrendingSearchesQueryResult = Apollo.QueryResult<TrendingSearchesQueryData, TrendingSearchesQueryVariables>;
 export const SearchStatsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getSearchStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalSearches"}},{"kind":"Field","name":{"kind":"Name","value":"popularQueries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"query"}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"lastSearched"}}]}},{"kind":"Field","name":{"kind":"Name","value":"searchTrends"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"searchCount"}},{"kind":"Field","name":{"kind":"Name","value":"topQueries"}}]}}]}}]}}]} as unknown as DocumentNode;
-
-/**
- * __useSearchStatsQuery__
- *
- * To run a query within a React component, call `useSearchStatsQuery` and pass it any options that fit your needs.
- * When your component renders, `useSearchStatsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useSearchStatsQuery({
- *   variables: {
- *   },
- * });
- */
-export function useSearchStatsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<SearchStatsQueryResult, SearchStatsQueryVariables>) {
+export function useSearchStatsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<SearchStatsQueryData, SearchStatsQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<SearchStatsQueryResult, SearchStatsQueryVariables>(SearchStatsDocument, options);
+        return ApolloReactHooks.useQuery<SearchStatsQueryData, SearchStatsQueryVariables>(SearchStatsDocument, options);
       }
-export function useSearchStatsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<SearchStatsQueryResult, SearchStatsQueryVariables>) {
+export function useSearchStatsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<SearchStatsQueryData, SearchStatsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<SearchStatsQueryResult, SearchStatsQueryVariables>(SearchStatsDocument, options);
+          return ApolloReactHooks.useLazyQuery<SearchStatsQueryData, SearchStatsQueryVariables>(SearchStatsDocument, options);
         }
-export function useSearchStatsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<SearchStatsQueryResult, SearchStatsQueryVariables>) {
+export function useSearchStatsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<SearchStatsQueryData, SearchStatsQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<SearchStatsQueryResult, SearchStatsQueryVariables>(SearchStatsDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<SearchStatsQueryData, SearchStatsQueryVariables>(SearchStatsDocument, options);
         }
 export type SearchStatsQueryHookResult = ReturnType<typeof useSearchStatsQuery>;
 export type SearchStatsLazyQueryHookResult = ReturnType<typeof useSearchStatsLazyQuery>;
 export type SearchStatsSuspenseQueryHookResult = ReturnType<typeof useSearchStatsSuspenseQuery>;
-export type SearchStatsQueryResult = Apollo.QueryResult<SearchStatsQueryResult, SearchStatsQueryVariables>;
+export type SearchStatsQueryResult = Apollo.QueryResult<SearchStatsQueryData, SearchStatsQueryVariables>;

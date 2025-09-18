@@ -2,11 +2,28 @@
 import type { 
   BlogPostComment as GeneratedBlogPostComment,
   CreateCommentInput as GeneratedCreateCommentInput,
-  UpdateCommentInput as GeneratedUpdateCommentInput
+  UpdateCommentInput as GeneratedUpdateCommentInput,
+  CreateCommentMutationData
 } from '@/generated/graphql';
+import type { ApolloError } from '@apollo/client';
 
 // Comment type
 export type BlogPostComment = GeneratedBlogPostComment;
+
+// Partial comment type for mutation responses (missing blogPost and replies)
+export type PartialBlogPostComment = CreateCommentMutationData['createComment'];
+
+// Query response types that match the actual GraphQL structure
+export type CommentQueryResponse = {
+  comment?: BlogPostComment | null;
+};
+
+export type CommentsQueryResponse = {
+  comments: {
+    comments: BlogPostComment[];
+    total: number;
+  };
+};
 
 // Create comment input type
 export type CreateCommentInput = GeneratedCreateCommentInput;
@@ -38,7 +55,7 @@ export interface UseCommentsReturn {
   comments: BlogPostComment[];
   total: number;
   loading: boolean;
-  error?: Error;
+  error?: ApolloError;
   loadMore: () => void;
   refetch: () => void;
 }
@@ -46,16 +63,16 @@ export interface UseCommentsReturn {
 export interface UseCommentReturn {
   comment: BlogPostComment | null;
   loading: boolean;
-  error?: Error;
+  error?: ApolloError;
 }
 
 export interface UseCommentActionsReturn {
-  createComment: (input: CreateCommentInput) => Promise<BlogPostComment>;
-  updateComment: (id: string, input: UpdateCommentInput) => Promise<BlogPostComment>;
+  createComment: (input: CreateCommentInput) => Promise<PartialBlogPostComment>;
+  updateComment: (id: string, input: UpdateCommentInput) => Promise<PartialBlogPostComment>;
   deleteComment: (id: string) => Promise<void>;
-  likeComment: (id: string) => Promise<BlogPostComment>;
-  unlikeComment: (id: string) => Promise<BlogPostComment>;
-  reportComment: (id: string) => Promise<BlogPostComment>;
+  likeComment: (id: string) => Promise<PartialBlogPostComment>;
+  unlikeComment: (id: string) => Promise<PartialBlogPostComment>;
+  reportComment: (id: string) => Promise<PartialBlogPostComment>;
   
   loading: {
     create: boolean;
@@ -67,8 +84,11 @@ export interface UseCommentActionsReturn {
   };
   
   errors: {
-    create?: Error;
-    update?: Error;
-    delete?: Error;
+    create?: ApolloError;
+    update?: ApolloError;
+    delete?: ApolloError;
+    like?: ApolloError;
+    unlike?: ApolloError;
+    report?: ApolloError;
   };
 }

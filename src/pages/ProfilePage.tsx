@@ -1,32 +1,27 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   Form,
   Input,
   Button,
-  Avatar,
-  Upload,
   message,
   Divider,
   Typography,
   Space,
   Row,
   Col,
-  Spin,
-  Alert,
-  Modal
+  Spin
 } from 'antd';
 import {
-  UserOutlined,
-  CameraOutlined,
   SaveOutlined,
-  EditOutlined,
-  LoadingOutlined
+  EditOutlined
 } from '@ant-design/icons';
-import type { UploadProps, UploadFile } from 'antd';
+
 import { useAppUser } from '@/hooks/appStateHooks';
 import { useUpdateProfileMutation } from '@/generated/graphql';
 import type { UpdateProfileInput } from '@/generated/graphql';
+import AvatarUpload from '@/components/AvatarUpload';
+
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -34,14 +29,12 @@ const { TextArea } = Input;
 interface ProfilePageProps {}
 
 const ProfilePage: React.FC<ProfilePageProps> = () => {
-  const { user, isAuthenticated, refreshUser } = useAppUser();
+  const { user, refreshUser } = useAppUser();
   const [form] = Form.useForm();
-  const [avatarLoading, setAvatarLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(user?.avatar || undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [updateProfile, { loading: updateLoading }] = useUpdateProfileMutation({
-    onCompleted: (data) => {
+    onCompleted: () => {
       message.success('个人资料更新成功！');
       refreshUser();
     },
@@ -51,76 +44,10 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
     }
   });
 
-  // 验证文件类型和大小
-  const validateFile = (file: File): boolean => {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024; // 5MB
-
-    if (!allowedTypes.includes(file.type)) {
-      message.error('只支持 JPEG、PNG、GIF 和 WebP 格式的图片！');
-      return false;
-    }
-
-    if (file.size > maxSize) {
-      message.error('图片大小不能超过 5MB！');
-      return false;
-    }
-
-    return true;
-  };
-
-  // 处理头像上传
-  const handleAvatarUpload = async (file: File) => {
-    if (!validateFile(file)) {
-      return;
-    }
-
-    setAvatarLoading(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('avatar', file);
-
-      // 上传到服务器
-      const response = await fetch('/api/upload/avatar', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`上传失败: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setAvatarUrl(result.url);
-        message.success('头像上传成功！');
-      } else {
-        throw new Error(result.message || '上传失败');
-      }
-    } catch (error) {
-      console.error('头像上传失败:', error);
-      message.error(error instanceof Error ? error.message : '头像上传失败，请重试');
-    } finally {
-      setAvatarLoading(false);
-    }
-  };
-
-  // 处理文件选择
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleAvatarUpload(file);
-    }
-  };
-
-  // 触发文件选择
-  const triggerFileSelect = () => {
-    fileInputRef.current?.click();
+  // 处理头像上传成功
+  const handleAvatarChange = (url: string) => {
+    setAvatarUrl(url);
+    message.success('头像上传成功！');
   };
 
   // 提交表单
@@ -243,40 +170,13 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
             {/* 右侧：头像 */}
             <Col xs={24} md={8}>
               <Title level={4}>头像设置</Title>
-              
+
               <div className="text-center">
-                <div className="relative inline-block mb-4">
-                  <Avatar
-                    size={120}
-                    src={avatarUrl}
-                    icon={<UserOutlined />}
-                    className="border-2 border-gray-300"
-                  />
-                  
-                  {/* 上传按钮覆盖层 */}
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon={avatarLoading ? <LoadingOutlined /> : <CameraOutlined />}
-                    size="small"
-                    onClick={triggerFileSelect}
-                    loading={avatarLoading}
-                    className="absolute bottom-0 right-0"
-                  />
-                </div>
-
-                <div className="text-center text-gray-500 text-sm">
-                  <p>支持 JPG、PNG、GIF、WebP 格式</p>
-                  <p>文件大小不超过 5MB</p>
-                </div>
-
-                {/* 隐藏的文件输入 */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                  onChange={handleFileChange}
-                  style={{ display: 'none' }}
+                <AvatarUpload
+                  value={avatarUrl}
+                  onChange={handleAvatarChange}
+                  size={120}
+                  showUploadButton={true}
                 />
               </div>
             </Col>

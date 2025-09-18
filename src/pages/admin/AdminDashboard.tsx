@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 // 导入Ant Design组件
 import {
   Card,
@@ -23,7 +22,6 @@ import { useSystemAdmin } from '@/hooks';
 const { Text } = Typography;
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
 
   const {
     dashboard,
@@ -188,36 +186,6 @@ export default function AdminDashboard() {
           </Col>
         </Row>
       )}
-
-      {/* 快捷操作 */}
-      <Card title="快捷操作">
-        <Row gutter={[16, 16]}>
-          <Col xs={24} md={8}>
-            <Button
-              block
-              onClick={() => navigate('/admin/users')}
-            >
-              👥 用户管理
-            </Button>
-          </Col>
-          <Col xs={24} md={8}>
-            <Button
-              block
-              onClick={() => navigate('/admin/invites')}
-            >
-              🎫 邀请码管理
-            </Button>
-          </Col>
-          <Col xs={24} md={8}>
-            <Button
-              block
-              onClick={() => navigate('/admin/system')}
-            >
-              ⚙️ 系统设置
-            </Button>
-          </Col>
-        </Row>
-      </Card>
     </div>
   );
 }

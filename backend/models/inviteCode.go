@@ -16,7 +16,7 @@ type InviteCode struct {
 	UsedByID    *uint          `json:"used_by_id,omitempty"`                         // 使用者ID
 	UsedBy      *User          `gorm:"foreignKey:UsedByID" json:"used_by,omitempty"` // 使用者信息
 	UsedAt      *time.Time     `json:"used_at,omitempty"`                            // 使用时间
-	ExpiresAt   time.Time      `gorm:"not null" json:"expires_at"`                   // 过期时间
+	ExpiresAt   *time.Time     `json:"expires_at,omitempty"`                         // 过期时间（可选）
 	MaxUses     int            `gorm:"default:1" json:"max_uses"`                    // 最大使用次数
 	CurrentUses int            `gorm:"default:0" json:"current_uses"`                // 当前使用次数
 	IsActive    bool           `gorm:"default:true" json:"is_active"`                // 是否激活
@@ -44,7 +44,10 @@ func GenerateInviteCode() string {
 
 // IsExpired 检查邀请码是否过期
 func (ic *InviteCode) IsExpired() bool {
-	return time.Now().After(ic.ExpiresAt)
+	if ic.ExpiresAt == nil {
+		return false // 没有过期时间，永不过期
+	}
+	return time.Now().After(*ic.ExpiresAt)
 }
 
 // IsUsable 检查邀请码是否可用
@@ -75,7 +78,7 @@ func (ic *InviteCode) UseInviteCode(userID uint, db *gorm.DB) error {
 
 // CreateInviteCodeInput 创建邀请码的输入结构体
 type CreateInviteCodeInput struct {
-	ExpiresAt   time.Time `json:"expires_at" binding:"required"`
-	MaxUses     int       `json:"max_uses" binding:"min=1"`
-	Description string    `json:"description"`
+	ExpiresAt   *time.Time `json:"expires_at"`
+	MaxUses     int        `json:"max_uses" binding:"min=1"`
+	Description string     `json:"description"`
 }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Typography, Button } from 'antd';
+import React from 'react';
+import { Typography } from 'antd';
 import { DownOutlined, RightOutlined } from '@ant-design/icons';
 import type { BlogPost } from '@/types';
 import ArticleCard from './ArticleCard';

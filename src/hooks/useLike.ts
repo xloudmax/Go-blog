@@ -48,15 +48,15 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
           variables: { slug: postId },
         });
 
-        if (existingPost) {
+        if ((existingPost as any)?.post) {
           cache.writeQuery({
             query: POST_QUERY,
             variables: { slug: postId },
             data: {
               post: {
-                ...existingPost.post,
+                ...(existingPost as any).post,
                 stats: {
-                  ...existingPost.post.stats,
+                  ...(existingPost as any).post.stats,
                   likeCount: data.likePost.stats?.likeCount || likeCount + 1,
                 },
                 isLiked: true,
@@ -107,9 +107,9 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
             variables: { slug: postId },
             data: {
               post: {
-                ...existingPost.post,
+                ...(existingPost as any).post,
                 stats: {
-                  ...existingPost.post.stats,
+                  ...(existingPost as any).post.stats,
                   likeCount: data.unlikePost.stats?.likeCount || Math.max(0, likeCount - 1),
                 },
                 isLiked: false,

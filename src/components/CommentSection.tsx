@@ -1,28 +1,38 @@
-import React, { useState, useCallback } from 'react';
-import { 
-  Card, 
-  List, 
-  Avatar, 
-  Input, 
-  Button, 
-  Space, 
-  Typography, 
+import React, { useState, useCallback, useEffect } from 'react';
+import {
+  Card,
+  Avatar,
+  Input,
+  Button,
+  Space,
+  Typography,
   Divider,
   notification,
   Spin,
-  Alert
+  Alert,
+  Tooltip
 } from 'antd';
-import { 
-  UserOutlined, 
-  LikeOutlined, 
-  LikeFilled, 
+import {
+  UserOutlined,
+  LikeOutlined,
+  LikeFilled,
   FlagOutlined,
   SendOutlined,
-  CommentOutlined
+  CommentOutlined,
+  MessageOutlined,
+  MoreOutlined,
+  LinkOutlined,
+  ClockCircleOutlined
 } from '@ant-design/icons';
 import { useComments, useCommentActionsHook } from '@/hooks';
 import type { BlogPostComment } from '@/types';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
+
+// 配置dayjs
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
@@ -36,14 +46,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
-  
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+
   const { comments, total, loading, error, refetch } = useComments(blogPostId, 10);
-  const { 
-    createComment, 
-    likeComment, 
-    unlikeComment, 
+  const {
+    createComment,
+    likeComment,
+    unlikeComment,
     reportComment,
-    loading: actionLoading 
+    loading: actionLoading
   } = useCommentActionsHook();
   
   // 处理创建评论
@@ -160,124 +171,277 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
       });
     }
   }, [reportComment, refetch]);
-  
-  // 渲染单个评论
-  const renderComment = (comment: BlogPostComment) => {
+
+  // 切换回复展开状态
+  const toggleReplies = useCallback((commentId: string) => {
+    setExpandedReplies(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(commentId)) {
+        newSet.delete(commentId);
+      } else {
+        newSet.add(commentId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // 生成评论短ID（用于显示）
+  const getCommentShortId = useCallback((fullId: string) => {
+    return fullId.slice(-8); // 取最后8位作为短ID显示
+  }, []);
+
+  // 复制评论链接
+  const copyCommentLink = useCallback((commentId: string) => {
+    const url = `${window.location.origin}${window.location.pathname}#comment-${commentId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      notification.success({
+        message: '成功',
+        description: '评论链接已复制到剪贴板',
+        duration: 2,
+      });
+    }).catch(() => {
+      notification.error({
+        message: '错误',
+        description: '复制链接失败',
+        duration: 2,
+      });
+    });
+  }, []);
+
+  // 跳转到评论
+  const scrollToComment = useCallback((commentId: string) => {
+    const element = document.getElementById(`comment-${commentId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // 高亮评论
+      element.classList.add('bg-blue-50', 'dark:bg-blue-900/20');
+      setTimeout(() => {
+        element.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+      }, 2000);
+    }
+  }, []);
+
+  // 取消回复
+  const cancelReply = useCallback(() => {
+    setReplyingTo(null);
+    setReplyContent('');
+  }, []);
+
+  // 递归渲染评论（支持多级嵌套）
+  const renderComment = useCallback((comment: BlogPostComment, depth: number = 0) => {
     const isLiked = false; // 这里应该从用户状态中获取
-    
+    const hasReplies = comment.replies && comment.replies.length > 0;
+    const isExpanded = expandedReplies.has(comment.id);
+    const maxDepth = 5; // 最大嵌套深度
+    const isReplyingToThis = replyingTo === comment.id;
+    const shortId = getCommentShortId(comment.id);
+
     return (
-      <List.Item>
-        <div className="w-full">
-          <div className="flex">
-            <Avatar 
-              src={comment.user?.avatar} 
-              icon={<UserOutlined />} 
-              className="flex-shrink-0 mr-3"
-            />
-            <div className="flex-1">
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
-                <div className="flex justify-between items-start">
-                  <Text strong>{comment.user?.username || '匿名用户'}</Text>
-                  <Text type="secondary" className="text-xs">
-                    {dayjs(comment.createdAt).format('YYYY-MM-DD HH:mm')}
+      <div
+        key={comment.id}
+        id={`comment-${comment.id}`}
+        className="w-full transition-colors duration-300"
+      >
+        <div className="comment-user-info">
+          {/* 头像 */}
+          <Avatar
+            src={comment.user?.avatar}
+            icon={<UserOutlined />}
+            className="comment-avatar"
+            size={depth > 0 ? 'small' : 'default'}
+          />
+
+          <div className="flex-1">
+            {/* 评论内容 */}
+            <div className="comment-content bg-gray-100 dark:bg-gray-700">
+              <div className="comment-header">
+                <div className="comment-user-details">
+                  <Text strong className={depth > 0 ? 'text-sm' : ''}>
+                    {comment.user?.username || '匿名用户'}
                   </Text>
+                  <Tooltip title={`评论ID: ${comment.id}`}>
+                    <Text
+                      type="secondary"
+                      className="text-xs bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded cursor-help"
+                    >
+                      #{shortId}
+                    </Text>
+                  </Tooltip>
+                  {depth > 0 && comment.parent && (
+                    <Tooltip title="回复的评论">
+                      <Text
+                        type="secondary"
+                        className="text-xs cursor-pointer hover:text-blue-500"
+                        onClick={() => scrollToComment(comment.parent!.id)}
+                      >
+                        回复 #{getCommentShortId(comment.parent.id)}
+                      </Text>
+                    </Tooltip>
+                  )}
                 </div>
-                <Text className="block mt-1">{comment.content}</Text>
+                <div className="comment-meta">
+                  <Tooltip title={dayjs(comment.createdAt).format('YYYY-MM-DD HH:mm:ss')}>
+                    <Text type="secondary" className="text-xs flex items-center">
+                      <ClockCircleOutlined className="mr-3" />
+                      {dayjs(comment.createdAt).fromNow()}
+                    </Text>
+                  </Tooltip>
+                  <Tooltip title="复制评论链接">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<LinkOutlined />}
+                      onClick={() => copyCommentLink(comment.id)}
+                      className="opacity-50 hover:opacity-100"
+                    />
+                  </Tooltip>
+                </div>
               </div>
-              
-              <Space className="mt-2" size="middle">
-                <Button 
-                  type="text" 
+              <Text className={`block mt-2 ${depth > 0 ? 'text-sm' : ''}`}>
+                {comment.content}
+              </Text>
+            </div>
+
+            {/* 操作按钮 */}
+            <div className="comment-actions">
+              <Button
+                type="text"
+                size="small"
+                icon={isLiked ? <LikeFilled /> : <LikeOutlined />}
+                onClick={() => handleLikeComment(comment.id, isLiked)}
+                loading={actionLoading.like || actionLoading.unlike}
+              >
+                {comment.likeCount > 0 ? comment.likeCount : ''}
+              </Button>
+
+              {/* 只在未达到最大深度时显示回复按钮 */}
+              {depth < maxDepth && (
+                <Button
+                  type="text"
                   size="small"
-                  icon={isLiked ? <LikeFilled /> : <LikeOutlined />}
-                  onClick={() => handleLikeComment(comment.id, isLiked)}
-                  loading={actionLoading.like || actionLoading.unlike}
-                >
-                  {comment.likeCount > 0 ? comment.likeCount : ''}
-                </Button>
-                
-                <Button 
-                  type="text" 
-                  size="small"
-                  onClick={() => setReplyingTo(comment.id === replyingTo ? null : comment.id)}
+                  icon={<MessageOutlined />}
+                  onClick={() => setReplyingTo(isReplyingToThis ? null : comment.id)}
                 >
                   回复
                 </Button>
-                
-                <Button 
-                  type="text" 
+              )}
+
+              {hasReplies && (
+                <Button
+                  type="text"
                   size="small"
-                  icon={<FlagOutlined />}
-                  onClick={() => handleReportComment(comment.id)}
-                  loading={actionLoading.report}
+                  icon={<MoreOutlined />}
+                  onClick={() => toggleReplies(comment.id)}
                 >
-                  举报
+                  {isExpanded ? '收起' : `展开 ${comment.replies.length} 条回复`}
                 </Button>
-              </Space>
-              
-              {/* 回复输入框 */}
-              {replyingTo === comment.id && (
-                <div className="mt-3 flex">
-                  <TextArea
-                    value={replyContent}
-                    onChange={(e) => setReplyContent(e.target.value)}
-                    placeholder="输入回复内容..."
-                    autoSize={{ minRows: 2, maxRows: 4 }}
-                    className="mr-2"
-                  />
+              )}
+
+              <Button
+                type="text"
+                size="small"
+                icon={<FlagOutlined />}
+                onClick={() => handleReportComment(comment.id)}
+                loading={actionLoading.report}
+              >
+                举报
+              </Button>
+            </div>
+
+            {/* 回复输入框 */}
+            {isReplyingToThis && (
+              <div className="mt-3">
+                <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border-l-2 border-blue-400">
+                  <Text className="text-xs text-blue-600 dark:text-blue-400">
+                    正在回复 @{comment.user?.username || '匿名用户'} 的评论 #{shortId}:
+                  </Text>
+                  <Text className="block text-xs text-gray-500 truncate mt-1">
+                    {comment.content.length > 50 ? comment.content.slice(0, 50) + '...' : comment.content}
+                  </Text>
+                </div>
+                <TextArea
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  placeholder={`回复 @${comment.user?.username || '匿名用户'}...`}
+                  autoSize={{ minRows: 2, maxRows: 4 }}
+                  className="mb-2"
+                />
+                <Space size="small">
                   <Button
                     type="primary"
+                    size="small"
                     icon={<SendOutlined />}
                     onClick={() => handleReplyComment(comment.id)}
                     loading={actionLoading.create}
                   >
-                    发送
+                    发送回复
                   </Button>
-                </div>
-              )}
-              
-              {/* 显示回复 */}
-              {comment.replies && comment.replies.length > 0 && (
-                <div className="mt-3 ml-8">
-                  <List
-                    dataSource={comment.replies}
-                    renderItem={renderReply}
-                    size="small"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </List.Item>
-    );
-  };
-  
-  // 渲染回复
-  const renderReply = (reply: BlogPostComment) => {
-    return (
-      <div className="flex mt-2" key={reply.id}>
-        <Avatar 
-          src={reply.user?.avatar} 
-          icon={<UserOutlined />} 
-          size="small"
-          className="flex-shrink-0 mr-2"
-        />
-        <div className="flex-1">
-          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-2">
-            <div className="flex justify-between items-start">
-              <Text strong>{reply.user?.username || '匿名用户'}</Text>
-              <Text type="secondary" className="text-xs">
-                {dayjs(reply.createdAt).format('YYYY-MM-DD HH:mm')}
-              </Text>
-            </div>
-            <Text className="block mt-1 text-sm">{reply.content}</Text>
+                  <Button size="small" onClick={cancelReply}>
+                    取消
+                  </Button>
+                </Space>
+              </div>
+            )}
+
+            {/* 嵌套回复 */}
+            {hasReplies && isExpanded && depth < maxDepth && (
+              <div className="mt-3 ml-4 border-l-2 border-gray-200 dark:border-gray-600 pl-4">
+                {comment.replies.map(reply => renderComment(reply, depth + 1))}
+              </div>
+            )}
+
+            {/* 如果达到最大深度，显示简化的回复列表 */}
+            {hasReplies && isExpanded && depth >= maxDepth && (
+              <div className="mt-3 ml-4 border-l-2 border-gray-200 dark:border-gray-600 pl-4">
+                <Text type="secondary" className="text-xs mb-2 block">
+                  更多回复请点击具体评论查看
+                </Text>
+                {comment.replies.slice(0, 3).map(reply => (
+                  <div key={reply.id} className="mb-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                    <Text strong className="text-xs">
+                      {reply.user?.username || '匿名用户'}:
+                    </Text>
+                    <Text className="ml-2 text-xs">{reply.content}</Text>
+                  </div>
+                ))}
+                {comment.replies.length > 3 && (
+                  <Text type="secondary" className="text-xs">
+                    还有 {comment.replies.length - 3} 条回复...
+                  </Text>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
     );
-  };
-  
+  }, [
+    expandedReplies,
+    replyingTo,
+    replyContent,
+    handleLikeComment,
+    handleReportComment,
+    handleReplyComment,
+    actionLoading,
+    toggleReplies,
+    cancelReply,
+    getCommentShortId,
+    copyCommentLink,
+    scrollToComment
+  ]);
+
+  // 处理URL中的评论锚点
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith('#comment-') && comments.length > 0) {
+      const commentId = hash.replace('#comment-', '');
+      // 等待渲染完成后滚动
+      setTimeout(() => {
+        scrollToComment(commentId);
+      }, 100);
+    }
+  }, [comments, scrollToComment]);
+
   if (error) {
     return (
       <Alert 
@@ -323,19 +487,29 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
           <Text className="block mt-2">正在加载评论...</Text>
         </div>
       ) : comments.length > 0 ? (
-        <List
-          dataSource={comments}
-          renderItem={renderComment}
-          pagination={{
-            pageSize: 10,
-            total: total,
-            showSizeChanger: false,
-          }}
-        />
+        <div className="space-y-4">
+          {comments.map(comment => (
+            <div key={comment.id} className="border-b border-gray-100 dark:border-gray-700 pb-4 last:border-b-0">
+              {renderComment(comment, 0)}
+            </div>
+          ))}
+
+          {/* 分页 */}
+          {total > 10 && (
+            <div className="flex justify-center mt-6">
+              <Button type="primary" ghost>
+                加载更多评论
+              </Button>
+            </div>
+          )}
+        </div>
       ) : (
-        <Text type="secondary" className="text-center block py-8">
-          暂无评论，快来发表第一条评论吧！
-        </Text>
+        <div className="text-center py-8">
+          <CommentOutlined className="text-4xl text-gray-300 dark:text-gray-600 mb-2" />
+          <Text type="secondary" className="block">
+            暂无评论，快来发表第一条评论吧！
+          </Text>
+        </div>
       )}
     </Card>
   );

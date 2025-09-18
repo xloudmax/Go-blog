@@ -1,8 +1,8 @@
 import {
-  Menu, 
-  Typography, 
-  Card, 
-  Result 
+  Menu,
+  Typography,
+  Card,
+  Result
 } from 'antd';
 import { useAdminNavigation } from '../../hooks';
 import { useAppUser } from '../../hooks';
@@ -10,6 +10,7 @@ import AdminDashboard from './AdminDashboard';
 import UserManagement from './UserManagement';
 import InviteCodeManagement from './InviteCodeManagement';
 import SystemManagement from './SystemManagement';
+import PostManagement from './PostManagement';
 
 const { Title } = Typography;
 
@@ -35,6 +36,8 @@ export default function AdminPage() {
         return <AdminDashboard />;
       case 'users':
         return <UserManagement />;
+      case 'posts':
+        return <PostManagement />;
       case 'invites':
         return <InviteCodeManagement />;
       case 'system':
@@ -96,6 +99,12 @@ export default function AdminPage() {
               <>
                 <Title level={3} style={{ margin: '0 0 8px 0' }}>用户管理</Title>
                 <Typography.Text type="secondary">管理系统用户和权限</Typography.Text>
+              </>
+            )}
+            {currentTab === 'posts' && (
+              <>
+                <Title level={3} style={{ margin: '0 0 8px 0' }}>文章管理</Title>
+                <Typography.Text type="secondary">管理博客文章内容和状态</Typography.Text>
               </>
             )}
             {currentTab === 'invites' && (

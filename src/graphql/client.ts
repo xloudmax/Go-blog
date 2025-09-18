@@ -48,7 +48,16 @@ const authLink = setContext((_, { headers }) => {
 // 错误处理链接
 const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
-    errorHandler.handleGraphQLErrors(graphQLErrors);
+    // 转换GraphQLFormattedError为GraphQLError格式
+    const errors = graphQLErrors.map(error => ({
+      ...error,
+      nodes: [],
+      source: undefined,
+      positions: [],
+      originalError: undefined,
+      extensions: error.extensions || {}
+    })) as any[];
+    errorHandler.handleGraphQLErrors(errors);
   }
 
   if (networkError) {

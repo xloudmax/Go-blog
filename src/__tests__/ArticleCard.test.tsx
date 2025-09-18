@@ -1,8 +1,9 @@
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import ArticleCard from '@/components/ArticleCard';
+import type { AccessLevel, PostStatus } from '@/generated/graphql';
 
 // Mock Ant Design components
 vi.mock('antd', async () => {
@@ -17,8 +18,8 @@ vi.mock('antd', async () => {
     ),
     Typography: {
       Title: ({ children, level }: any) => {
-        const Heading = `h${level}` as keyof JSX.IntrinsicElements;
-        return <Heading>{children}</Heading>;
+        const Heading = `h${level}` as keyof React.JSX.IntrinsicElements;
+        return React.createElement(Heading, {}, children);
       },
       Paragraph: ({ children }: any) => <p>{children}</p>,
     },
@@ -59,18 +60,36 @@ describe('ArticleCard', () => {
     content: 'Test content',
     excerpt: 'Test excerpt',
     tags: ['tag1', 'tag2'],
+    categories: ['category1'],
     author: {
+      id: 'user1',
       username: 'testuser',
+      email: 'test@example.com',
       avatar: null,
+      bio: null,
+      role: 'USER' as const,
+      isActive: true,
+      isVerified: true,
+      createdAt: '2023-01-01T00:00:00Z',
+      updatedAt: '2023-01-01T00:00:00Z',
+      lastLoginAt: null,
+      emailVerifiedAt: '2023-01-01T00:00:00Z',
+      posts: [],
+      postsCount: 0,
     },
     stats: {
+      id: 'stats1',
       viewCount: 100,
+      likeCount: 10,
+      shareCount: 5,
+      commentCount: 3,
+      lastViewedAt: null,
+      updatedAt: '2023-01-01T00:00:00Z',
     },
     createdAt: '2023-01-01T00:00:00Z',
     publishedAt: '2023-01-01T00:00:00Z',
-    status: 'PUBLISHED',
-    accessLevel: 'PUBLIC',
-    categories: [],
+    status: 'PUBLISHED' as PostStatus,
+    accessLevel: 'PUBLIC' as AccessLevel,
     isLiked: false,
     lastEditedAt: null,
     updatedAt: '2023-01-01T00:00:00Z',

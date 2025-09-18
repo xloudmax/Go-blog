@@ -1,8 +1,4 @@
 // 搜索相关类型定义
-import type { 
-  TrendingSearchesQuery,
-  SearchStatsQuery
-} from '@/generated/graphql';
 
 // 热门搜索词类型
 export interface TrendingSearch {

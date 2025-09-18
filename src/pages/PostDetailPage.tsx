@@ -11,7 +11,6 @@ import {
   Alert,
   Divider,
   Tooltip,
-  Switch,
   notification
 } from 'antd';
 import {
@@ -22,14 +21,12 @@ import {
   EditOutlined,
   CalendarOutlined,
   UserOutlined,
-  CommentOutlined,
-  SunOutlined,
-  MoonOutlined
+  CommentOutlined
 } from '@ant-design/icons';
 import { useQuery } from '@apollo/client';
 import { POST_QUERY } from '@/api/graphql';
 import { useAppUser, useLike } from '@/hooks';
-import { useTheme } from '../components/ThemeProvider';
+import { useTheme } from '@/components/ThemeProvider';
 import MarkdownViewer from '../components/MarkdownViewer';
 import CommentSection from '@/components/CommentSection';
 import './PostDetailPage.css';
@@ -40,7 +37,7 @@ export default function PostDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAppUser();
-  const { theme, toggle: toggleTheme, isDarkMode } = useTheme();
+  const { isDarkMode } = useTheme();
 
   // 获取文章详情
   const { data, loading, error, refetch } = useQuery(POST_QUERY, {
@@ -147,25 +144,6 @@ export default function PostDetailPage() {
             >
               返回
             </Button>
-            <div>
-              <Title level={2} className="mb-2">
-                文章详情
-              </Title>
-              <Paragraph type="secondary" className="mb-0">
-                阅读完整文章内容
-              </Paragraph>
-            </div>
-          </div>
-          
-          {/* 主题切换开关 */}
-          <div className="flex items-center gap-2">
-            <SunOutlined className={!isDarkMode ? 'text-yellow-500' : 'text-gray-400'} />
-            <Switch
-              checked={isDarkMode}
-              onChange={toggleTheme}
-              size="small"
-            />
-            <MoonOutlined className={isDarkMode ? 'text-blue-400' : 'text-gray-400'} />
           </div>
         </div>
 
@@ -190,20 +168,21 @@ export default function PostDetailPage() {
           )}
 
           {/* 作者信息和发布时间 */}
-          <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
-            <div className="flex items-center gap-3">
+          <div className="user-info-container justify-between flex-wrap mb-8">
+            <div className="user-info-container">
               <Avatar 
                 src={post.author.avatar} 
                 icon={<UserOutlined />}
                 size="large"
+                className="user-info-avatar"
               />
-              <div>
-                <div className={`font-medium ${
+              <div className="user-info-details">
+                <div className={`user-info-name text-base ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>
                   {post.author.username}
                 </div>
-                <div className={`text-sm flex items-center gap-1 ${
+                <div className={`text-sm user-info-meta ${
                   isDarkMode ? 'text-gray-400' : 'text-gray-500'
                 }`}>
                   <CalendarOutlined />
@@ -213,7 +192,7 @@ export default function PostDetailPage() {
             </div>
 
             {/* 操作按钮 */}
-            <Space>
+            <div className="user-info-actions">
               {/* 编辑按钮 - 只有作者可见 */}
               {isAuthenticated && user?.username === post.author.username && (
                 <Tooltip title="编辑文章">
@@ -252,7 +231,7 @@ export default function PostDetailPage() {
                   分享
                 </Button>
               </Tooltip>
-            </Space>
+            </div>
           </div>
 
           {/* 标签 */}
@@ -269,18 +248,18 @@ export default function PostDetailPage() {
           )}
 
           {/* 统计信息 */}
-          <div className={`flex items-center gap-4 text-sm ${
+          <div className={`user-info-stats text-sm ${
             isDarkMode ? 'text-gray-400' : 'text-gray-500'
           }`}>
-            <span className="flex items-center gap-1">
+            <span className="user-info-stat-item">
               <EyeOutlined />
               {post.stats?.viewCount || 0} 次浏览
             </span>
-            <span className="flex items-center gap-1">
+            <span className="user-info-stat-item">
               <LikeOutlined />
               {likeCount} 次点赞
             </span>
-            <span className="flex items-center gap-1">
+            <span className="user-info-stat-item">
               <CommentOutlined />
               {post.stats?.commentCount || 0} 条评论
             </span>

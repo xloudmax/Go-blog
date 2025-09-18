@@ -357,12 +357,12 @@ export default function UserManagement() {
                             title: '用户信息',
                             key: 'userInfo',
                             render: (_, user: User) => (
-                                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                <div className="user-table-info">
                                     {user.avatar && (
                                         <Avatar src={user.avatar} size={48} shape="square"/>
                                     )}
-                                    <div>
-                                        <div style={{fontWeight: 'bold'}}>{user.username}</div>
+                                    <div className="user-table-details">
+                                        <div className="user-table-name">{user.username}</div>
                                         <Text type="secondary">{user.email}</Text>
                                     </div>
                                 </div>
@@ -382,7 +382,7 @@ export default function UserManagement() {
                             title: '状态',
                             key: 'status',
                             render: (_, user: User) => (
-                                <Space direction="vertical">
+                                <Space direction="vertical" size="small">
                                     <Tag color={user.isVerified ? 'green' : 'orange'} className="rounded-full">
                                         {user.isVerified ? '已验证' : '未验证'}
                                     </Tag>
@@ -414,7 +414,7 @@ export default function UserManagement() {
                             title: '操作',
                             key: 'action',
                             render: (_, user: User) => (
-                                <Space>
+                                <div className="user-table-actions">
                                     <Button
                                         type="text"
                                         size="small"
@@ -435,7 +435,7 @@ export default function UserManagement() {
                                     >
                                         删除
                                     </Button>
-                                </Space>
+                                </div>
                             )
                         }
                     ]}

@@ -7,21 +7,21 @@ import {
   useDeleteCommentMutation,
   useLikeCommentMutation,
   useUnlikeCommentMutation,
-  useReportCommentMutation,
-  type CreateCommentMutationVariables,
-  type UpdateCommentMutationVariables
+  useReportCommentMutation
 } from '@/generated/graphql';
 import type { 
   UseCommentsReturn,
   UseCommentReturn,
   UseCommentActionsReturn,
   CreateCommentInput,
-  UpdateCommentInput
+  UpdateCommentInput,
+  PartialBlogPostComment,
+  BlogPostComment
 } from '@/types';
 
 // 评论列表hook
 export const useComments = (blogPostId: string, limit: number = 10): UseCommentsReturn => {
-  const [offset, setOffset] = useState(0);
+  const [offset] = useState(0);
   
   const { data, loading, error, fetchMore, refetch } = useCommentsQuery({
     variables: { blogPostId, limit, offset },
@@ -48,7 +48,7 @@ export const useComments = (blogPostId: string, limit: number = 10): UseComments
   }, [data?.comments?.comments?.length, fetchMore]);
   
   return {
-    comments: data?.comments?.comments || [],
+    comments: (data?.comments?.comments || []) as BlogPostComment[],
     total: data?.comments?.total || 0,
     loading,
     error,
@@ -65,7 +65,7 @@ export const useComment = (id: string): UseCommentReturn => {
   });
   
   return {
-    comment: data?.comment || null,
+    comment: (data?.comment || null) as BlogPostComment | null,
     loading,
     error,
   };
@@ -86,52 +86,70 @@ export const useCommentActionsHook = (): UseCommentActionsReturn => {
     awaitRefetchQueries: true,
   });
   
-  const [likeCommentMutation, { loading: likeLoading }] = useLikeCommentMutation();
+  const [likeCommentMutation, { loading: likeLoading, error: likeError }] = useLikeCommentMutation();
   
-  const [unlikeCommentMutation, { loading: unlikeLoading }] = useUnlikeCommentMutation();
+  const [unlikeCommentMutation, { loading: unlikeLoading, error: unlikeError }] = useUnlikeCommentMutation();
   
-  const [reportCommentMutation, { loading: reportLoading }] = useReportCommentMutation();
+  const [reportCommentMutation, { loading: reportLoading, error: reportError }] = useReportCommentMutation();
   
-  const createComment = useCallback(async (input: CreateCommentInput) => {
+  const createComment = useCallback(async (input: CreateCommentInput): Promise<PartialBlogPostComment> => {
     const result = await createCommentMutation({
       variables: { input },
     });
-    return result.data?.createComment;
+    if (!result.data?.createComment) {
+      throw new Error('Failed to create comment');
+    }
+    return result.data.createComment;
   }, [createCommentMutation]);
   
-  const updateComment = useCallback(async (id: string, input: UpdateCommentInput) => {
+  const updateComment = useCallback(async (id: string, input: UpdateCommentInput): Promise<PartialBlogPostComment> => {
     const result = await updateCommentMutation({
       variables: { id, input },
     });
-    return result.data?.updateComment;
+    if (!result.data?.updateComment) {
+      throw new Error('Failed to update comment');
+    }
+    return result.data.updateComment;
   }, [updateCommentMutation]);
   
   const deleteComment = useCallback(async (id: string) => {
     const result = await deleteCommentMutation({
       variables: { id },
     });
-    return result.data?.deleteComment;
+    if (!result.data?.deleteComment?.success) {
+      throw new Error(result.data?.deleteComment?.message || 'Failed to delete comment');
+    }
+    return;
   }, [deleteCommentMutation]);
   
-  const likeComment = useCallback(async (id: string) => {
+  const likeComment = useCallback(async (id: string): Promise<PartialBlogPostComment> => {
     const result = await likeCommentMutation({
       variables: { id },
     });
-    return result.data?.likeComment;
+    if (!result.data?.likeComment) {
+      throw new Error('Failed to like comment');
+    }
+    return result.data.likeComment;
   }, [likeCommentMutation]);
   
-  const unlikeComment = useCallback(async (id: string) => {
+  const unlikeComment = useCallback(async (id: string): Promise<PartialBlogPostComment> => {
     const result = await unlikeCommentMutation({
       variables: { id },
     });
-    return result.data?.unlikeComment;
+    if (!result.data?.unlikeComment) {
+      throw new Error('Failed to unlike comment');
+    }
+    return result.data.unlikeComment;
   }, [unlikeCommentMutation]);
   
-  const reportComment = useCallback(async (id: string) => {
+  const reportComment = useCallback(async (id: string): Promise<PartialBlogPostComment> => {
     const result = await reportCommentMutation({
       variables: { id },
     });
-    return result.data?.reportComment;
+    if (!result.data?.reportComment) {
+      throw new Error('Failed to report comment');
+    }
+    return result.data.reportComment;
   }, [reportCommentMutation]);
   
   return {
@@ -153,6 +171,9 @@ export const useCommentActionsHook = (): UseCommentActionsReturn => {
       create: createError,
       update: updateError,
       delete: deleteError,
+      like: likeError,
+      unlike: unlikeError,
+      report: reportError,
     },
   };
 };

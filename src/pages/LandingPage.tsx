@@ -1,9 +1,9 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Button, Space, Typography} from 'antd';
+import {Button, Space} from 'antd';
 import {LoginOutlined, UserAddOutlined} from '@ant-design/icons';
 
-const { Title } = Typography;
+
 
 interface Cell {
   x: number;
@@ -13,12 +13,7 @@ interface Cell {
   justDied?: boolean;
 }
 
-interface MouseTrailPoint {
-  x: number;
-  y: number;
-  opacity: number;
-  timestamp: number;
-}
+
 
 const LandingPage: React.FC = () => {
   const [windowSize, setWindowSize] = useState({
@@ -28,16 +23,16 @@ const LandingPage: React.FC = () => {
 
   // GameOfLife 状态
   const [cells, setCells] = useState<Cell[][]>([]);
+  const [, setMouseTrail] = useState<Array<{x: number; y: number; opacity: number; timestamp: number}>>([]);
 
-  // 鼠标轨迹状态
-  const [mouseTrail, setMouseTrail] = useState<MouseTrailPoint[]>([]);
+
 
   const animationRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastMousePosRef = useRef({ x: -1, y: -1 });
   const mouseThrottleRef = useRef<number>(0);
-  const trailAnimationRef = useRef<number>(0);
+
   const cellSize = 8;
   const fps = 10; // 降低帧率，提升流畅度
 
@@ -336,48 +331,6 @@ const LandingPage: React.FC = () => {
 
       {/* 内容区域 */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4 pointer-events-none">
-        {/* 品牌标识 - 像素艺术风格 */}
-        <div className="mb-12">
-          {/* 像素风格标题 */}
-          <div className="relative">
-            <Title
-              level={1}
-              className="text-white mb-4"
-              style={{
-                fontSize: '4rem',
-                fontFamily: 'monospace, "Courier New", Courier',
-                fontWeight: 'bold',
-                letterSpacing: '0.2em',
-                textShadow: `
-                  0 0 10px rgba(99, 102, 241, 1),
-                  0 0 20px rgba(99, 102, 241, 0.8),
-                  0 0 30px rgba(124, 58, 237, 0.6),
-                  2px 2px 0px rgba(99, 102, 241, 0.8),
-                  4px 4px 0px rgba(124, 58, 237, 0.6),
-                  6px 6px 0px rgba(168, 85, 247, 0.4)
-                `,
-                background: 'linear-gradient(45deg, #6366f1, #7c3aed, #a855f7)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                imageRendering: 'pixelated'
-              }}
-            >C404
-            </Title>
-            {/* 像素装饰线条 */}
-            <div className="flex justify-center space-x-1 mb-2">
-              {[...Array(15)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-600"
-                  style={{
-                    imageRendering: 'pixelated'
-                  }}
-                ></div>
-              ))}
-            </div>
-          </div>
-        </div>
 
         {/* 像素风格认证按钮 */}
         <div className="pointer-events-auto">
@@ -405,7 +358,7 @@ const LandingPage: React.FC = () => {
                     textShadow: '0 0 15px rgba(99, 102, 241, 0.8), 0 0 30px rgba(99, 102, 241, 0.6)'
                   }}
                 >
-                  ◤ 登录 ◥
+                  登录
                 </Button>
                 {/* 像素装饰效果 */}
                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
@@ -440,7 +393,7 @@ const LandingPage: React.FC = () => {
                     textShadow: '0 0 15px rgba(168, 85, 247, 0.8), 0 0 30px rgba(168, 85, 247, 0.6)'
                   }}
                 >
-                  ◤ 注册 ◥
+                  注册
                 </Button>
                 {/* 像素装饰效果 */}
                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none">

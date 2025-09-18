@@ -36,7 +36,7 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
         navigate(`/editor/posts/${post.slug}`);
         break;
       case 'share':
-        navigator.clipboard.writeText(`${window.location.origin}/post/${post.slug}`);
+        { navigator.clipboard.writeText(`${window.location.origin}/post/${post.slug}`);
         // 使用 notification 而不是 message
         const notification = (window as any).antdNotification || (window as any).notification;
         if (notification && notification.success) {
@@ -46,7 +46,7 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
             duration: 2,
           });
         }
-        break;
+        break; }
     }
     onAction(action, post);
   };

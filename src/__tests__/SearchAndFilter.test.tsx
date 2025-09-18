@@ -1,37 +1,63 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import SearchAndFilter from '@/components/SearchAndFilter';
 
 // Mock Ant Design components
-vi.mock('antd', async () => {
-  const actual = await vi.importActual('antd');
+vi.mock('antd', () => {
+  const Option = ({ children, value }: any) => (
+    <option value={value}>{children}</option>
+  );
+
   return {
-    ...actual,
     Input: {
-      Search: ({ placeholder, onSearch }: any) => (
+      Search: ({ placeholder, onSearch, value, onChange }: any) => (
         <input 
           placeholder={placeholder} 
-          onChange={(e) => onSearch && onSearch(e.target.value)}
+          value={value}
+          onChange={(e) => {
+            if (onChange) onChange(e);
+            if (onSearch) onSearch(e.target.value);
+          }}
           data-testid="search-input"
         />
       ),
     },
-    Select: ({ children, placeholder }: any) => (
-      <select placeholder={placeholder} data-testid="select">
-        {children}
-      </select>
+    Select: Object.assign(
+      ({ children, placeholder, mode, value, onChange }: any) => (
+        <select 
+          data-testid="select" 
+          aria-label={placeholder}
+          multiple={mode === 'multiple'}
+          value={value}
+          onChange={(e) => onChange && onChange(e.target.value)}
+        >
+          {children}
+        </select>
+      ),
+      { Option }
     ),
-    Option: ({ children }: any) => <option>{children}</option>,
-    Button: ({ children, onClick }: any) => (
+    Button: ({ children, onClick, icon }: any) => (
       <button onClick={onClick} data-testid="button">
+        {icon}
         {children}
       </button>
     ),
-    Space: ({ children }: any) => <div>{children}</div>,
-    Tag: ({ children }: any) => <span>{children}</span>,
+    Space: ({ children }: any) => <div data-testid="space">{children}</div>,
+    Tag: ({ children, closable, onClose }: any) => (
+      <span data-testid="tag">
+        {children}
+        {closable && <button onClick={onClose}>×</button>}
+      </span>
+    ),
   };
 });
+
+// Mock Ant Design icons
+vi.mock('@ant-design/icons', () => ({
+  SearchOutlined: () => <span data-testid="search-icon">🔍</span>,
+  FilterOutlined: () => <span data-testid="filter-icon">🔽</span>,
+  CloseOutlined: () => <span data-testid="close-icon">✕</span>,
+}));
 
 describe('SearchAndFilter', () => {
   const mockOnSearch = vi.fn();
@@ -58,7 +84,9 @@ describe('SearchAndFilter', () => {
     render(<SearchAndFilter {...defaultProps} />);
 
     // Check if tags are rendered in the select dropdown
-    expect(screen.getByTestId('select')).toBeInTheDocument();
+    const selects = screen.getAllByTestId('select');
+    expect(selects).toHaveLength(2); // Tags select and status select
+    expect(selects[0]).toHaveAttribute('multiple');
   });
 
   it('renders status options', () => {

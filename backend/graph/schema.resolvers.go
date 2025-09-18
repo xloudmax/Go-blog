@@ -511,16 +511,19 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input CreatePostInput
 
 // UpdatePost is the resolver for the updatePost field.
 func (r *mutationResolver) UpdatePost(ctx context.Context, id string, input UpdatePostInput) (*BlogPost, error) {
-	// 解析文章ID
-	postID, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("无效的文章ID: %w", err)
-	}
+	// 使用统一ID解析逻辑
+	helper := services.NewResolverHelper(r.Resolver.DB)
 
 	// 获取当前用户
-	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	user, err := getUserFromContextSafe(ctx, r.Resolver.DB)
 	if err != nil {
-		return nil, fmt.Errorf("未授权访问: %w", err)
+		return nil, err
+	}
+
+	// 解析并获取文章（支持数字ID和Slug）
+	post, err := helper.ResolveBlogPost(id, &user.ID, user.Role)
+	if err != nil {
+		return nil, HandleBusinessError(err)
 	}
 
 	// 转换输入参数
@@ -588,33 +591,36 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id string, input Upda
 
 	// 调用博客服务
 	blogService := services.NewBlogService(r.Resolver.DB)
-	post, err := blogService.UpdatePostFromInput(uint(postID), updateInput, user.ID, user.Role)
+	updatedPost, err := blogService.UpdatePostFromInput(post.ID, updateInput, user.ID, user.Role)
 	if err != nil {
-		return nil, fmt.Errorf("更新文章失败: %w", err)
+		return nil, HandleBusinessError(err)
 	}
 
-	return convertToGraphQLBlogPostWithUser(post, user), nil
+	return convertToGraphQLBlogPostWithUser(updatedPost, user), nil
 }
 
 // DeletePost is the resolver for the deletePost field.
 func (r *mutationResolver) DeletePost(ctx context.Context, id string) (*GeneralResponse, error) {
-	// 解析文章ID
-	postID, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("无效的文章ID: %w", err)
-	}
+	// 使用统一ID解析逻辑
+	helper := services.NewResolverHelper(r.Resolver.DB)
 
 	// 获取当前用户
-	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	user, err := getUserFromContextSafe(ctx, r.Resolver.DB)
 	if err != nil {
-		return nil, fmt.Errorf("未授权访问: %w", err)
+		return nil, err
+	}
+
+	// 解析并获取文章（支持数字ID和Slug）
+	post, err := helper.ResolveBlogPost(id, &user.ID, user.Role)
+	if err != nil {
+		return nil, HandleBusinessError(err)
 	}
 
 	// 调用博客服务
 	blogService := services.NewBlogService(r.Resolver.DB)
-	err = blogService.DeletePost(uint(postID), user.ID, user.Role)
+	err = blogService.DeletePost(post.ID, user.ID, user.Role)
 	if err != nil {
-		return nil, fmt.Errorf("删除文章失败: %w", err)
+		return nil, HandleBusinessError(err)
 	}
 
 	return &GeneralResponse{
@@ -626,11 +632,8 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id string) (*GeneralR
 
 // PublishPost is the resolver for the publishPost field.
 func (r *mutationResolver) PublishPost(ctx context.Context, id string) (*BlogPost, error) {
-	// 解析文章ID
-	postID, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("无效的文章ID: %w", err)
-	}
+	// 使用统一ID解析逻辑
+	helper := services.NewResolverHelper(r.Resolver.DB)
 
 	// 获取当前用户
 	user, err := getUserFromContext(ctx, r.Resolver.DB)
@@ -638,23 +641,26 @@ func (r *mutationResolver) PublishPost(ctx context.Context, id string) (*BlogPos
 		return nil, fmt.Errorf("未授权访问: %w", err)
 	}
 
+	// 解析并获取文章（支持数字ID和Slug）
+	post, err := helper.ResolveBlogPost(id, &user.ID, user.Role)
+	if err != nil {
+		return nil, fmt.Errorf("获取文章失败: %w", err)
+	}
+
 	// 调用博客服务
 	blogService := services.NewBlogService(r.Resolver.DB)
-	post, err := blogService.PublishPost(uint(postID), user.ID, user.Role)
+	publishedPost, err := blogService.PublishPost(post.ID, user.ID, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("发布文章失败: %w", err)
 	}
 
-	return convertToGraphQLBlogPostWithUser(post, user), nil
+	return convertToGraphQLBlogPostWithUser(publishedPost, user), nil
 }
 
 // ArchivePost is the resolver for the archivePost field.
 func (r *mutationResolver) ArchivePost(ctx context.Context, id string) (*BlogPost, error) {
-	// 解析文章ID
-	postID, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("无效的文章ID: %w", err)
-	}
+	// 使用统一ID解析逻辑
+	helper := services.NewResolverHelper(r.Resolver.DB)
 
 	// 获取当前用户
 	user, err := getUserFromContext(ctx, r.Resolver.DB)
@@ -662,23 +668,26 @@ func (r *mutationResolver) ArchivePost(ctx context.Context, id string) (*BlogPos
 		return nil, fmt.Errorf("未授权访问: %w", err)
 	}
 
+	// 解析并获取文章（支持数字ID和Slug）
+	post, err := helper.ResolveBlogPost(id, &user.ID, user.Role)
+	if err != nil {
+		return nil, fmt.Errorf("获取文章失败: %w", err)
+	}
+
 	// 调用博客服务
 	blogService := services.NewBlogService(r.Resolver.DB)
-	post, err := blogService.ArchivePost(uint(postID), user.ID, user.Role)
+	archivedPost, err := blogService.ArchivePost(post.ID, user.ID, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("归档文章失败: %w", err)
 	}
 
-	return convertToGraphQLBlogPostWithUser(post, user), nil
+	return convertToGraphQLBlogPostWithUser(archivedPost, user), nil
 }
 
 // LikePost is the resolver for the likePost field.
 func (r *mutationResolver) LikePost(ctx context.Context, id string) (*BlogPost, error) {
-	// 解析文章ID
-	postID, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("无效的文章ID: %w", err)
-	}
+	// 使用统一ID解析逻辑
+	helper := services.NewResolverHelper(r.Resolver.DB)
 
 	// 获取当前用户
 	user, err := getUserFromContext(ctx, r.Resolver.DB)
@@ -686,15 +695,21 @@ func (r *mutationResolver) LikePost(ctx context.Context, id string) (*BlogPost, 
 		return nil, fmt.Errorf("未授权访问: %w", err)
 	}
 
+	// 解析并获取文章（支持数字ID和Slug）
+	post, err := helper.ResolveBlogPost(id, &user.ID, user.Role)
+	if err != nil {
+		return nil, fmt.Errorf("获取文章失败: %w", err)
+	}
+
 	// 调用博客服务
 	blogService := services.NewBlogService(r.Resolver.DB)
-	post, err := blogService.LikePost(uint(postID), user.ID)
+	likedPost, err := blogService.LikePost(post.ID, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("点赞文章失败: %w", err)
 	}
 
 	// 设置点赞状态
-	graphqlPost := convertToGraphQLBlogPostWithUser(post, user)
+	graphqlPost := convertToGraphQLBlogPostWithUser(likedPost, user)
 	graphqlPost.IsLiked = true
 
 	return graphqlPost, nil
@@ -702,11 +717,8 @@ func (r *mutationResolver) LikePost(ctx context.Context, id string) (*BlogPost, 
 
 // UnlikePost is the resolver for the unlikePost field.
 func (r *mutationResolver) UnlikePost(ctx context.Context, id string) (*BlogPost, error) {
-	// 解析文章ID
-	postID, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("无效的文章ID: %w", err)
-	}
+	// 使用统一ID解析逻辑
+	helper := services.NewResolverHelper(r.Resolver.DB)
 
 	// 获取当前用户
 	user, err := getUserFromContext(ctx, r.Resolver.DB)
@@ -714,15 +726,21 @@ func (r *mutationResolver) UnlikePost(ctx context.Context, id string) (*BlogPost
 		return nil, fmt.Errorf("未授权访问: %w", err)
 	}
 
+	// 解析并获取文章（支持数字ID和Slug）
+	post, err := helper.ResolveBlogPost(id, &user.ID, user.Role)
+	if err != nil {
+		return nil, fmt.Errorf("获取文章失败: %w", err)
+	}
+
 	// 调用博客服务
 	blogService := services.NewBlogService(r.Resolver.DB)
-	post, err := blogService.UnlikePost(uint(postID), user.ID)
+	unlikedPost, err := blogService.UnlikePost(post.ID, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("取消点赞失败: %w", err)
 	}
 
 	// 设置点赞状态
-	graphqlPost := convertToGraphQLBlogPostWithUser(post, user)
+	graphqlPost := convertToGraphQLBlogPostWithUser(unlikedPost, user)
 	graphqlPost.IsLiked = false
 
 	return graphqlPost, nil
@@ -730,15 +748,7 @@ func (r *mutationResolver) UnlikePost(ctx context.Context, id string) (*BlogPost
 
 // UploadImage is the resolver for the uploadImage field.
 func (r *mutationResolver) UploadImage(ctx context.Context, file graphql.Upload) (*ImageUploadResponse, error) {
-	// 简化实现：图片上传功能
-	// 实际项目中需要：
-	// 1. 验证用户权限
-	// 2. 验证文件类型和大小
-	// 3. 生成唯一文件名
-	// 4. 保存到本地或云存储
-	// 5. 返回访问URL
-
-	// 获取当前用户（可选）
+	// 获取当前用户
 	user, err := getUserFromContext(ctx, r.Resolver.DB)
 	if err != nil {
 		return nil, fmt.Errorf("未授权访问: %w", err)
@@ -749,22 +759,19 @@ func (r *mutationResolver) UploadImage(ctx context.Context, file graphql.Upload)
 		return nil, fmt.Errorf("文件不能为空")
 	}
 
-	// 简化实现：不实际处理文件上传
-	// 实际项目中应该：
-	// 1. 读取文件内容
-	// 2. 验证文件类型（image/jpeg, image/png等）
-	// 3. 检查文件大小限制
-	// 4. 生成唯一文件名
-	// 5. 保存文件
-	// 6. 返回文件访问URL
+	// 使用文件服务上传图片
+	fileService := services.NewFileService()
+	result, err := fileService.UploadImage(file, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("上传图片失败: %w", err)
+	}
 
-	// 生成模拟的URL
-	mockURL := fmt.Sprintf("/uploads/images/%d_%s", user.ID, file.Filename)
-
+	// 转换服务响应到GraphQL响应
 	return &ImageUploadResponse{
-		ImageURL: mockURL,
-		Filename: file.Filename,
-		Size:     1024, // 模拟文件大小
+		ImageURL:  result.ImageURL,
+		DeleteURL: result.DeleteURL,
+		Filename:  result.Filename,
+		Size:      result.Size,
 	}, nil
 }
 
@@ -949,13 +956,13 @@ func (r *mutationResolver) CreateInviteCode(ctx context.Context, input CreateInv
 	}
 
 	// 生成唯一的邀请码
-	code := generateInviteCode()
+	code := models.GenerateInviteCode()
 	
 	// 验证邀请码唯一性
 	var existingCode models.InviteCode
 	if err := r.DB.Where("code = ?", code).First(&existingCode).Error; err == nil {
 		// 如果存在重复，重新生成
-		code = generateInviteCode()
+		code = models.GenerateInviteCode()
 	}
 
 	// 设置默认值
@@ -979,7 +986,7 @@ func (r *mutationResolver) CreateInviteCode(ctx context.Context, input CreateInv
 	}
 
 	if !input.ExpiresAt.IsZero() {
-		inviteCode.ExpiresAt = input.ExpiresAt
+		inviteCode.ExpiresAt = &input.ExpiresAt
 	}
 
 	// 保存到数据库
@@ -998,13 +1005,21 @@ func (r *mutationResolver) CreateInviteCode(ctx context.Context, input CreateInv
 		description = &inviteCode.Description
 	}
 
+	var expiresAt time.Time
+	if inviteCode.ExpiresAt != nil {
+		expiresAt = *inviteCode.ExpiresAt
+	} else {
+		// 如果没有过期时间，返回一个很远的未来时间表示"永不过期"
+		expiresAt = time.Date(2999, 12, 31, 23, 59, 59, 0, time.UTC)
+	}
+
 	return &InviteCode{
 		ID:          strconv.FormatUint(uint64(inviteCode.ID), 10),
 		Code:        inviteCode.Code,
 		CreatedBy:   convertToGraphQLUser(&inviteCode.CreatedBy),
 		UsedBy:      nil, // 新创建的邀请码未被使用
 		UsedAt:      nil,
-		ExpiresAt:   inviteCode.ExpiresAt,
+		ExpiresAt:   expiresAt,
 		MaxUses:     inviteCode.MaxUses,
 		CurrentUses: inviteCode.CurrentUses,
 		IsActive:    inviteCode.IsActive,
@@ -1670,8 +1685,13 @@ func (r *queryResolver) SearchPosts(ctx context.Context, query string, limit *in
 
 	// 转换结果
 	posts := make([]*BlogPost, len(result.Posts))
+	var currentUser *models.User
+	if user, err := getUserFromContext(ctx, r.Resolver.DB); err == nil {
+		currentUser = user
+	}
+
 	for i, post := range result.Posts {
-		posts[i] = convertToGraphQLBlogPostWithUser(post, nil) // TODO: 传递当前用户信息以设置isLiked
+		posts[i] = convertToGraphQLBlogPostWithUser(post, currentUser)
 	}
 
 	return &SearchResult{
@@ -1714,8 +1734,13 @@ func (r *queryResolver) EnhancedSearch(ctx context.Context, input SearchInput) (
 
 	// 转换结果
 	posts := make([]*BlogPost, len(result.Posts))
+	var currentUser *models.User
+	if user, err := getUserFromContext(ctx, r.Resolver.DB); err == nil {
+		currentUser = user
+	}
+
 	for i, post := range result.Posts {
-		posts[i] = convertToGraphQLBlogPostWithUser(post, nil) // TODO: 传递当前用户信息以设置isLiked
+		posts[i] = convertToGraphQLBlogPostWithUser(post, currentUser)
 	}
 
 	// 获取搜索建议
@@ -1841,6 +1866,16 @@ func (r *queryResolver) GetSearchStats(ctx context.Context) (*SearchStats, error
 
 // InviteCodes is the resolver for the inviteCodes field.
 func (r *queryResolver) InviteCodes(ctx context.Context, limit *int, offset *int, isActive *bool) ([]*InviteCode, error) {
+	// 验证管理员权限
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	if err != nil {
+		return nil, HandleAuthError(err)
+	}
+
+	if user.Role != "admin" {
+		return nil, HandleForbidden()
+	}
+
 	// 设置默认值
 	defaultLimit := 10
 	defaultOffset := 0
@@ -1865,7 +1900,7 @@ func (r *queryResolver) InviteCodes(ctx context.Context, limit *int, offset *int
 
 	// 获取结果
 	var inviteCodes []models.InviteCode
-	err := dbQuery.Offset(*offset).Limit(*limit).Find(&inviteCodes).Error
+	err = dbQuery.Offset(*offset).Limit(*limit).Find(&inviteCodes).Error
 	if err != nil {
 		return nil, fmt.Errorf("获取邀请码列表失败: %w", err)
 	}
@@ -1879,13 +1914,21 @@ func (r *queryResolver) InviteCodes(ctx context.Context, limit *int, offset *int
 			description = &inviteCode.Description
 		}
 
+		var expiresAt time.Time
+		if inviteCode.ExpiresAt != nil {
+			expiresAt = *inviteCode.ExpiresAt
+		} else {
+			// 如果没有过期时间，返回一个很远的未来时间表示"永不过期"
+			expiresAt = time.Date(2999, 12, 31, 23, 59, 59, 0, time.UTC)
+		}
+
 		result[i] = &InviteCode{
 			ID:          strconv.FormatUint(uint64(inviteCode.ID), 10),
 			Code:        inviteCode.Code,
 			CreatedBy:   convertToGraphQLUser(&inviteCode.CreatedBy),
 			UsedBy:      convertToGraphQLUser(inviteCode.UsedBy),
 			UsedAt:      inviteCode.UsedAt,
-			ExpiresAt:   inviteCode.ExpiresAt,
+			ExpiresAt:   expiresAt,
 			MaxUses:     inviteCode.MaxUses,
 			CurrentUses: inviteCode.CurrentUses,
 			IsActive:    inviteCode.IsActive,

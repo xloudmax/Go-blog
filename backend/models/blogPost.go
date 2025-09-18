@@ -17,8 +17,6 @@ type BlogPost struct {
 	Tags          string            `gorm:"type:text" json:"tags"`                                          // 文章标签，逗号分隔
 	Categories    string            `gorm:"type:text" json:"categories"`                                    // 文章分类，逗号分隔
 	CoverImageURL string            `gorm:"type:text" json:"cover_image_url"`                               // 封面图片的 URL
-	ViewCount     int               `gorm:"default:0" json:"view_count"`                                    // 浏览次数
-	Likes         int               `gorm:"default:0" json:"likes"`                                         // 点赞数
 	AccessLevel   string            `gorm:"type:varchar(20);not null;default:'PUBLIC'" json:"access_level"` // 访问权限（PUBLIC, PRIVATE, RESTRICTED）
 	Status        string            `gorm:"type:varchar(20);not null;default:'DRAFT'" json:"status"`        // 状态（DRAFT, PUBLISHED, ARCHIVED）
 	PublishedAt   *time.Time        `json:"published_at,omitempty"`                                         // 发布时间
@@ -85,7 +83,15 @@ func (bp *BlogPost) CanBeViewedBy(userID *uint, userRole string) bool {
 		return false
 	}
 
-	// TODO: 实现 RESTRICTED 访问级别的逻辑
+	// RESTRICTED访问级别的逻辑：
+	// 1. 已发布的文章，已登录用户可以查看
+	// 2. 未登录用户无法查看
+	if bp.AccessLevel == "RESTRICTED" {
+		if userID != nil && bp.IsPublished() {
+			return true
+		}
+		return false
+	}
 	return false
 }
 

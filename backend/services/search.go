@@ -256,8 +256,11 @@ func (s *SearchService) calculateTimeFactor(createdAt time.Time) float64 {
 
 // calculatePopularityFactor 计算人气因子
 func (s *SearchService) calculatePopularityFactor(post models.BlogPost) float64 {
-	// 基础人气得分
-	popularityScore := float64(post.ViewCount)*0.1 + float64(post.Likes)*2.0
+	// 基础人气得分 - 使用Stats数据
+	var popularityScore float64
+	if post.Stats != nil {
+		popularityScore = float64(post.Stats.ViewCount)*0.1 + float64(post.Stats.LikeCount)*2.0
+	}
 
 	// 使用对数函数避免热门文章得分过高
 	if popularityScore > 0 {

@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react'
 import MDEditor from '@uiw/react-md-editor'
 import { ThemeContext } from '@/components/ThemeProvider'
-import { Card, Button, Space, Tooltip, Modal, notification } from 'antd'
+import { Card, Button, Space, Tooltip, App } from 'antd'
 import {
   SaveOutlined,
   EyeOutlined,
@@ -31,6 +31,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
     const [lastSaved, setLastSaved] = useState<Date | null>(null)
     const [isDirty, setIsDirty] = useState(false)
     const [showSaveSuccess, setShowSaveSuccess] = useState(false)
+    const { modal, notification } = App.useApp()
 
     // 当父组件传入的内容变化时同步到内部状态
     useEffect(() => {
@@ -65,7 +66,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
         } finally {
             setIsSaving(false)
         }
-    }, [value, onSave])
+    }, [onSave, value, notification])
 
     // 保存前确认
     const confirmSave = useCallback(() => {
@@ -78,7 +79,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
             return
         }
 
-        Modal.confirm({
+        modal.confirm({
             title: '确认保存',
             icon: <ExclamationCircleOutlined />,
             content: '您确定要保存当前文章吗？',
@@ -86,7 +87,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
             cancelText: '取消',
             onOk: handleInternalSave
         });
-    }, [isDirty, handleInternalSave])
+    }, [isDirty, modal, handleInternalSave, notification])
 
     // 处理键盘快捷键
     useEffect(() => {
@@ -142,7 +143,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
         }, autoSaveInterval); // 使用配置的间隔
 
         return () => clearTimeout(autoSaveTimer);
-    }, [isDirty, isSaving, handleInternalSave]);
+    }, [isDirty, isSaving, handleInternalSave, notification]);
 
     // 切换全屏模式
     const toggleFullscreen = async () => {

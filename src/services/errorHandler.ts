@@ -1,6 +1,6 @@
 // 统一错误处理服务
 import { notification } from 'antd';
-import type { GraphQLError } from '@apollo/client';
+import type { GraphQLError } from 'graphql';
 
 // 错误类型定义
 export interface AppError {
@@ -71,20 +71,21 @@ const parseNetworkError = (error: unknown): AppError => {
   let code = 'NETWORK_ERROR';
   let type: AppError['type'] = 'network';
   
-  if (error?.statusCode === 401) {
+  const networkError = error as any;
+  if (networkError?.statusCode === 401) {
     message = '认证已过期，请重新登录';
     code = 'UNAUTHENTICATED';
     type = 'auth';
-  } else if (error?.statusCode === 403) {
+  } else if (networkError?.statusCode === 403) {
     message = '权限不足';
     code = 'FORBIDDEN';
     type = 'auth';
-  } else if (error?.statusCode >= 500) {
+  } else if (networkError?.statusCode >= 500) {
     message = '服务器内部错误';
     code = 'INTERNAL_SERVER_ERROR';
     type = 'server';
-  } else if (error?.message) {
-    message = error.message;
+  } else if (networkError?.message) {
+    message = networkError.message;
   }
   
   return {
@@ -178,18 +179,18 @@ export const handleError = (error: unknown): AppError => {
     appError = errors[0]; // 返回第一个错误
   }
   // 如果是网络错误
-  else if (error?.networkError) {
-    appError = handleNetworkError(error.networkError);
+  else if ((error as any)?.networkError) {
+    appError = handleNetworkError((error as any).networkError);
   }
   // 如果是GraphQL错误对象
-  else if (error?.graphQLErrors) {
-    const errors = handleGraphQLErrors(error.graphQLErrors);
+  else if ((error as any)?.graphQLErrors) {
+    const errors = handleGraphQLErrors((error as any).graphQLErrors);
     appError = errors[0]; // 返回第一个错误
   }
   // 其他错误
   else {
     appError = {
-      message: error?.message || config.defaultErrorMessage,
+      message: (error as any)?.message || config.defaultErrorMessage,
       type: 'unknown',
       originalError: error,
     };

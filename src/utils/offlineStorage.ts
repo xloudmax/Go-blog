@@ -1,7 +1,7 @@
 // src/utils/offlineStorage.ts
 // 离线存储工具类 - 使用IndexedDB替代localStorage
 
-import { showErrorNotification } from '@/components/ErrorNotification';
+
 
 // 数据库配置
 const DB_NAME = 'BlogEditorDB';

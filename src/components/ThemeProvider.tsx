@@ -19,6 +19,7 @@ interface ThemeProviderProps {
     children: ReactNode;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = () => {
     const context = useContext(ThemeContext);
     return {
@@ -38,14 +39,14 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         document.body.classList.remove('light', 'dark');
         
         const saved = localStorage.getItem('theme')
-        console.log('Saved theme from localStorage:', saved)
+
         if (saved === 'light' || saved === 'dark') {
             return saved
         }
         
         // 清除后检查是否还有dark类
         const hasHtmlDarkClass = document.documentElement.classList.contains('dark')
-        console.log('HTML has dark class after cleanup:', hasHtmlDarkClass)
+
         if (hasHtmlDarkClass) {
             return 'dark'
         }
@@ -57,7 +58,7 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         //     return 'dark'
         // }
         
-        console.log('Defaulting to light theme')
+
         return 'light'
     }
 
@@ -65,7 +66,7 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
     // 当 theme 改变时，写入 localStorage 并同步到 DOM
     useEffect(() => {
-        console.log('Theme effect triggered, current theme:', theme)
+
         localStorage.setItem('theme', theme);
         
         // 强制清除所有主题类
@@ -86,7 +87,7 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             document.body.style.backgroundColor = '#1f2937';
         }
         
-        console.log('Applied theme to DOM:', theme, 'HTML classes:', document.documentElement.className)
+
 
         // 同步 highlight.js 主题
         const id = 'hljs-theme';

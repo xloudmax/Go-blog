@@ -2,11 +2,11 @@
 // 版本历史管理组件
 import React, { useEffect, useState } from 'react';
 import { Modal, List, Typography, Button, Spin, Space, Tag } from 'antd';
-import { usePostVersionsQuery, PostVersionsQueryResult } from '../generated/graphql';
+import { usePostVersionsQuery, PostVersionsQueryData } from '../generated/graphql';
 
 const { Text } = Typography;
 
-type BlogPostVersion = PostVersionsQueryResult['postVersions'][0];
+type BlogPostVersion = NonNullable<PostVersionsQueryData['postVersions']>[0];
 
 interface VersionHistoryProps {
   /** 文章ID */

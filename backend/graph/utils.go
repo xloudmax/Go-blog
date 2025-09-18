@@ -147,6 +147,10 @@ func getGinContext(ctx context.Context) *gin.Context {
 
 // convertToGraphQLUser 转换数据库用户模型为 GraphQL 用户类型
 func convertToGraphQLUser(user *models.User) *User {
+	if user == nil {
+		return nil
+	}
+
 	var role UserRole
 	switch user.Role {
 	case "admin":
@@ -494,13 +498,21 @@ func convertToGraphQLInviteCode(inviteCode *models.InviteCode) *InviteCode {
 		usedBy = convertToGraphQLUser(inviteCode.UsedBy)
 	}
 
+	var expiresAt time.Time
+	if inviteCode.ExpiresAt != nil {
+		expiresAt = *inviteCode.ExpiresAt
+	} else {
+		// 如果没有过期时间，返回一个很远的未来时间表示"永不过期"
+		expiresAt = time.Date(2999, 12, 31, 23, 59, 59, 0, time.UTC)
+	}
+
 	return &InviteCode{
 		ID:          strconv.FormatUint(uint64(inviteCode.ID), 10),
 		Code:        inviteCode.Code,
 		CreatedBy:   convertToGraphQLUser(&inviteCode.CreatedBy),
 		UsedBy:      usedBy,
 		UsedAt:      inviteCode.UsedAt,
-		ExpiresAt:   inviteCode.ExpiresAt,
+		ExpiresAt:   expiresAt,
 		MaxUses:     inviteCode.MaxUses,
 		CurrentUses: inviteCode.CurrentUses,
 		IsActive:    inviteCode.IsActive,

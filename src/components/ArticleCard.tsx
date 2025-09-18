@@ -9,7 +9,6 @@ import {
 } from '@ant-design/icons';
 import type { BlogPost } from '@/types';
 import { useAppUser } from '@/hooks';
-import { useNavigate } from 'react-router-dom';
 
 const { Title, Paragraph } = Typography;
 
@@ -21,7 +20,6 @@ interface ArticleCardProps {
 
 const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction }) => {
   const { user, isAuthenticated } = useAppUser();
-  const navigate = useNavigate();
 
   // 格式化相对时间
   const formatRelativeTime = (dateString: string) => {
@@ -114,8 +112,8 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction })
         )}
         
         {/* 元信息 */}
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
-          <Space size="small">
+        <div className="article-card-user-info mt-auto">
+          <div className="article-card-author">
             <Avatar 
               size="small" 
               src={post.author.avatar || undefined}
@@ -126,18 +124,18 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction })
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {post.author.username}
             </span>
-          </Space>
+          </div>
           
-          <Space size="small">
-            <span className="text-xs text-gray-500 flex items-center">
-              <ClockCircleOutlined className="mr-1" />
+          <div className="article-card-stats">
+            <span className="article-card-stat text-xs text-gray-500">
+              <ClockCircleOutlined />
               {formatRelativeTime(post.publishedAt || post.createdAt)}
             </span>
-            <span className="text-xs text-gray-500 flex items-center">
-              <EyeOutlined className="mr-1" />
+            <span className="article-card-stat text-xs text-gray-500">
+              <EyeOutlined />
               {post.stats?.viewCount || 0}
             </span>
-          </Space>
+          </div>
         </div>
         
         {/* 操作按钮 */}

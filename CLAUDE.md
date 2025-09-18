@@ -118,3 +118,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. Test both frontend build and backend compilation after changes
 4. Use proper error handling in resolvers (don't leave panic statements)
 5. Maintain type consistency between generated types and custom types
+- repair-platform/services
+services/auth.go:82:5: syntax error: unexpected newline in composite literal; possibly missing comma or }

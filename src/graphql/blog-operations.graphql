@@ -1,32 +1,22 @@
-# Blog Operations
-
-# Import fragments
-#import "./fragments.graphql"
-
-# Queries
-
-# 获取博客文章列表
+# Blog Post Queries
 query Posts($limit: Int, $offset: Int, $filter: PostFilterInput, $sort: PostSortInput) {
   posts(limit: $limit, offset: $offset, filter: $filter, sort: $sort) {
     ...BlogPostSummary
   }
 }
 
-# 获取单个博客文章
 query Post($id: ID, $slug: String) {
   post(id: $id, slug: $slug) {
     ...BlogPostDetail
   }
 }
 
-# 获取文章版本历史
 query PostVersions($postId: ID!) {
   postVersions(postId: $postId) {
     ...BlogPostVersion
   }
 }
 
-# 搜索文章
 query SearchPosts($query: String!, $limit: Int, $offset: Int) {
   searchPosts(query: $query, limit: $limit, offset: $offset) {
     posts {
@@ -37,81 +27,61 @@ query SearchPosts($query: String!, $limit: Int, $offset: Int) {
   }
 }
 
-# 获取热门文章
 query PopularPosts($limit: Int) {
   getPopularPosts(limit: $limit) {
     ...BlogPostSummary
   }
 }
 
-# 获取最新文章
 query RecentPosts($limit: Int) {
   getRecentPosts(limit: $limit) {
     ...BlogPostSummary
   }
 }
 
-# 获取热门标签
 query TrendingTags($limit: Int) {
   getTrendingTags(limit: $limit)
 }
 
-# Mutations
-
-# 创建博客文章
+# Blog Post Mutations
 mutation CreatePost($input: CreatePostInput!) {
   createPost(input: $input) {
     ...BlogPostDetail
   }
 }
 
-# 更新博客文章
 mutation UpdatePost($id: ID!, $input: UpdatePostInput!) {
   updatePost(id: $id, input: $input) {
     ...BlogPostDetail
   }
 }
 
-# 删除博客文章
 mutation DeletePost($id: ID!) {
   deletePost(id: $id) {
     ...GeneralResponseInfo
   }
 }
 
-# 发布文章
 mutation PublishPost($id: ID!) {
   publishPost(id: $id) {
-    id
-    status
-    publishedAt
+    ...BlogPostDetail
   }
 }
 
-# 归档文章
 mutation ArchivePost($id: ID!) {
   archivePost(id: $id) {
-    id
-    status
+    ...BlogPostDetail
   }
 }
 
-# 点赞文章
 mutation LikePost($id: ID!) {
   likePost(id: $id) {
-    id
-    stats {
-      ...BlogPostStats
-    }
+    ...BlogPostDetail
   }
 }
 
-# 取消点赞
 mutation UnlikePost($id: ID!) {
   unlikePost(id: $id) {
-    id
-    stats {
-      ...BlogPostStats
-    }
+    ...BlogPostDetail
   }
 }

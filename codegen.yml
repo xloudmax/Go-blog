@@ -1,7 +1,6 @@
 schema: './backend/graph/schema.graphql'
 documents: 
   - 'src/graphql/**/*.graphql'
-  - 'src/api/graphql/comment.ts'
 generates:
   src/generated/graphql.ts:
     plugins:
@@ -19,13 +18,16 @@ generates:
       skipTypename: false
       enumsAsTypes: true
       constEnums: true
-      addDocBlocks: true
+      addDocBlocks: false
       dedupeOperationSuffix: true
       omitOperationSuffix: false
-      operationResultSuffix: 'Result'
+      operationResultSuffix: 'Data'
       documentVariableSuffix: 'Document'
       fragmentVariableSuffix: 'FragmentDoc'
       documentMode: 'documentNode'
       pureMagicComment: true
-      extractAllFieldsToTypes: true
-      nonOptionalTypename: true
+      extractAllFieldsToTypes: false
+      nonOptionalTypename: false
+      avoidOptionals: false
+      maybeValue: 'T | null'
+      inputMaybeValue: 'T | null | undefined'

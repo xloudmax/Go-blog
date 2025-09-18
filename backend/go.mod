@@ -7,6 +7,7 @@ require (
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/mozillazg/go-pinyin v0.21.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/vektah/gqlparser/v2 v2.5.30
 	go.uber.org/zap v1.27.0

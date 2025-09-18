@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"repair-platform/middleware"
 	"repair-platform/models"
-	"strconv"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -22,20 +20,38 @@ func NewBlogService(db *gorm.DB) *BlogService {
 	return &BlogService{db: db}
 }
 
+// ensurePostStatsExist 确保文章统计记录存在
+func (s *BlogService) ensurePostStatsExist(postID uint) error {
+	var existingStats models.BlogPostStats
+	err := s.db.Where("blog_post_id = ?", postID).First(&existingStats).Error
+
+	// 如果统计记录不存在，创建一个
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		stats := &models.BlogPostStats{
+			BlogPostID:   postID,
+			ViewCount:    0,
+			LikeCount:    0,
+			ShareCount:   0,
+			CommentCount: 0,
+		}
+		return s.db.Create(stats).Error
+	}
+
+	return err // 返回其他错误，nil表示记录已存在
+}
+
 // CreatePost 创建博客文章
 func (s *BlogService) CreatePost(input *models.CreatePostInput, authorID uint) (*models.BlogPost, error) {
-	// 生成slug（简化版）
-	slug := generateSlug(input.Title)
+	// 使用新的slug生成器
+	slugGenerator := NewSlugGenerator()
 
-	// 检查slug是否已存在，包括软删除的记录，如果存在则添加唯一后缀
-	var existing models.BlogPost
-	// 使用Unscoped()来包含软删除的记录
-	if err := s.db.Unscoped().Where("slug = ?", slug).First(&existing).Error; err == nil {
-		// 如果存在，添加唯一后缀确保唯一性
-		// 使用时间戳作为后缀
-		suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-		slug = fmt.Sprintf("%s-%s", slug, suffix)
-	}
+	// 生成唯一slug
+	slug := slugGenerator.GenerateUniqueSlug(input.Title, func(testSlug string) bool {
+		var existing models.BlogPost
+		// 使用Unscoped()来包含软删除的记录
+		err := s.db.Unscoped().Where("slug = ?", testSlug).First(&existing).Error
+		return err == nil // 如果找到记录，返回true表示已存在
+	})
 
 	// 创建文章
 	post := &models.BlogPost{
@@ -295,6 +311,11 @@ func (s *BlogService) ArchivePost(postID uint, userID uint, userRole string) (*m
 
 // LikePost 点赞文章
 func (s *BlogService) LikePost(postID uint, userID uint) (*models.BlogPost, error) {
+	// 确保统计记录存在
+	if err := s.ensurePostStatsExist(postID); err != nil {
+		middleware.GetLogger().Warnw("确保文章统计记录存在失败", "postID", postID, "error", err)
+	}
+
 	// 查找文章
 	var post models.BlogPost
 	if err := s.db.Preload("Author").Preload("Stats").First(&post, postID).Error; err != nil {
@@ -307,7 +328,7 @@ func (s *BlogService) LikePost(postID uint, userID uint) (*models.BlogPost, erro
 	// 检查是否已经点赞
 	var existingLike models.BlogPostLike
 	if err := s.db.Where("blog_post_id = ? AND user_id = ?", postID, userID).First(&existingLike).Error; err == nil {
-		return nil, errors.New("已经点赞过了")
+		return nil, models.ErrAlreadyLiked
 	}
 
 	// 在事务中处理点赞
@@ -346,6 +367,11 @@ func (s *BlogService) LikePost(postID uint, userID uint) (*models.BlogPost, erro
 
 // UnlikePost 取消点赞文章
 func (s *BlogService) UnlikePost(postID uint, userID uint) (*models.BlogPost, error) {
+	// 确保统计记录存在
+	if err := s.ensurePostStatsExist(postID); err != nil {
+		middleware.GetLogger().Warnw("确保文章统计记录存在失败", "postID", postID, "error", err)
+	}
+
 	// 查找文章
 	var post models.BlogPost
 	if err := s.db.Preload("Author").Preload("Stats").First(&post, postID).Error; err != nil {
@@ -358,7 +384,7 @@ func (s *BlogService) UnlikePost(postID uint, userID uint) (*models.BlogPost, er
 	// 查找点赞记录
 	var like models.BlogPostLike
 	if err := s.db.Where("blog_post_id = ? AND user_id = ?", postID, userID).First(&like).Error; err != nil {
-		return nil, errors.New("尚未点赞")
+		return nil, models.ErrNotLiked
 	}
 
 	// 在事务中处理取消点赞
@@ -398,41 +424,13 @@ func (s *BlogService) getNextVersionNumber(postID uint) int {
 	return int(count) + 1
 }
 
-// generateSlug 生成URL友好的slug
-func generateSlug(title string) string {
-	// 简单的slug生成逻辑
-	slug := strings.ToLower(title)
-	slug = strings.ReplaceAll(slug, " ", "-")
-	slug = strings.ReplaceAll(slug, "_", "-")
-
-	// 移除特殊字符，只保留字母、数字和连字符
-	var result strings.Builder
-	for _, r := range slug {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
-			result.WriteRune(r)
-		}
-	}
-
-	slug = result.String()
-
-	// 移除连续的连字符
-	for strings.Contains(slug, "--") {
-		slug = strings.ReplaceAll(slug, "--", "-")
-	}
-
-	// 移除开头和结尾的连字符
-	slug = strings.Trim(slug, "-")
-
-	// 如果为空，使用时间戳
-	if slug == "" {
-		slug = "post-" + strconv.FormatInt(time.Now().Unix(), 10)
-	}
-
-	return slug
-}
-
 // GetPostByID 根据ID获取文章
 func (s *BlogService) GetPostByID(postID uint, userID *uint, userRole string) (*models.BlogPost, error) {
+	// 确保统计记录存在
+	if err := s.ensurePostStatsExist(postID); err != nil {
+		middleware.GetLogger().Warnw("确保文章统计记录存在失败", "postID", postID, "error", err)
+	}
+
 	var post models.BlogPost
 	if err := s.db.Preload("Author").Preload("Stats").First(&post, postID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -446,9 +444,11 @@ func (s *BlogService) GetPostByID(postID uint, userID *uint, userRole string) (*
 		return nil, models.ErrForbidden
 	}
 
-	// 更新浏览数（如果是公开访问）
-	if userID != nil && post.Status == "PUBLISHED" {
-		s.db.Model(&models.BlogPostStats{}).Where("blog_post_id = ?", postID).UpdateColumn("view_count", gorm.Expr("view_count + ?", 1))
+	// 更新浏览数（如果是公开访问且有统计记录）
+	if userID != nil && post.Status == "PUBLISHED" && post.Stats != nil {
+		if err := post.Stats.IncrementViewCount(s.db); err != nil {
+			middleware.GetLogger().Warnw("更新浏览数失败", "postID", postID, "error", err)
+		}
 	}
 
 	return &post, nil
@@ -464,14 +464,21 @@ func (s *BlogService) GetPostBySlug(slug string, userID *uint, userRole string) 
 		return nil, models.ErrInternalServerError
 	}
 
+	// 确保统计记录存在
+	if err := s.ensurePostStatsExist(post.ID); err != nil {
+		middleware.GetLogger().Warnw("确保文章统计记录存在失败", "postID", post.ID, "error", err)
+	}
+
 	// 检查访问权限
 	if !post.CanBeViewedBy(userID, userRole) {
 		return nil, models.ErrForbidden
 	}
 
-	// 更新浏览数（如果是公开访问）
-	if userID != nil && post.Status == "PUBLISHED" {
-		s.db.Model(&models.BlogPostStats{}).Where("blog_post_id = ?", post.ID).UpdateColumn("view_count", gorm.Expr("view_count + ?", 1))
+	// 更新浏览数（如果是公开访问且有统计记录）
+	if userID != nil && post.Status == "PUBLISHED" && post.Stats != nil {
+		if err := post.Stats.IncrementViewCount(s.db); err != nil {
+			middleware.GetLogger().Warnw("更新浏览数失败", "postID", post.ID, "error", err)
+		}
 	}
 
 	return &post, nil

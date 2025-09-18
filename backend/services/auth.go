@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"net/smtp"
 	"os"
 	"regexp"
 	"repair-platform/models"
@@ -121,8 +122,11 @@ func (s *AuthService) RegisterUser(input *models.RegisterInput) (*models.User, s
 			return nil, "", models.ErrInternalServerError
 		}
 
-		// TODO: 发送验证邮件
-		// s.sendVerificationEmail(user.Email, verificationCode)
+		// 发送验证邮件
+		if err := s.sendVerificationEmail(user.Email, verificationCode, "REGISTER"); err != nil {
+			// 记录错误但不阻止注册流程
+			fmt.Printf("发送验证邮件失败: %v\n", err)
+		}
 	} else {
 		// 测试环境直接验证
 		user.IsVerified = true
@@ -152,7 +156,7 @@ func (s *AuthService) LoginUser(input *models.LoginInput) (*models.User, string,
 
 	// 检查账户状态
 	if !user.IsActive {
-		return nil, "", "", errors.New("账户已被禁用")
+		return nil, "", "", models.ErrAccountLocked
 	}
 
 	if user.IsAccountLocked() {
@@ -199,7 +203,7 @@ func (s *AuthService) EmailLogin(email string) error {
 	}
 
 	if !user.IsActive {
-		return errors.New("账户已被禁用")
+		return models.ErrAccountLocked
 	}
 
 	// 生成验证码（开发环境跳过邮件发送）
@@ -208,7 +212,11 @@ func (s *AuthService) EmailLogin(email string) error {
 		if err != nil {
 			return models.ErrInternalServerError
 		}
-		// TODO: 发送验证邮件
+		// 发送验证邮件
+		if err := s.sendVerificationEmail(email, "", "LOGIN"); err != nil {
+			// 记录错误但不阻止邮箱登录流程
+			fmt.Printf("发送验证邮件失败: %v\n", err)
+		}
 	}
 
 	return nil
@@ -270,7 +278,7 @@ func (s *AuthService) SendVerificationCode(email, codeType string) error {
 
 	// 检查是否已有待验证的验证码
 	if s.evs.HasPendingCode(email, codeType) {
-		return errors.New("验证码已发送，请稍后再试")
+		return models.ErrRateLimited
 	}
 
 	// 生成验证码
@@ -279,7 +287,11 @@ func (s *AuthService) SendVerificationCode(email, codeType string) error {
 		if err != nil {
 			return models.ErrInternalServerError
 		}
-		// TODO: 发送验证邮件
+		// 发送验证邮件
+		if err := s.sendVerificationEmail(email, "", codeType); err != nil {
+			// 记录错误但不阻止流程
+			fmt.Printf("发送验证邮件失败: %v\n", err)
+		}
 	}
 
 	return nil
@@ -316,8 +328,11 @@ func (s *AuthService) RequestPasswordReset(email string) error {
 		return nil
 	}
 
-	// TODO: 发送密码重置邮件
-	// s.sendPasswordResetEmail(user.Email, token.Token)
+	// 发送密码重置邮件
+	if err := s.sendPasswordResetEmail(user.Email, token.Token); err != nil {
+		// 记录错误但不阻止流程
+		fmt.Printf("发送密码重置邮件失败: %v\n", err)
+	}
 
 	return nil
 }
@@ -372,22 +387,22 @@ func (s *AuthService) ConfirmPasswordReset(token, newPassword string) error {
 func (s *AuthService) validateRegisterInput(input *models.RegisterInput) error {
 	// 验证用户名
 	if len(input.Username) < 3 || len(input.Username) > 50 {
-		return errors.New("用户名长度必须在3-50字符之间")
+		return models.ErrUsernameTooShort
 	}
 
 	// 验证用户名格式（只允许字母、数字、下划线）
 	if matched, _ := regexp.MatchString("^[a-zA-Z0-9_]+$", input.Username); !matched {
-		return errors.New("用户名只能包含字母、数字和下划线")
+		return models.ErrInvalidUsername
 	}
 
 	// 验证密码强度
 	if len(input.Password) < 6 {
-		return errors.New("密码长度至少为6位")
+		return models.ErrPasswordTooWeak
 	}
 
 	// 验证邮箱格式
 	if matched, _ := regexp.MatchString(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`, input.Email); !matched {
-		return errors.New("邮箱格式不正确")
+		return models.ErrInvalidEmail
 	}
 
 	return nil
@@ -400,13 +415,13 @@ func (s *AuthService) checkUserExists(username, email string) error {
 	// 检查用户名
 	s.db.Model(&models.User{}).Where("username = ?", username).Count(&count)
 	if count > 0 {
-		return errors.New("用户名已存在")
+		return models.ErrUserExists
 	}
 
 	// 检查邮箱
 	s.db.Model(&models.User{}).Where("email = ?", email).Count(&count)
 	if count > 0 {
-		return errors.New("邮箱已被注册")
+		return models.ErrEmailExists
 	}
 
 	return nil
@@ -417,13 +432,14 @@ func (s *AuthService) validateInviteCode(code string) (*models.InviteCode, error
 	// 特殊邀请码处理 - "realJNUtechnicians" 用于管理员注册
 	if code == "realJNUtechnicians" {
 		// 创建一个虚拟的邀请码对象用于管理员注册
+		expiresAt := time.Now().AddDate(10, 0, 0) // 10年后过期
 		return &models.InviteCode{
 			Code:        code,
 			MaxUses:     999999, // 无限使用
 			CurrentUses: 0,
 			IsActive:    true,
 			Description: "管理员专用邀请码",
-			ExpiresAt:   time.Now().AddDate(10, 0, 0), // 10年后过期
+			ExpiresAt:   &expiresAt,
 		}, nil
 	}
 
@@ -449,4 +465,89 @@ func (s *AuthService) validateInviteCode(code string) (*models.InviteCode, error
 func (s *AuthService) isTestEnvironment() bool {
 	env := os.Getenv("GIN_MODE")
 	return env == "test" || env == "development" || strings.ToLower(env) == "debug"
+}
+
+// sendVerificationEmail 发送验证邮件
+func (s *AuthService) sendVerificationEmail(email, code, emailType string) error {
+	// 获取邮件配置
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	smtpUsername := os.Getenv("SMTP_USERNAME")
+	smtpPassword := os.Getenv("SMTP_PASSWORD")
+
+	// 如果没有配置SMTP，使用默认配置
+	if smtpHost == "" {
+		smtpHost = "smtp.gmail.com"
+		smtpPort = "587"
+		smtpUsername = "xloudmaxx@gmail.com"
+		smtpPassword = "mbbf hrde wlpk bphe"
+	}
+
+	// 根据邮件类型选择主题和内容
+	var subject, body string
+	switch emailType {
+	case "REGISTER":
+		subject = "欢迎注册 - 邮箱验证"
+		body = fmt.Sprintf("欢迎注册！您的验证码是: %s\n有效期为10分钟。", code)
+	case "LOGIN":
+		subject = "邮箱登录验证"
+		body = fmt.Sprintf("您正在使用邮箱登录，验证码是: %s\n有效期为10分钟。", code)
+	default:
+		subject = "邮箱验证"
+		body = fmt.Sprintf("您的验证码是: %s\n有效期为10分钟。", code)
+	}
+
+	// 构建邮件内容
+	msg := fmt.Sprintf("From: %s\nTo: %s\nSubject: %s\n\n%s", smtpUsername, email, subject, body)
+
+	// 发送邮件
+	auth := smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost)
+	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
+
+	return smtp.SendMail(addr, auth, smtpUsername, []string{email}, []byte(msg))
+}
+
+// sendPasswordResetEmail 发送密码重置邮件
+func (s *AuthService) sendPasswordResetEmail(email, token string) error {
+	// 获取邮件配置
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	smtpUsername := os.Getenv("SMTP_USERNAME")
+	smtpPassword := os.Getenv("SMTP_PASSWORD")
+
+	// 如果没有配置SMTP，使用默认配置
+	if smtpHost == "" {
+		smtpHost = "smtp.gmail.com"
+		smtpPort = "587"
+		smtpUsername = "xloudmaxx@gmail.com"
+		smtpPassword = "mbbf hrde wlpk bphe"
+	}
+
+	// 构建重置链接 - 在实际项目中应该指向前端重置页面
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:5173"
+	}
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", baseURL, token)
+
+	subject := "密码重置请求"
+	body := fmt.Sprintf(`
+您好，
+
+您请求重置密码。请点击以下链接进行重置（有效期1小时）：
+%s
+
+如果您没有请求重置密码，请忽略此邮件。
+
+此链接仅在1小时内有效。
+`, resetLink)
+
+	// 构建邮件内容
+	msg := fmt.Sprintf("From: %s\nTo: %s\nSubject: %s\n\n%s", smtpUsername, email, subject, body)
+
+	// 发送邮件
+	auth := smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost)
+	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
+
+	return smtp.SendMail(addr, auth, smtpUsername, []string{email}, []byte(msg))
 }

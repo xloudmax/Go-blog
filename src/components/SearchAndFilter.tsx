@@ -35,7 +35,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   };
 
   const handleStatusChange = (value: string) => {
-    onFilter({ ...activeFilters, status: value as any });
+    onFilter({ ...activeFilters, status: value as never });
   };
 
   const clearAllFilters = () => {
@@ -82,7 +82,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             onChange={handleTagChange}
             style={{ minWidth: 150 }}
             className="rounded-lg focus:outline-none focus:ring-0 focus:shadow-none"
-            dropdownStyle={{ borderRadius: '0.5rem' }}
+            styles={{ popup: { root: { borderRadius: '0.5rem' } } }}
           >
             {allTags.map(tag => (
               <Option key={tag} value={tag}>{tag}</Option>
@@ -96,7 +96,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
             onChange={handleStatusChange}
             style={{ minWidth: 120 }}
             className="rounded-lg focus:outline-none focus:ring-0 focus:shadow-none"
-            dropdownStyle={{ borderRadius: '0.5rem' }}
+            styles={{ popup: { root: { borderRadius: '0.5rem' } } }}
           >
             <Option value="PUBLISHED">已发布</Option>
             <Option value="DRAFT">草稿</Option>

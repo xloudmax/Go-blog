@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useLazyQuery } from '@apollo/client';
+import { useLazyQuery } from '@apollo/client';
 import type {
     CreatePostInput,
     UpdatePostInput,
@@ -13,8 +13,7 @@ import type {
 // Import generated operations and hooks
 import {
   usePostsQuery,
-  usePostQuery,
-  useSearchPostsQuery,
+
   usePopularPostsQuery,
   useRecentPostsQuery,
   useTrendingTagsQuery,
@@ -73,9 +72,7 @@ export const usePosts = (filter?: PostFilterInput, sort?: PostSortInput, limit: 
             variables: {
                 offset: data?.posts?.length || 0,
             },
-            updateQuery: (prev: { posts: TypedBlogPost[] }, {fetchMoreResult}: {
-                fetchMoreResult?: { posts: TypedBlogPost[] }
-            }) => {
+            updateQuery: (prev, {fetchMoreResult}) => {
                 if (!fetchMoreResult) return prev;
                 return {
                     ...prev,
@@ -195,7 +192,7 @@ export const useBlogActions = () => {
     const updatePost = async (id: string, postData: UpdatePostInput) => {
         const result = await updatePostMutation({
             variables: {id, input: postData},
-            update: (cache: any, {data}: { data?: { updatePost: TypedBlogPost } }) => {
+            update: (cache: any, {data}) => {
                 if (data?.updatePost) {
                     cache.writeQuery({
                         query: POST_QUERY,
@@ -222,7 +219,7 @@ export const useBlogActions = () => {
     const publishPost = async (id: string) => {
         const result = await publishPostMutation({
             variables: {id},
-            update: (cache: any, {data}: { data?: { publishPost: TypedBlogPost } }) => {
+            update: (cache: any, {data}) => {
                 if (data?.publishPost) {
                     cache.modify({
                         id: cache.identify({__typename: 'BlogPost', id}),
@@ -240,7 +237,7 @@ export const useBlogActions = () => {
     const archivePost = async (id: string) => {
         const result = await archivePostMutation({
             variables: {id},
-            update: (cache: any, {data}: { data?: { archivePost: TypedBlogPost } }) => {
+            update: (cache: any, {data}) => {
                 if (data?.archivePost) {
                     cache.modify({
                         id: cache.identify({__typename: 'BlogPost', id}),
@@ -257,22 +254,8 @@ export const useBlogActions = () => {
     const likePost = async (id: string) => {
         const result = await likePostMutation({
             variables: {id},
-            optimisticResponse: {
-                likePost: {
-                    __typename: 'BlogPost',
-                    id,
-                    stats: {
-                        __typename: 'BlogPostStats',
-                        id: `stats-${id}`,
-                        likeCount: 0, // 这会被实际结果覆盖
-                        viewCount: 0,
-                        shareCount: 0,
-                        commentCount: 0,
-                        lastViewedAt: null,
-                        updatedAt: new Date().toISOString(),
-                    },
-                },
-            },
+            // 简化optimisticResponse，只更新必要字段
+            optimisticResponse: undefined,
         });
         return result.data?.likePost as TypedBlogPost;
     };
@@ -280,22 +263,8 @@ export const useBlogActions = () => {
     const unlikePost = async (id: string) => {
         const result = await unlikePostMutation({
             variables: {id},
-            optimisticResponse: {
-                unlikePost: {
-                    __typename: 'BlogPost',
-                    id,
-                    stats: {
-                        __typename: 'BlogPostStats',
-                        id: `stats-${id}`,
-                        likeCount: 0, // 这会被实际结果覆盖
-                        viewCount: 0,
-                        shareCount: 0,
-                        commentCount: 0,
-                        lastViewedAt: null,
-                        updatedAt: new Date().toISOString(),
-                    },
-                },
-            },
+            // 简化optimisticResponse，只更新必要字段
+            optimisticResponse: undefined,
         });
         return result.data?.unlikePost as TypedBlogPost;
     };

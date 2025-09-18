@@ -1,11 +1,10 @@
 // src/pages/EditorPage.tsx
 // 新建或编辑文章的页面
 // 使用 lazy 与 Suspense 按需加载编辑器，减少首屏体积
-import React, { useEffect, useState, SetStateAction, Suspense, useCallback } from 'react'
+import React, { useEffect, useState, Suspense, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { 
   Spin, 
-  Select, 
   Input,
     Card,
   Button,
@@ -20,11 +19,6 @@ import {
   Modal
 } from 'antd';
 import { 
-    FileAddOutlined, 
-    TagOutlined, 
-    PictureOutlined,
-    EyeOutlined,
-    SaveOutlined,
     LoadingOutlined,
     InfoCircleOutlined,
     FileTextOutlined,
@@ -35,24 +29,25 @@ import {
 import MarkdownEditor from '@/components/MarkdownEditor'
 import { useBlogActions } from '@/api/graphql/blog'
 
-const { Option } = Select;
+
 const { Title, Text, Paragraph } = Typography;
 
 export default function EditorPage() {
     const { file: fileNameFromParams } = useParams<{ file?: string }>()
     const navigate = useNavigate()
-    const { createPost, loading: blogLoading, errors } = useBlogActions()
+    const { createPost } = useBlogActions()
 
     const [markdownContent, setMarkdownContent] = useState('')
     const [newFileTitle, setNewFileTitle] = useState('')
     const [initialContentLoaded, setInitialContentLoaded] = useState(false)
     const [loading, setLoading] = useState(!!fileNameFromParams)
-    const [isSaving, setIsSaving] = useState(false)
+
     const [tags, setTags] = useState<string[]>([])
     const [newTag, setNewTag] = useState('')
     const [coverImage, setCoverImage] = useState('')
     const [excerpt, setExcerpt] = useState('')
     const [isPreviewVisible, setIsPreviewVisible] = useState(false)
+    const [, setIsSaving] = useState(false)
 
     const isEditMode = !!fileNameFromParams
 
@@ -170,10 +165,7 @@ export default function EditorPage() {
         }
     }
 
-    // 显示预览
-    const showPreview = () => {
-        setIsPreviewVisible(true);
-    };
+
 
     // 关闭预览
     const closePreview = () => {

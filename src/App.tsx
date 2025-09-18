@@ -1,6 +1,6 @@
 // src/App.tsx
 // 应用入口，负责路由配置
-import React from 'react';
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AppLayout from './layouts/AppLayout';
 import LandingPage from './pages/LandingPage';

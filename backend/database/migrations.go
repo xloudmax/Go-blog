@@ -1,6 +1,8 @@
 package database
 
 import (
+	"errors"
+	"fmt"
 	"repair-platform/models"
 
 	"gorm.io/gorm"
@@ -23,6 +25,11 @@ func RunMigrations(db *gorm.DB) error {
 		return err
 	}
 
+	// 迁移现有数据的冗余字段到Stats表
+	if err := migrateRedundantBlogPostData(db); err != nil {
+		return err
+	}
+
 	// 创建搜索优化索引
 	if err := createSearchIndexes(db); err != nil {
 		return err
@@ -31,7 +38,8 @@ func RunMigrations(db *gorm.DB) error {
 	// 创建全文搜索索引（如果数据库支持）
 	if err := createFullTextSearchIndexes(db); err != nil {
 		// 如果不支持全文搜索，记录日志但不中断
-		// 可以在这里添加日志记录
+		// 禁用全文搜索相关功能
+		fmt.Printf("Warning: Full-text search indexes creation failed: %v\n", err)
 	}
 
 	// 创建评论相关索引
@@ -99,24 +107,29 @@ func createSearchIndexes(db *gorm.DB) error {
 
 // createFullTextSearchIndexes 创建全文搜索索引
 func createFullTextSearchIndexes(db *gorm.DB) error {
+	// 首先尝试创建全文搜索虚拟表
+	createFTSTable := `CREATE VIRTUAL TABLE IF NOT EXISTS blog_post_fts USING fts5(
+		title,
+		content,
+		tags,
+		categories,
+		content='blog_post',
+		content_rowid='id'
+	)`
+
+	if err := db.Exec(createFTSTable).Error; err != nil {
+		// 如果FTS表创建失败，不创建相关触发器
+		return fmt.Errorf("failed to create FTS table: %w", err)
+	}
+
 	// 对于 SQLite，我们可以创建虚拟表来支持全文搜索
 	sqliteFullTextIndexes := []string{
-		// 创建全文搜索虚拟表（SQLite FTS5）
-		`CREATE VIRTUAL TABLE IF NOT EXISTS blog_post_fts USING fts5(
-			title, 
-			content, 
-			tags, 
-			categories, 
-			content='blog_post', 
-			content_rowid='id'
-		)`,
-		
 		// 创建触发器保持同步（INSERT）
 		`CREATE TRIGGER IF NOT EXISTS blog_post_ai AFTER INSERT ON blog_post BEGIN
 			INSERT INTO blog_post_fts(rowid, title, content, tags, categories)
 			VALUES (new.id, new.title, new.content, new.tags, new.categories);
 		END`,
-		
+
 		// 创建触发器保持同步（DELETE）
 		`CREATE TRIGGER IF NOT EXISTS blog_post_ad AFTER DELETE ON blog_post BEGIN
 			INSERT INTO blog_post_fts(blog_post_fts, rowid, title, content, tags, categories)
@@ -229,4 +242,120 @@ func DropSearchIndexes(db *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// migrateRedundantBlogPostData 迁移BlogPost模型中的冗余统计数据到BlogPostStats表
+func migrateRedundantBlogPostData(db *gorm.DB) error {
+	// 创建一个临时结构体来读取老的BlogPost数据（包含冗余字段）
+	type OldBlogPost struct {
+		ID        uint `gorm:"primaryKey"`
+		ViewCount int  `gorm:"default:0"`
+		Likes     int  `gorm:"default:0"`
+	}
+
+	// 检查是否存在老的ViewCount和Likes字段
+	var hasViewCount, hasLikes bool
+
+	// 检查ViewCount字段是否存在
+	if db.Migrator().HasColumn(&models.BlogPost{}, "view_count") {
+		hasViewCount = true
+	}
+
+	// 检查Likes字段是否存在
+	if db.Migrator().HasColumn(&models.BlogPost{}, "likes") {
+		hasLikes = true
+	}
+
+	// 如果没有这些字段，跳过迁移
+	if !hasViewCount && !hasLikes {
+		return nil
+	}
+
+	// 开始迁移过程
+	fmt.Println("开始迁移BlogPost冗余统计数据到BlogPostStats表...")
+
+	// 获取所有BlogPost记录
+	var oldPosts []OldBlogPost
+	query := db.Table("blog_post").Select("id")
+
+	if hasViewCount {
+		query = query.Select("id, view_count")
+	}
+	if hasLikes {
+		if hasViewCount {
+			query = query.Select("id, view_count, likes")
+		} else {
+			query = query.Select("id, likes")
+		}
+	}
+
+	if err := query.Find(&oldPosts).Error; err != nil {
+		return fmt.Errorf("获取BlogPost数据失败: %w", err)
+	}
+
+	// 在事务中执行迁移
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, oldPost := range oldPosts {
+			// 检查是否已存在Stats记录
+			var existingStats models.BlogPostStats
+			err := tx.Where("blog_post_id = ?", oldPost.ID).First(&existingStats).Error
+
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// Stats记录不存在，创建新的
+				newStats := &models.BlogPostStats{
+					BlogPostID:   oldPost.ID,
+					ViewCount:    0,
+					LikeCount:    0,
+					ShareCount:   0,
+					CommentCount: 0,
+				}
+
+				// 迁移数据
+				if hasViewCount {
+					newStats.ViewCount = oldPost.ViewCount
+				}
+				if hasLikes {
+					newStats.LikeCount = oldPost.Likes
+				}
+
+				if err := tx.Create(newStats).Error; err != nil {
+					return fmt.Errorf("创建BlogPostStats记录失败，PostID: %d, Error: %w", oldPost.ID, err)
+				}
+			} else if err != nil {
+				return fmt.Errorf("检查BlogPostStats记录失败，PostID: %d, Error: %w", oldPost.ID, err)
+			} else {
+				// Stats记录已存在，更新数据（如果老数据有值且新数据为0）
+				updateNeeded := false
+				if hasViewCount && existingStats.ViewCount == 0 && oldPost.ViewCount > 0 {
+					existingStats.ViewCount = oldPost.ViewCount
+					updateNeeded = true
+				}
+				if hasLikes && existingStats.LikeCount == 0 && oldPost.Likes > 0 {
+					existingStats.LikeCount = oldPost.Likes
+					updateNeeded = true
+				}
+
+				if updateNeeded {
+					if err := tx.Save(&existingStats).Error; err != nil {
+						return fmt.Errorf("更新BlogPostStats记录失败，PostID: %d, Error: %w", oldPost.ID, err)
+					}
+				}
+			}
+		}
+
+		// 迁移完成后，删除冗余字段
+		if hasViewCount {
+			if err := tx.Migrator().DropColumn(&models.BlogPost{}, "view_count"); err != nil {
+				fmt.Printf("删除view_count字段失败（可以忽略）: %v\n", err)
+			}
+		}
+		if hasLikes {
+			if err := tx.Migrator().DropColumn(&models.BlogPost{}, "likes"); err != nil {
+				fmt.Printf("删除likes字段失败（可以忽略）: %v\n", err)
+			}
+		}
+
+		fmt.Printf("成功迁移了 %d 条BlogPost记录的统计数据\n", len(oldPosts))
+		return nil
+	})
 }

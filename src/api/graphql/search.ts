@@ -1,73 +1,30 @@
-import { gql, useQuery, useLazyQuery } from '@apollo/client';
-import type { 
-  TrendingSearchesQuery, 
-  SearchStatsQuery 
-} from '@/generated/graphql';
-import type { 
+import type {
   UseTrendingSearchesReturn,
   UseSearchStatsReturn,
   SearchStats as TypedSearchStats
 } from '@/types';
 
-// 热门搜索词查询
-export const TRENDING_SEARCHES_QUERY = gql`
-  query TrendingSearches($limit: Int) {
-    getTrendingSearches(limit: $limit)
-  }
-`;
+// Import generated operations
+import {
+  useSearchPostsLazyQuery,
+  useEnhancedSearchLazyQuery,
+  useTrendingSearchesQuery,
+  useSearchStatsQuery,
+  SearchPostsDocument,
+  EnhancedSearchDocument,
+  TrendingSearchesDocument,
+  SearchStatsDocument
+} from '@/generated/graphql';
 
-// 搜索统计信息查询
-export const SEARCH_STATS_QUERY = gql`
-  query SearchStats {
-    getSearchStats {
-      totalSearches
-      popularQueries {
-        query
-        count
-        lastSearched
-      }
-      searchTrends {
-        date
-        searchCount
-        topQueries
-      }
-    }
-  }
-`;
-
-// 基础搜索查询 - 使用后端现有的searchPosts
-export const BASIC_SEARCH_QUERY = gql`
-  query SearchPosts($query: String!, $limit: Int, $offset: Int) {
-    searchPosts(query: $query, limit: $limit, offset: $offset) {
-      posts {
-        id
-        title
-        slug
-        excerpt
-        tags
-        categories
-        coverImageUrl
-        status
-        publishedAt
-        author {
-          id
-          username
-          avatar
-        }
-        stats {
-          viewCount
-          likeCount
-        }
-      }
-      total
-      took
-    }
-  }
-`;
+// Export the generated documents for backward compatibility
+export const BASIC_SEARCH_QUERY = SearchPostsDocument;
+export const ENHANCED_SEARCH_QUERY = EnhancedSearchDocument;
+export const TRENDING_SEARCHES_QUERY = TrendingSearchesDocument;
+export const SEARCH_STATS_QUERY = SearchStatsDocument;
 
 // 热门搜索词 Hook
 export const useTrendingSearches = (limit: number = 10): UseTrendingSearchesReturn => {
-  const { data, loading, error } = useQuery(TRENDING_SEARCHES_QUERY, {
+  const { data, loading, error } = useTrendingSearchesQuery({
     variables: { limit },
     errorPolicy: 'all',
   });
@@ -81,7 +38,7 @@ export const useTrendingSearches = (limit: number = 10): UseTrendingSearchesRetu
 
 // 搜索统计信息 Hook
 export const useSearchStats = (): UseSearchStatsReturn => {
-  const { data, loading, error } = useQuery(SEARCH_STATS_QUERY, {
+  const { data, loading, error } = useSearchStatsQuery({
     errorPolicy: 'all',
   });
 
@@ -92,18 +49,18 @@ export const useSearchStats = (): UseSearchStatsReturn => {
   };
 };
 
-// 基础搜索 Hook - 替代增强搜索
-export const useEnhancedSearch = () => {
-  const [searchPosts, { data, loading, error, fetchMore }] = useLazyQuery(BASIC_SEARCH_QUERY, {
+// 基础搜索 Hook
+export const useBasicSearch = () => {
+  const [searchPosts, { data, loading, error, fetchMore }] = useSearchPostsLazyQuery({
     errorPolicy: 'all',
   });
 
   const search = (params: { query: string; limit?: number; offset?: number }) => {
     return searchPosts({
-      variables: { 
-        query: params.query, 
-        limit: params.limit || 10, 
-        offset: params.offset || 0 
+      variables: {
+        query: params.query,
+        limit: params.limit || 10,
+        offset: params.offset || 0
       },
     });
   };
@@ -111,6 +68,35 @@ export const useEnhancedSearch = () => {
   return {
     search,
     results: data?.searchPosts,
+    loading,
+    error,
+    fetchMore,
+  };
+};
+
+// 增强搜索 Hook - 使用真正的enhancedSearch
+export const useEnhancedSearch = () => {
+  const [enhancedSearch, { data, loading, error, fetchMore }] = useEnhancedSearchLazyQuery({
+    errorPolicy: 'all',
+  });
+
+  const search = (params: { query: string; limit?: number; offset?: number; filters?: any; sortBy?: string }) => {
+    const input = {
+      query: params.query,
+      limit: params.limit || 10,
+      offset: params.offset || 0,
+      filters: params.filters || null,
+      sortBy: params.sortBy || null,
+    };
+
+    return enhancedSearch({
+      variables: { input },
+    });
+  };
+
+  return {
+    search,
+    results: data?.enhancedSearch,
     loading,
     error,
     fetchMore,

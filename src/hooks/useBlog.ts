@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { 
   usePostsQuery, 
-  usePostQuery, 
   usePopularPostsQuery, 
   useRecentPostsQuery, 
   useTrendingTagsQuery,
@@ -15,8 +14,6 @@ import type {
 } from '@/generated/graphql';
 import type { 
   BlogPost,
-  CreatePostInput,
-  UpdatePostInput,
   DashboardStats
 } from '@/types';
 
@@ -173,13 +170,20 @@ export const useBlogDashboard = () => {
   const trendingTags = tagsData?.getTrendingTags || [];
   
   const stats = useMemo<DashboardStats>(() => {
+    const totalViews = popularPosts.reduce((sum, post) => sum + (post.stats?.viewCount || 0), 0);
+    const totalLikes = popularPosts.reduce((sum, post) => sum + (post.stats?.likeCount || 0), 0);
+    const totalPosts = popularPosts.length + recentPosts.length;
+    const engagementRate = popularPosts.length > 0 
+      ? (totalLikes / Math.max(totalViews, 1)) * 100 
+      : 0;
+    const avgEngagement = totalPosts > 0 ? (totalLikes + totalViews) / totalPosts : 0;
+    
     return {
-      totalViews: popularPosts.reduce((sum, post) => sum + (post.stats?.viewCount || 0), 0),
-      totalLikes: popularPosts.reduce((sum, post) => sum + (post.stats?.likeCount || 0), 0),
-      totalPosts: popularPosts.length + recentPosts.length,
-      engagementRate: popularPosts.length > 0 
-        ? (popularPosts.reduce((sum, post) => sum + (post.stats?.likeCount || 0), 0) / popularPosts.reduce((sum, post) => sum + (post.stats?.viewCount || 0), 1)) * 100 
-        : 0
+      totalViews,
+      totalLikes,
+      totalPosts,
+      engagementRate,
+      avgEngagement,
     };
   }, [popularPosts, recentPosts]);
   

@@ -1,27 +1,19 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import {
   Button,
-  Typography,
-  notification
+  Typography
 } from 'antd';
-import {
-  EditOutlined,
-  FileTextOutlined
-} from '@ant-design/icons';
+
 import { useBlogList } from '@/hooks';
-import { useAppUser } from '@/hooks';
 import type { BlogPost, PostFilter } from '@/types';
 import ArticleListContainer from '@/components/ArticleListContainer';
 import TagCloud from '@/components/TagCloud';
 import SearchAndFilter from '@/components/SearchAndFilter';
 import ArticleSkeleton from '@/components/ArticleSkeleton';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function HomePage() {
-  const navigate = useNavigate();
-  const { user, isAuthenticated } = useAppUser();
 
   // 博客列表管理
   const {

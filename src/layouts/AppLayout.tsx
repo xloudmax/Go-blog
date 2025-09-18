@@ -19,7 +19,6 @@ import {
   MenuFoldOutlined, 
   MenuUnfoldOutlined, 
   HomeOutlined, 
-  FileAddOutlined, 
   SettingOutlined, 
   UserOutlined,
   LogoutOutlined,
@@ -169,9 +168,6 @@ export default function AppLayout() {
     }, [isAuthenticated, createPost]);
 
     // 回调函数使用 useCallback，防止因重新渲染导致的函数地址变化
-    const goEditor = useCallback(() => {
-        navigate('/editor/posts')
-    }, [navigate])
 
     const handleLogout = useCallback(async () => {
         try {
