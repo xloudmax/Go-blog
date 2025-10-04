@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  Card,
   Typography,
   Avatar,
   Tag,
@@ -26,10 +25,10 @@ import {
 import { useQuery } from '@apollo/client';
 import { POST_QUERY } from '@/api/graphql';
 import { useAppUser, useLike } from '@/hooks';
-import { useTheme } from '@/components/ThemeProvider';
 import MarkdownViewer from '../components/MarkdownViewer';
 import CommentSection from '@/components/CommentSection';
-import './PostDetailPage.css';
+import TableOfContents from '@/components/TableOfContents';
+import BackToTop from '@/components/BackToTop';
 
 const { Title, Paragraph } = Typography;
 
@@ -37,7 +36,6 @@ export default function PostDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAppUser();
-  const { isDarkMode } = useTheme();
 
   // 获取文章详情
   const { data, loading, error, refetch } = useQuery(POST_QUERY, {
@@ -59,6 +57,22 @@ export default function PostDetailPage() {
   useEffect(() => {
     // useLike hook 会自动处理这个逻辑
   }, [post]);
+
+  // 动态设置页面标题
+  useEffect(() => {
+    if (post?.title) {
+      document.title = `${post.title} - 博客平台`;
+    } else if (loading) {
+      document.title = '加载中... - 博客平台';
+    } else {
+      document.title = '博客平台';
+    }
+
+    // 清理函数：离开页面时恢复默认标题
+    return () => {
+      document.title = '博客平台';
+    };
+  }, [post?.title, loading]);
 
   // 处理分享
   const handleShare = () => {
@@ -91,7 +105,7 @@ export default function PostDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-96">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '24rem' }}>
         <Spin size="large" />
       </div>
     );
@@ -132,166 +146,184 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" style={{ padding: '0 40px', boxSizing: 'border-box' }}>
-      <div className="max-w-4xl mx-auto py-12">
+    <div style={{ minHeight: '100vh', padding: '0 20px', boxSizing: 'border-box' }}>
+      <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '3rem 0' }}>
         {/* 标准页面标题和导航 */}
-        <div className="mb-6 flex justify-between items-center">
-          <div className="flex items-center">
-            <Button 
-              icon={<ArrowLeftOutlined />} 
-              onClick={() => navigate(-1)}
-              className="mr-4"
-            >
-              返回
-            </Button>
-          </div>
+        <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/home')}
+          >
+            返回
+          </Button>
         </div>
 
-        {/* 文章内容容器 */}
-        <Card className="mb-6 post-detail-card mx-8">
-        <div className="mb-6">
-          <Title 
-            level={1} 
-            className={`mb-4 ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}
-          >
-            {post.title}
-          </Title>
-          
-          {post.excerpt && (
-            <Paragraph className={`text-lg mb-4 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-600'
-            }`}>
-              {post.excerpt}
-            </Paragraph>
-          )}
+        {/* 主内容区：文章 + TOC */}
+        <div style={{ display: 'flex', gap: '2rem', position: 'relative', alignItems: 'flex-start' }}>
+          {/* 左侧主内容区 */}
+          <div style={{ flex: '1', minWidth: 0 }}>
+            {/* 文章内容容器 */}
+            <div
+              style={{
+                marginBottom: '1.5rem',
+                padding: '2rem',
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderRadius: '8px',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                  <Title
+                    level={1}
+                    style={{ margin: 0, color: 'var(--color-text)' }}
+                  >
+                    {post.title}
+                  </Title>
+                  {post.status !== 'PUBLISHED' && (
+                    <Tag color="orange" style={{ fontSize: '14px', padding: '4px 12px' }}>
+                      草稿
+                    </Tag>
+                  )}
+                </div>
 
-          {/* 作者信息和发布时间 */}
-          <div className="user-info-container justify-between flex-wrap mb-8">
-            <div className="user-info-container">
-              <Avatar 
-                src={post.author.avatar} 
-                icon={<UserOutlined />}
-                size="large"
-                className="user-info-avatar"
-              />
-              <div className="user-info-details">
-                <div className={`user-info-name text-base ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  {post.author.username}
+                {post.excerpt && (
+                  <Paragraph style={{ fontSize: '18px', marginBottom: '1rem', color: 'var(--color-text-secondary)' }}>
+                    {post.excerpt}
+                  </Paragraph>
+                )}
+
+                {/* 作者信息和发布时间 */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: '2rem', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Avatar
+                      src={post.author.avatar}
+                      icon={<UserOutlined />}
+                      size="large"
+                    />
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-text)' }}>
+                        {post.author.username}
+                      </div>
+                      <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CalendarOutlined />
+                        {post.publishedAt ? formatDate(post.publishedAt) : formatDate(post.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 操作按钮 */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {/* 编辑按钮 - 只有作者可见 */}
+                    {isAuthenticated && user?.username === post.author.username && (
+                      <Tooltip title="编辑文章">
+                        <Button
+                          icon={<EditOutlined />}
+                          onClick={() => navigate(`/editor/posts/${post.slug}`)}
+                        >
+                          编辑
+                        </Button>
+                      </Tooltip>
+                    )}
+
+                    {/* 点赞按钮 - 使用优化后的逻辑 */}
+                    <Tooltip title={isLiked ? "取消点赞" : "点赞"}>
+                      <Button
+                        icon={<LikeOutlined />}
+                        onClick={handleLike}
+                        type={isLiked ? "primary" : "default"}
+                        disabled={!isAuthenticated}
+                      >
+                        {likeCount}
+                      </Button>
+                    </Tooltip>
+
+                    {/* 分享按钮 */}
+                    <Tooltip title="分享文章">
+                      <Button
+                        icon={<ShareAltOutlined />}
+                        onClick={handleShare}
+                      >
+                        分享
+                      </Button>
+                    </Tooltip>
+                  </div>
                 </div>
-                <div className={`text-sm user-info-meta ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                }`}>
-                  <CalendarOutlined />
-                  {post.publishedAt ? formatDate(post.publishedAt) : formatDate(post.createdAt)}
+
+                {/* 标签 */}
+                {post.tags && post.tags.length > 0 && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <Space wrap>
+                      {post.tags.map((tag: string) => (
+                        <Tag key={tag} color="blue">
+                          {tag}
+                        </Tag>
+                      ))}
+                    </Space>
+                  </div>
+                )}
+
+                {/* 统计信息 */}
+                <div style={{ display: 'flex', gap: '1.5rem', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <EyeOutlined />
+                    {post.stats?.viewCount || 0} 次浏览
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <LikeOutlined />
+                    {likeCount} 次点赞
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CommentOutlined />
+                    {post.stats?.commentCount || 0} 条评论
+                  </span>
                 </div>
+              </div>
+
+              <Divider style={{ borderColor: 'var(--color-border)' }} />
+
+              {/* 文章内容 */}
+              <div style={{ maxWidth: '100%', color: 'var(--color-text)' }}>
+                {post.content ? (
+                  <MarkdownViewer content={post.content} />
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-tertiary)' }}>
+                    暂无内容
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* 操作按钮 */}
-            <div className="user-info-actions">
-              {/* 编辑按钮 - 只有作者可见 */}
-              {isAuthenticated && user?.username === post.author.username && (
-                <Tooltip title="编辑文章">
-                  <Button 
-                    icon={<EditOutlined />}
-                    onClick={() => navigate(`/editor/posts/${post.slug}`)}
-                  >
-                    编辑
-                  </Button>
-                </Tooltip>
-              )}
-              
-              {/* 点赞按钮 - 使用优化后的逻辑 */}
-              <Tooltip title={isLiked ? "取消点赞" : "点赞"}>
-                <Button 
-                  icon={<LikeOutlined />}
-                  onClick={handleLike}
-                  type={isLiked ? "primary" : "default"}
-                  disabled={!isAuthenticated}
-                  className={`transition-all duration-200 ${
-                    isLiked 
-                      ? 'bg-red-500 border-red-500 hover:bg-red-400' 
-                      : ''
-                  }`}
-                >
-                  {likeCount}
-                </Button>
-              </Tooltip>
-
-              {/* 分享按钮 */}
-              <Tooltip title="分享文章">
-                <Button 
-                  icon={<ShareAltOutlined />}
-                  onClick={handleShare}
-                >
-                  分享
-                </Button>
-              </Tooltip>
-            </div>
+            {/* 评论区 */}
+            {post.status === 'PUBLISHED' ? (
+              <CommentSection
+                blogPostId={post.id}
+                blogPostSlug={post.slug}
+              />
+            ) : (
+              <Alert
+                message="评论功能已禁用"
+                description="草稿文章暂不支持评论功能。发布文章后即可开启评论。"
+                type="info"
+                showIcon
+                style={{ marginTop: '24px' }}
+              />
+            )}
           </div>
 
-          {/* 标签 */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mb-4">
-              <Space wrap>
-                {post.tags.map((tag: string) => (
-                  <Tag key={tag} color="blue">
-                    {tag}
-                  </Tag>
-                ))}
-              </Space>
-            </div>
-          )}
-
-          {/* 统计信息 */}
-          <div className={`user-info-stats text-sm ${
-            isDarkMode ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            <span className="user-info-stat-item">
-              <EyeOutlined />
-              {post.stats?.viewCount || 0} 次浏览
-            </span>
-            <span className="user-info-stat-item">
-              <LikeOutlined />
-              {likeCount} 次点赞
-            </span>
-            <span className="user-info-stat-item">
-              <CommentOutlined />
-              {post.stats?.commentCount || 0} 条评论
-            </span>
-          </div>
-        </div>
-
-        <Divider className={isDarkMode ? 'border-gray-700' : ''} />
-
-        {/* 文章内容 */}
-        <div className={`prose max-w-none ${
-          isDarkMode 
-            ? 'prose-dark prose-invert text-white' 
-            : 'prose-light text-gray-900'
-        }`}>
-          {post.content ? (
-            <MarkdownViewer content={post.content} />
-          ) : (
-            <div className={`text-center py-8 ${
-              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              暂无内容
-            </div>
+          {/* 右侧 TOC 侧边栏 */}
+          {post.content && (
+            <aside className="toc-sidebar">
+              <div className="toc-sticky">
+                <TableOfContents content={post.content} />
+              </div>
+            </aside>
           )}
         </div>
-      </Card>
-
-      {/* 评论区 */}
-      <CommentSection 
-        blogPostId={post.id} 
-        blogPostSlug={post.slug} 
-      />
       </div>
+
+      {/* 返回顶部按钮 */}
+      <BackToTop />
     </div>
   );
 }

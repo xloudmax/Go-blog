@@ -71,7 +71,7 @@ func isAdmin(ctx context.Context, db *gorm.DB) bool {
 	if err != nil {
 		return false
 	}
-	return user.Role == "admin"
+	return user.Role == "ADMIN"
 }
 
 // getUserFromContext 从上下文中获取当前用户信息
@@ -153,7 +153,7 @@ func convertToGraphQLUser(user *models.User) *User {
 
 	var role UserRole
 	switch user.Role {
-	case "admin":
+	case "ADMIN":
 		role = UserRoleAdmin
 	default:
 		role = UserRoleUser
@@ -206,7 +206,7 @@ func requireAdmin(ctx context.Context, db *gorm.DB) (*models.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	if user.Role != "admin" {
+	if user.Role != "ADMIN" {
 		return nil, ErrForbidden
 	}
 	return user, nil
@@ -251,6 +251,39 @@ func sendVerificationCode(to, code string) error {
 	}
 
 	logger.Infow("邮件发送成功", "email", to)
+	return nil
+}
+
+// sendPasswordResetEmail 发送密码重置邮件
+func sendPasswordResetEmail(to, token string) error {
+	logger := middleware.GetLogger()
+
+	// 检查是否为开发环境
+	if os.Getenv("GO_ENV") != "production" {
+		logger.Infow("[开发模式] 密码重置令牌", "email", to, "token", token)
+		return nil
+	}
+
+	// 生产环境的邮件发送代码
+	from := "xloudmaxx@gmail.com"
+	password := "mbbf hrde wlpk bphe"
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+
+	subject := "Subject: 密码重置\n"
+	// 在实际生产中，这里应该是一个指向前端密码重置页面的链接
+	resetLink := fmt.Sprintf("http://localhost:5173/reset-password?token=%s", token)
+	body := fmt.Sprintf("请点击以下链接重置密码:\n%s\n\n该链接1小时内有效。\n如果您没有请求重置密码，请忽略此邮件。", resetLink)
+	msg := fmt.Sprintf("From: %s\nTo: %s\n%s\n\n%s", from, to, subject, body)
+
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+	err := smtp.SendMail(fmt.Sprintf("%s:%s", smtpHost, smtpPort), auth, from, []string{to}, []byte(msg))
+	if err != nil {
+		logger.Errorw("发送密码重置邮件失败", "email", to, "error", err)
+		return err
+	}
+
+	logger.Infow("密码重置邮件发送成功", "email", to)
 	return nil
 }
 

@@ -23,7 +23,7 @@ func TestBasicIntegration(t *testing.T) {
 	})
 
 	t.Run("GraphQL Playground", func(t *testing.T) {
-		req, _ := http.NewRequest("GET", "/graphql/playground", nil)
+		req, _ := http.NewRequest("GET", "/graphql", nil)
 		w := httptest.NewRecorder()
 		helper.Router.ServeHTTP(w, req)
 

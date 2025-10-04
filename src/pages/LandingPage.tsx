@@ -1,7 +1,8 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {Button, Space} from 'antd';
-import {LoginOutlined, UserAddOutlined} from '@ant-design/icons';
+import {LoginOutlined, UserAddOutlined, HomeOutlined} from '@ant-design/icons';
+import { useAppUser } from '@/hooks';
 
 
 
@@ -16,6 +17,7 @@ interface Cell {
 
 
 const LandingPage: React.FC = () => {
+  const { isAuthenticated } = useAppUser();
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -335,30 +337,24 @@ const LandingPage: React.FC = () => {
         {/* 像素风格认证按钮 */}
         <div className="pointer-events-auto">
           <Space size="large" className="flex flex-col sm:flex-row">
-            {/* 登录按钮 - 像素风格 */}
-            <Link to="/login">
+            {/* 主页按钮 - 像素风格 */}
+            <Link to="/home">
               <div
                 className="group relative overflow-hidden"
               >
                 <Button
                   size="large"
-                  icon={<LoginOutlined className="text-xl" />}
+                  icon={<HomeOutlined className="text-xl" />}
                   className="flex items-center justify-center px-10 py-8 text-xl font-mono font-bold border-0 relative z-10"
                   style={{
                     background: 'transparent',
                     color: '#ffffff',
-                    boxShadow: `
-                      0 0 0 3px rgba(99, 102, 241, 0.8),
-                      0 0 0 6px rgba(124, 58, 237, 0.6),
-                      0 8px 16px rgba(0, 0, 0, 0.3),
-                      0 0 20px rgba(99, 102, 241, 0.4)
-                    `,
                     borderRadius: '0px',
                     letterSpacing: '0.1em',
-                    textShadow: '0 0 15px rgba(99, 102, 241, 0.8), 0 0 30px rgba(99, 102, 241, 0.6)'
+                    textShadow: '0 0 15px rgba(34, 197, 94, 0.8), 0 0 30px rgba(34, 197, 94, 0.6)'
                   }}
                 >
-                  登录
+                  主页
                 </Button>
                 {/* 像素装饰效果 */}
                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
@@ -370,40 +366,67 @@ const LandingPage: React.FC = () => {
               </div>
             </Link>
 
-            {/* 注册按钮 - 像素风格 */}
-            <Link to="/register">
-              <div
-                className="group relative overflow-hidden"
-              >
-                <Button
-                  size="large"
-                  icon={<UserAddOutlined className="text-xl" />}
-                  className="flex items-center justify-center px-10 py-8 text-xl font-mono font-bold border-0 relative z-10"
-                  style={{
-                    background: 'transparent',
-                    color: '#ffffff',
-                    boxShadow: `
-                      0 0 0 3px rgba(168, 85, 247, 0.8),
-                      0 0 0 6px rgba(124, 58, 237, 0.6),
-                      0 8px 16px rgba(0, 0, 0, 0.3),
-                      0 0 20px rgba(168, 85, 247, 0.4)
-                    `,
-                    borderRadius: '0px',
-                    letterSpacing: '0.1em',
-                    textShadow: '0 0 15px rgba(168, 85, 247, 0.8), 0 0 30px rgba(168, 85, 247, 0.6)'
-                  }}
+            {/* 登录按钮 - 像素风格（仅未登录时显示） */}
+            {!isAuthenticated && (
+              <Link to="/login">
+                <div
+                  className="group relative overflow-hidden"
                 >
-                  注册
-                </Button>
-                {/* 像素装饰效果 */}
-                <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                  <div className="absolute top-1 left-1 w-2 h-2 bg-pink-400"></div>
-                  <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-400"></div>
-                  <div className="absolute bottom-1 left-1 w-2 h-2 bg-yellow-400"></div>
-                  <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-400"></div>
+                  <Button
+                    size="large"
+                    icon={<LoginOutlined className="text-xl" />}
+                    className="flex items-center justify-center px-10 py-8 text-xl font-mono font-bold border-0 relative z-10"
+                    style={{
+                      background: 'transparent',
+                      color: '#ffffff',
+                      borderRadius: '0px',
+                      letterSpacing: '0.1em',
+                      textShadow: '0 0 15px rgba(99, 102, 241, 0.8), 0 0 30px rgba(99, 102, 241, 0.6)'
+                    }}
+                  >
+                    登录
+                  </Button>
+                  {/* 像素装饰效果 */}
+                  <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                    <div className="absolute top-1 left-1 w-2 h-2 bg-cyan-400"></div>
+                    <div className="absolute top-1 right-1 w-2 h-2 bg-pink-400"></div>
+                    <div className="absolute bottom-1 left-1 w-2 h-2 bg-green-400"></div>
+                    <div className="absolute bottom-1 right-1 w-2 h-2 bg-yellow-400"></div>
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            )}
+
+            {/* 注册按钮 - 像素风格（仅未登录时显示） */}
+            {!isAuthenticated && (
+              <Link to="/register">
+                <div
+                  className="group relative overflow-hidden"
+                >
+                  <Button
+                    size="large"
+                    icon={<UserAddOutlined className="text-xl" />}
+                    className="flex items-center justify-center px-10 py-8 text-xl font-mono font-bold border-0 relative z-10"
+                    style={{
+                      background: 'transparent',
+                      color: '#ffffff',
+                      borderRadius: '0px',
+                      letterSpacing: '0.1em',
+                      textShadow: '0 0 15px rgba(168, 85, 247, 0.8), 0 0 30px rgba(168, 85, 247, 0.6)'
+                    }}
+                  >
+                    注册
+                  </Button>
+                  {/* 像素装饰效果 */}
+                  <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                    <div className="absolute top-1 left-1 w-2 h-2 bg-pink-400"></div>
+                    <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-400"></div>
+                    <div className="absolute bottom-1 left-1 w-2 h-2 bg-yellow-400"></div>
+                    <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-400"></div>
+                  </div>
+                </div>
+              </Link>
+            )}
           </Space>
         </div>
       </div>

@@ -264,7 +264,7 @@ func (s *AdminService) DeleteUser(userID uint) error {
 	}
 
 	// 不能删除管理员账户
-	if user.Role == "admin" {
+	if user.Role == "ADMIN" {
 		return errors.New("不能删除管理员账户")
 	}
 

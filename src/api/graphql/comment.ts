@@ -280,10 +280,7 @@ export const useCommentActions = () => {
   const [updateCommentMutation, { loading: updateLoading, error: updateError }] = useMutation(UPDATE_COMMENT_MUTATION);
 
   // 删除评论
-  const [deleteCommentMutation, { loading: deleteLoading, error: deleteError }] = useMutation(DELETE_COMMENT_MUTATION, {
-    refetchQueries: [{ query: COMMENTS_QUERY }],
-    awaitRefetchQueries: true,
-  });
+  const [deleteCommentMutation, { loading: deleteLoading, error: deleteError }] = useMutation(DELETE_COMMENT_MUTATION);
 
   // 点赞评论
   const [likeCommentMutation, { loading: likeLoading }] = useMutation(LIKE_COMMENT_MUTATION);

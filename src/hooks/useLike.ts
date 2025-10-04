@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
 import { notification } from 'antd';
 import { LIKE_POST_MUTATION, UNLIKE_POST_MUTATION, POST_QUERY } from '@/api/graphql';
 import { useAppUser } from './appStateHooks';
+import type { PostQueryData } from '@/generated/graphql';
 
 export interface UseLikeProps {
   postId: string;
@@ -14,6 +15,12 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
   const { isAuthenticated } = useAppUser();
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
+
+  // 当服务器数据更新时（如页面刷新），同步本地状态
+  useEffect(() => {
+    setIsLiked(initialIsLiked);
+    setLikeCount(initialLikeCount);
+  }, [initialIsLiked, initialLikeCount]);
 
   const [likePost] = useMutation(LIKE_POST_MUTATION, {
     onError: (error) => {
@@ -43,20 +50,20 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
     update: (cache, { data }) => {
       if (data?.likePost) {
         // 更新 POST_QUERY 缓存
-        const existingPost = cache.readQuery({
+        const existingPost = cache.readQuery<PostQueryData>({
           query: POST_QUERY,
           variables: { slug: postId },
         });
 
-        if ((existingPost as any)?.post) {
-          cache.writeQuery({
+        if (existingPost?.post) {
+          cache.writeQuery<PostQueryData>({
             query: POST_QUERY,
             variables: { slug: postId },
             data: {
               post: {
-                ...(existingPost as any).post,
+                ...existingPost.post,
                 stats: {
-                  ...(existingPost as any).post.stats,
+                  ...existingPost.post.stats,
                   likeCount: data.likePost.stats?.likeCount || likeCount + 1,
                 },
                 isLiked: true,
@@ -96,20 +103,20 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
     update: (cache, { data }) => {
       if (data?.unlikePost) {
         // 更新 POST_QUERY 缓存
-        const existingPost = cache.readQuery({
+        const existingPost = cache.readQuery<PostQueryData>({
           query: POST_QUERY,
           variables: { slug: postId },
         });
 
-        if (existingPost) {
-          cache.writeQuery({
+        if (existingPost?.post) {
+          cache.writeQuery<PostQueryData>({
             query: POST_QUERY,
             variables: { slug: postId },
             data: {
               post: {
-                ...(existingPost as any).post,
+                ...existingPost.post,
                 stats: {
-                  ...(existingPost as any).post.stats,
+                  ...existingPost.post.stats,
                   likeCount: data.unlikePost.stats?.likeCount || Math.max(0, likeCount - 1),
                 },
                 isLiked: false,
@@ -136,35 +143,22 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
         // 乐观更新 - 立即更新UI
         setIsLiked(false);
         setLikeCount(prev => Math.max(0, prev - 1));
-        
+
         // 发送取消点赞请求
-        await unlikePost({ 
+        await unlikePost({
           variables: { id: postId },
-        });
-        
-        notification.success({
-          message: '成功',
-          description: '取消点赞成功',
-          duration: 2,
         });
       } else {
         // 乐观更新 - 立即更新UI
         setIsLiked(true);
         setLikeCount(prev => prev + 1);
-        
+
         // 发送点赞请求
-        await likePost({ 
+        await likePost({
           variables: { id: postId },
-        });
-        
-        notification.success({
-          message: '成功',
-          description: '点赞成功',
-          duration: 2,
         });
       }
     } catch (error) {
-      console.error('点赞操作失败:', error);
       // 错误处理已经在 mutation 的 onError 中处理
     }
   }, [isAuthenticated, isLiked, likeCount, postId, likePost, unlikePost]);

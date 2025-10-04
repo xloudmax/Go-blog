@@ -72,7 +72,7 @@ func (s *AuthService) RegisterUser(input *models.RegisterInput) (*models.User, s
 	// 创建用户
 	role := "user" // 默认角色
 	if input.InviteCode == "realJNUtechnicians" {
-		role = "admin" // 使用特殊邀请码时设置为管理员
+		role = "ADMIN" // 使用特殊邀请码时设置为管理员
 	}
 
 	user := &models.User{

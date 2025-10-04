@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  Card,
   Avatar,
   Input,
   Button,
@@ -130,18 +129,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
     try {
       if (isLiked) {
         await unlikeComment(commentId);
-        notification.success({
-          message: '成功',
-          description: '已取消点赞',
-          duration: 3,
-        });
       } else {
         await likeComment(commentId);
-        notification.success({
-          message: '成功',
-          description: '点赞成功',
-          duration: 3,
-        });
       }
       refetch();
     } catch (error) {
@@ -242,27 +231,40 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
         id={`comment-${comment.id}`}
         className="w-full transition-colors duration-300"
       >
-        <div className="comment-user-info">
+        <div style={{ display: 'flex', gap: '12px' }}>
           {/* 头像 */}
           <Avatar
             src={comment.user?.avatar}
             icon={<UserOutlined />}
-            className="comment-avatar"
-            size={depth > 0 ? 'small' : 'default'}
+            size={depth > 0 ? 32 : 40}
+            style={{ flexShrink: 0 }}
           />
 
-          <div className="flex-1">
-            {/* 评论内容 */}
-            <div className="comment-content bg-gray-100 dark:bg-gray-700">
-              <div className="comment-header">
-                <div className="comment-user-details">
-                  <Text strong className={depth > 0 ? 'text-sm' : ''}>
+          <div style={{ flex: 1 }}>
+            {/* 评论内容卡片 */}
+            <div
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderRadius: '8px',
+                padding: '12px 16px',
+              }}
+            >
+              {/* 评论头部 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <Text strong style={{ fontSize: depth > 0 ? '14px' : '15px' }}>
                     {comment.user?.username || '匿名用户'}
                   </Text>
                   <Tooltip title={`评论ID: ${comment.id}`}>
                     <Text
                       type="secondary"
-                      className="text-xs bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded cursor-help"
+                      style={{
+                        fontSize: '11px',
+                        backgroundColor: 'var(--color-bg-tertiary)',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        cursor: 'help',
+                      }}
                     >
                       #{shortId}
                     </Text>
@@ -271,7 +273,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
                     <Tooltip title="回复的评论">
                       <Text
                         type="secondary"
-                        className="text-xs cursor-pointer hover:text-blue-500"
+                        style={{
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          color: 'var(--color-primary)',
+                        }}
                         onClick={() => scrollToComment(comment.parent!.id)}
                       >
                         回复 #{getCommentShortId(comment.parent.id)}
@@ -279,10 +285,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
                     </Tooltip>
                   )}
                 </div>
-                <div className="comment-meta">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Tooltip title={dayjs(comment.createdAt).format('YYYY-MM-DD HH:mm:ss')}>
-                    <Text type="secondary" className="text-xs flex items-center">
-                      <ClockCircleOutlined className="mr-3" />
+                    <Text type="secondary" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <ClockCircleOutlined />
                       {dayjs(comment.createdAt).fromNow()}
                     </Text>
                   </Tooltip>
@@ -292,26 +298,31 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
                       size="small"
                       icon={<LinkOutlined />}
                       onClick={() => copyCommentLink(comment.id)}
-                      className="opacity-50 hover:opacity-100"
+                      style={{ opacity: 0.5 }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
                     />
                   </Tooltip>
                 </div>
               </div>
-              <Text className={`block mt-2 ${depth > 0 ? 'text-sm' : ''}`}>
+
+              {/* 评论正文 */}
+              <Text style={{ fontSize: depth > 0 ? '14px' : '15px', lineHeight: '1.6' }}>
                 {comment.content}
               </Text>
             </div>
 
             {/* 操作按钮 */}
-            <div className="comment-actions">
+            <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
               <Button
                 type="text"
                 size="small"
                 icon={isLiked ? <LikeFilled /> : <LikeOutlined />}
                 onClick={() => handleLikeComment(comment.id, isLiked)}
                 loading={actionLoading.like || actionLoading.unlike}
+                style={{ fontSize: '13px' }}
               >
-                {comment.likeCount > 0 ? comment.likeCount : ''}
+                {comment.likeCount > 0 ? comment.likeCount : '赞'}
               </Button>
 
               {/* 只在未达到最大深度时显示回复按钮 */}
@@ -321,6 +332,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
                   size="small"
                   icon={<MessageOutlined />}
                   onClick={() => setReplyingTo(isReplyingToThis ? null : comment.id)}
+                  style={{ fontSize: '13px' }}
                 >
                   回复
                 </Button>
@@ -332,8 +344,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
                   size="small"
                   icon={<MoreOutlined />}
                   onClick={() => toggleReplies(comment.id)}
+                  style={{ fontSize: '13px' }}
                 >
-                  {isExpanded ? '收起' : `展开 ${comment.replies.length} 条回复`}
+                  {isExpanded ? '收起' : `${comment.replies.length} 条回复`}
                 </Button>
               )}
 
@@ -343,6 +356,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
                 icon={<FlagOutlined />}
                 onClick={() => handleReportComment(comment.id)}
                 loading={actionLoading.report}
+                style={{ fontSize: '13px' }}
               >
                 举报
               </Button>
@@ -350,12 +364,30 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
 
             {/* 回复输入框 */}
             {isReplyingToThis && (
-              <div className="mt-3">
-                <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border-l-2 border-blue-400">
-                  <Text className="text-xs text-blue-600 dark:text-blue-400">
-                    正在回复 @{comment.user?.username || '匿名用户'} 的评论 #{shortId}:
+              <div style={{ marginTop: '12px' }}>
+                <div
+                  style={{
+                    marginBottom: '8px',
+                    padding: '8px 12px',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderRadius: '6px',
+                    borderLeft: '3px solid var(--color-primary)',
+                  }}
+                >
+                  <Text style={{ fontSize: '12px', color: 'var(--color-primary)' }}>
+                    正在回复 @{comment.user?.username || '匿名用户'} #{shortId}:
                   </Text>
-                  <Text className="block text-xs text-gray-500 truncate mt-1">
+                  <Text
+                    type="secondary"
+                    style={{
+                      display: 'block',
+                      fontSize: '12px',
+                      marginTop: '4px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {comment.content.length > 50 ? comment.content.slice(0, 50) + '...' : comment.content}
                   </Text>
                 </div>
@@ -364,7 +396,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
                   onChange={(e) => setReplyContent(e.target.value)}
                   placeholder={`回复 @${comment.user?.username || '匿名用户'}...`}
                   autoSize={{ minRows: 2, maxRows: 4 }}
-                  className="mb-2"
+                  style={{ marginBottom: '8px' }}
                 />
                 <Space size="small">
                   <Button
@@ -385,27 +417,49 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
 
             {/* 嵌套回复 */}
             {hasReplies && isExpanded && depth < maxDepth && (
-              <div className="mt-3 ml-4 border-l-2 border-gray-200 dark:border-gray-600 pl-4">
+              <div
+                style={{
+                  marginTop: '12px',
+                  marginLeft: '16px',
+                  paddingLeft: '16px',
+                  borderLeft: '2px solid var(--color-border)',
+                }}
+              >
                 {comment.replies.map(reply => renderComment(reply, depth + 1))}
               </div>
             )}
 
             {/* 如果达到最大深度，显示简化的回复列表 */}
             {hasReplies && isExpanded && depth >= maxDepth && (
-              <div className="mt-3 ml-4 border-l-2 border-gray-200 dark:border-gray-600 pl-4">
-                <Text type="secondary" className="text-xs mb-2 block">
+              <div
+                style={{
+                  marginTop: '12px',
+                  marginLeft: '16px',
+                  paddingLeft: '16px',
+                  borderLeft: '2px solid var(--color-border)',
+                }}
+              >
+                <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: '8px' }}>
                   更多回复请点击具体评论查看
                 </Text>
                 {comment.replies.slice(0, 3).map(reply => (
-                  <div key={reply.id} className="mb-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                    <Text strong className="text-xs">
+                  <div
+                    key={reply.id}
+                    style={{
+                      marginBottom: '8px',
+                      padding: '8px',
+                      backgroundColor: 'var(--color-bg-tertiary)',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    <Text strong style={{ fontSize: '12px' }}>
                       {reply.user?.username || '匿名用户'}:
                     </Text>
-                    <Text className="ml-2 text-xs">{reply.content}</Text>
+                    <Text style={{ marginLeft: '8px', fontSize: '12px' }}>{reply.content}</Text>
                   </div>
                 ))}
                 {comment.replies.length > 3 && (
-                  <Text type="secondary" className="text-xs">
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
                     还有 {comment.replies.length - 3} 条回复...
                   </Text>
                 )}
@@ -454,19 +508,28 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
   }
   
   return (
-    <Card className="mt-6">
-      <Title level={4}>
-        <CommentOutlined /> 评论 ({total})
-      </Title>
-      
+    <div style={{ marginTop: '2rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <Title level={4} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
+          <CommentOutlined /> 评论 ({total})
+        </Title>
+      </div>
+
       {/* 发表评论 */}
-      <div className="mb-6">
+      <div
+        style={{
+          marginBottom: '2rem',
+          padding: '1rem',
+          backgroundColor: 'var(--color-bg-secondary)',
+          borderRadius: '8px',
+        }}
+      >
         <TextArea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="发表你的评论..."
           autoSize={{ minRows: 3, maxRows: 6 }}
-          className="mb-2"
+          style={{ marginBottom: '12px' }}
         />
         <Button
           type="primary"
@@ -477,26 +540,33 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
           发表评论
         </Button>
       </div>
-      
-      <Divider />
-      
+
+      <Divider style={{ margin: '1.5rem 0' }} />
+
       {/* 评论列表 */}
       {loading ? (
-        <div className="text-center py-8">
+        <div style={{ textAlign: 'center', padding: '3rem 0' }}>
           <Spin size="large" />
-          <Text className="block mt-2">正在加载评论...</Text>
+          <Text style={{ display: 'block', marginTop: '1rem' }}>正在加载评论...</Text>
         </div>
       ) : comments.length > 0 ? (
-        <div className="space-y-4">
-          {comments.map(comment => (
-            <div key={comment.id} className="border-b border-gray-100 dark:border-gray-700 pb-4 last:border-b-0">
+        <div>
+          {comments.map((comment, index) => (
+            <div
+              key={comment.id}
+              style={{
+                paddingBottom: '1.5rem',
+                marginBottom: '1.5rem',
+                borderBottom: index < comments.length - 1 ? '1px solid var(--color-border)' : 'none',
+              }}
+            >
               {renderComment(comment, 0)}
             </div>
           ))}
 
           {/* 分页 */}
           {total > 10 && (
-            <div className="flex justify-center mt-6">
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
               <Button type="primary" ghost>
                 加载更多评论
               </Button>
@@ -504,14 +574,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
           )}
         </div>
       ) : (
-        <div className="text-center py-8">
-          <CommentOutlined className="text-4xl text-gray-300 dark:text-gray-600 mb-2" />
-          <Text type="secondary" className="block">
+        <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+          <CommentOutlined style={{ fontSize: '3rem', color: 'var(--color-text-tertiary)', marginBottom: '1rem' }} />
+          <Text type="secondary" style={{ display: 'block' }}>
             暂无评论，快来发表第一条评论吧！
           </Text>
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 

@@ -154,7 +154,7 @@ func (s *BlogService) UpdatePost(postID uint, input *models.UpdatePostInput, use
 	}
 
 	// 检查权限（作者或管理员）
-	if post.AuthorID != userID && userRole != "admin" {
+	if post.AuthorID != userID && userRole != "ADMIN" {
 		return nil, models.ErrForbidden
 	}
 
@@ -239,7 +239,7 @@ func (s *BlogService) DeletePost(postID uint, userID uint, userRole string) erro
 	}
 
 	// 检查权限（作者或管理员）
-	if post.AuthorID != userID && userRole != "admin" {
+	if post.AuthorID != userID && userRole != "ADMIN" {
 		return models.ErrForbidden
 	}
 
@@ -263,7 +263,7 @@ func (s *BlogService) PublishPost(postID uint, userID uint, userRole string) (*m
 	}
 
 	// 检查权限（作者或管理员）
-	if post.AuthorID != userID && userRole != "admin" {
+	if post.AuthorID != userID && userRole != "ADMIN" {
 		return nil, models.ErrForbidden
 	}
 
@@ -292,7 +292,7 @@ func (s *BlogService) ArchivePost(postID uint, userID uint, userRole string) (*m
 	}
 
 	// 检查权限（作者或管理员）
-	if post.AuthorID != userID && userRole != "admin" {
+	if post.AuthorID != userID && userRole != "ADMIN" {
 		return nil, models.ErrForbidden
 	}
 
@@ -512,7 +512,7 @@ func (s *BlogService) GetPosts(limit, offset int, filter *PostFilter, sort *Post
 	}
 
 	// 如果不是管理员，只能看到公开的已发布文章
-	if userRole != "admin" {
+	if userRole != "ADMIN" {
 		if userID != nil {
 			// 已登录用户可以看到自己的文章和公开的已发布文章
 			query = query.Where("(status = 'PUBLISHED' AND access_level = 'PUBLIC') OR author_id = ?", *userID)
@@ -576,7 +576,7 @@ func (s *BlogService) SearchPosts(searchQuery string, limit, offset int, userID 
 		searchPattern, searchPattern, searchPattern, searchPattern)
 
 	// 权限控制
-	if userRole != "admin" {
+	if userRole != "ADMIN" {
 		if userID != nil {
 			query = query.Where("(status = 'PUBLISHED' AND access_level = 'PUBLIC') OR author_id = ?", *userID)
 		} else {
@@ -603,7 +603,7 @@ func (s *BlogService) GetPopularPosts(limit int, userID *uint, userRole string) 
 	query := s.db.Preload("Author").Preload("Stats")
 
 	// 权限控制
-	if userRole != "admin" {
+	if userRole != "ADMIN" {
 		if userID != nil {
 			query = query.Where("(status = 'PUBLISHED' AND access_level = 'PUBLIC') OR author_id = ?", *userID)
 		} else {
@@ -632,7 +632,7 @@ func (s *BlogService) GetRecentPosts(limit int, userID *uint, userRole string) (
 	query := s.db.Preload("Author").Preload("Stats")
 
 	// 权限控制
-	if userRole != "admin" {
+	if userRole != "ADMIN" {
 		if userID != nil {
 			query = query.Where("(status = 'PUBLISHED' AND access_level = 'PUBLIC') OR author_id = ?", *userID)
 		} else {
@@ -660,7 +660,7 @@ func (s *BlogService) GetPostVersions(postID uint, userID uint, userRole string)
 	}
 
 	// 只有作者或管理员可以查看版本历史
-	if post.AuthorID != userID && userRole != "admin" {
+	if post.AuthorID != userID && userRole != "ADMIN" {
 		return nil, models.ErrForbidden
 	}
 

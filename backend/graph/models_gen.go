@@ -25,6 +25,18 @@ type AuthPayload struct {
 	ExpiresAt    time.Time `json:"expiresAt"`
 }
 
+type BatchUpdateCategoriesInput struct {
+	PostIds    []string     `json:"postIds"`
+	Categories []string     `json:"categories"`
+	Operation  TagOperation `json:"operation"`
+}
+
+type BatchUpdateTagsInput struct {
+	PostIds   []string     `json:"postIds"`
+	Tags      []string     `json:"tags"`
+	Operation TagOperation `json:"operation"`
+}
+
 type BlogPost struct {
 	ID            string             `json:"id"`
 	Title         string             `json:"title"`
@@ -78,6 +90,12 @@ type BlogPostVersion struct {
 	ChangeLog  *string   `json:"changeLog,omitempty"`
 	CreatedAt  time.Time `json:"createdAt"`
 	CreatedBy  *User     `json:"createdBy"`
+}
+
+type CategoryInfo struct {
+	Name  string      `json:"name"`
+	Count int         `json:"count"`
+	Posts []*BlogPost `json:"posts"`
 }
 
 type CommentFilterInput struct {
@@ -279,6 +297,19 @@ type ServerMemoryStats struct {
 	HeapSys    string `json:"heapSys"`
 }
 
+type TagCategoryStats struct {
+	TotalTags       int             `json:"totalTags"`
+	TotalCategories int             `json:"totalCategories"`
+	Tags            []*TagInfo      `json:"tags"`
+	Categories      []*CategoryInfo `json:"categories"`
+}
+
+type TagInfo struct {
+	Name  string      `json:"name"`
+	Count int         `json:"count"`
+	Posts []*BlogPost `json:"posts"`
+}
+
 type UpdateCommentInput struct {
 	Content string `json:"content"`
 }
@@ -434,6 +465,61 @@ func (e *PostStatus) UnmarshalJSON(b []byte) error {
 }
 
 func (e PostStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type TagOperation string
+
+const (
+	TagOperationAdd     TagOperation = "ADD"
+	TagOperationReplace TagOperation = "REPLACE"
+)
+
+var AllTagOperation = []TagOperation{
+	TagOperationAdd,
+	TagOperationReplace,
+}
+
+func (e TagOperation) IsValid() bool {
+	switch e {
+	case TagOperationAdd, TagOperationReplace:
+		return true
+	}
+	return false
+}
+
+func (e TagOperation) String() string {
+	return string(e)
+}
+
+func (e *TagOperation) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TagOperation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TagOperation", str)
+	}
+	return nil
+}
+
+func (e TagOperation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *TagOperation) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e TagOperation) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

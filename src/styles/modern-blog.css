@@ -207,7 +207,17 @@ html.dark .gradient-border::before {
   box-shadow: var(--shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
   transition: var(--transition-all-long, all 0.3s ease);
   overflow: hidden;
-  margin-bottom: var(--spacing-lg, 1.25rem);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 确保 Ant Design Card 内部也使用 flex 布局 */
+.article-card > .ant-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
 }
 
 .article-card:hover {

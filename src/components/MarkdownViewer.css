@@ -32,32 +32,121 @@ html:not(.dark) .markdown-body pre {
   color: #1f2937;
 }
 
+/* 亮色模式下的表格样式 */
+html.light .markdown-body table,
+html:not(.dark) .markdown-body table {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+}
+
+html.light .markdown-body th,
+html:not(.dark) .markdown-body th {
+  background-color: #f6f8fa !important;
+  color: #1f2937 !important;
+  border-color: #d0d7de !important;
+}
+
+html.light .markdown-body td,
+html:not(.dark) .markdown-body td {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border-color: #d0d7de !important;
+}
+
+html.light .markdown-body tr,
+html:not(.dark) .markdown-body tr {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+}
+
+html.light .markdown-body tr:nth-child(2n),
+html:not(.dark) .markdown-body tr:nth-child(2n) {
+  background-color: #f6f8fa !important;
+}
+
+/* 亮色模式下的链接样式 */
+html.light .markdown-body a,
+html:not(.dark) .markdown-body a {
+  color: #0969da !important;
+  text-decoration: none;
+}
+
+html.light .markdown-body a:hover,
+html:not(.dark) .markdown-body a:hover {
+  text-decoration: underline;
+}
+
+/* 亮色模式下的引用块样式 */
+html.light .markdown-body blockquote,
+html:not(.dark) .markdown-body blockquote {
+  background-color: transparent !important;
+  border-left-color: #d0d7de !important;
+  color: #656d76 !important;
+}
+
+/* 亮色模式下的分割线样式 */
+html.light .markdown-body hr,
+html:not(.dark) .markdown-body hr {
+  background-color: #d0d7de !important;
+  border-color: #d0d7de !important;
+}
+
+/* 亮色模式下的标题样式 */
+html.light .markdown-body h1,
+html.light .markdown-body h2,
+html.light .markdown-body h3,
+html.light .markdown-body h4,
+html.light .markdown-body h5,
+html.light .markdown-body h6,
+html:not(.dark) .markdown-body h1,
+html:not(.dark) .markdown-body h2,
+html:not(.dark) .markdown-body h3,
+html:not(.dark) .markdown-body h4,
+html:not(.dark) .markdown-body h5,
+html:not(.dark) .markdown-body h6 {
+  color: #1f2937 !important;
+  border-bottom-color: #d0d7de !important;
+}
+
+/* 亮色模式下的列表样式 */
+html.light .markdown-body ul,
+html.light .markdown-body ol,
+html:not(.dark) .markdown-body ul,
+html:not(.dark) .markdown-body ol {
+  color: #1f2937 !important;
+}
+
+html.light .markdown-body li,
+html:not(.dark) .markdown-body li {
+  color: #1f2937 !important;
+}
+
 /* 深色模式下的样式 */
 html.dark .markdown-viewer-card {
-  background-color: #0d1117;
+  background-color: var(--color-bg);
 }
 
 /* 确保 markdown 内容在深色模式下也有合适的背景 */
 html.dark .markdown-body {
-  background-color: #0d1117 !important;
-  color: #f0f6fc !important;
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
   color-scheme: dark;
-  --focus-outlineColor: #1f6feb;
-  --fgColor-default: #f0f6fc;
-  --fgColor-muted: #9198a1;
-  --fgColor-accent: #4493f8;
+  --focus-outlineColor: var(--color-primary);
+  --fgColor-default: var(--color-text);
+  --fgColor-muted: var(--color-text-secondary);
+  --fgColor-accent: var(--color-primary);
   --fgColor-success: #3fb950;
   --fgColor-attention: #d29922;
   --fgColor-danger: #f85149;
   --fgColor-done: #ab7df8;
-  --bgColor-default: #0d1117;
-  --bgColor-muted: #151b23;
+  --bgColor-default: var(--color-bg);
+  --bgColor-muted: var(--color-bg-secondary);
   --bgColor-neutral-muted: #656c7633;
   --bgColor-attention-muted: #bb800926;
-  --borderColor-default: #3d444d;
-  --borderColor-muted: #3d444db3;
-  --borderColor-neutral-muted: #3d444db3;
-  --borderColor-accent-emphasis: #1f6feb;
+  --borderColor-default: var(--color-border);
+  --borderColor-muted: var(--color-border-secondary);
+  --borderColor-neutral-muted: var(--color-border-secondary);
+  --borderColor-accent-emphasis: var(--color-primary);
   --borderColor-success-emphasis: #238636;
   --borderColor-attention-emphasis: #9e6a03;
   --borderColor-danger-emphasis: #da3633;
@@ -66,39 +155,90 @@ html.dark .markdown-body {
 
 /* 确保代码块在深色模式下正确显示 */
 html.dark .markdown-body code {
-  background-color: #151b23 !important;
-  color: #f0f6fc;
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text);
 }
 
 html.dark .markdown-body pre {
-  background-color: #151b23 !important;
-  color: #f0f6fc;
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text);
 }
 
 /* 确保表格在深色模式下正确显示 */
 html.dark .markdown-body table {
-  background-color: #0d1117;
+  background-color: var(--color-bg);
 }
 
 html.dark .markdown-body th {
-  background-color: #151b23;
-  color: #f0f6fc;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text);
 }
 
 html.dark .markdown-body td {
-  background-color: #0d1117;
-  color: #f0f6fc;
-  border-color: #3d444d;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  border-color: var(--color-border);
 }
 
 /* 确保引用块在深色模式下正确显示 */
 html.dark .markdown-body blockquote {
-  background-color: #151b23;
-  border-left-color: #1f6feb;
-  color: #9198a1;
+  background-color: var(--color-bg-secondary);
+  border-left-color: var(--color-primary);
+  color: var(--color-text-secondary);
 }
 
 /* 处理段落在深色模式下的样式 */
 html.dark .markdown-body p {
-  color: #f0f6fc;
+  color: var(--color-text);
+}
+
+/* 深色模式下的链接样式 */
+html.dark .markdown-body a {
+  color: var(--color-primary) !important;
+  text-decoration: none;
+}
+
+html.dark .markdown-body a:hover {
+  color: var(--color-primary) !important;
+  text-decoration: underline;
+}
+
+/* 深色模式下的标题样式 */
+html.dark .markdown-body h1,
+html.dark .markdown-body h2,
+html.dark .markdown-body h3,
+html.dark .markdown-body h4,
+html.dark .markdown-body h5,
+html.dark .markdown-body h6 {
+  color: var(--color-text) !important;
+  border-bottom-color: var(--color-border) !important;
+}
+
+/* 深色模式下的列表样式 */
+html.dark .markdown-body ul,
+html.dark .markdown-body ol {
+  color: var(--color-text) !important;
+}
+
+html.dark .markdown-body li {
+  color: var(--color-text) !important;
+}
+
+/* 深色模式下的分割线样式 */
+html.dark .markdown-body hr {
+  background-color: var(--color-border) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* 深色模式下的表格边框 */
+html.dark .markdown-body table {
+  border-color: var(--color-border) !important;
+}
+
+html.dark .markdown-body tr {
+  border-color: var(--color-border) !important;
+}
+
+html.dark .markdown-body tr:nth-child(2n) {
+  background-color: var(--color-bg-secondary) !important;
 }

@@ -18,7 +18,7 @@ if (import.meta.env.DEV || process.env.NODE_ENV !== "production") {
 
 // 创建HTTP链接
 const httpLink = createHttpLink({
-  uri: `${import.meta.env.VITE_API_BASE_URL || "http://0.0.0.0:11451/"}graphql`,
+  uri: `${import.meta.env.VITE_API_BASE_URL || "http://localhost:11451/"}graphql`,
 });
 
 // 认证链接 - 自动添加JWT token到请求头
@@ -32,7 +32,7 @@ const authLink = setContext((_, { headers }) => {
   
   // 基本的JWT格式验证（应该有3个部分，用.分隔）
   if (token && token.split('.').length !== 3) {
-    console.warn('Invalid JWT token format, removing from storage');
+    // Invalid JWT token format, removing from storage
     localStorage.removeItem('token');
     token = null;
   }

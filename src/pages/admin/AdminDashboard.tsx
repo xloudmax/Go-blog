@@ -72,9 +72,9 @@ export default function AdminDashboard() {
           <Space>
             <Tag
               color={
-                systemHealth.status === 'excellent' ? 'success' :
-                systemHealth.status === 'good' ? 'processing' :
-                systemHealth.status === 'warning' ? 'warning' : 'error'
+                systemHealth.status === 'excellent' ? 'blue' :
+                systemHealth.status === 'good' ? 'green' :
+                systemHealth.status === 'warning' ? 'orange' : 'red'
               }
             >
               {systemHealth.status === 'excellent' ? '优秀' :

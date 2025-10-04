@@ -55,7 +55,7 @@ func (s *SearchService) AdvancedSearchPosts(query string, limit, offset int, use
 		Preload("Stats")
 
 	// 权限过滤
-	if userRole != "admin" {
+	if userRole != "ADMIN" {
 		if userID != nil {
 			dbQuery = dbQuery.Where("(status = 'PUBLISHED' AND access_level = 'PUBLIC') OR author_id = ?", *userID)
 		} else {
@@ -106,6 +106,9 @@ func (s *SearchService) AdvancedSearchPosts(query string, limit, offset int, use
 		Total: total,
 		Took:  took,
 	}
+
+	// 记录搜索查询
+	s.LogSearchQuery(query, len(result), userID)
 
 	// 缓存搜索结果（5分钟TTL）
 	cacheService.Set(query, limit, offset, userID, userRole, searchResult, 5*time.Minute)
@@ -633,4 +636,110 @@ func (s *SearchService) GetAuthorFacets(query string, limit int) ([]FacetItem, e
 func (s *SearchService) GetCacheStats() map[string]interface{} {
 	cacheService := GetGlobalSearchCache()
 	return cacheService.GetCacheStats()
+}
+
+// LogSearchQuery 记录搜索查询
+func (s *SearchService) LogSearchQuery(query string, resultCount int, userID *uint) error {
+	// 如果查询为空，不记录
+	if strings.TrimSpace(query) == "" {
+		return nil
+	}
+
+	// 创建搜索查询记录
+	searchQuery := &models.SearchQuery{
+		Query:       strings.TrimSpace(query),
+		ResultCount: resultCount,
+		UserID:      userID,
+	}
+
+	// 异步记录，不阻塞主流程
+	go func() {
+		if err := s.db.Create(searchQuery).Error; err != nil {
+			// 记录错误但不影响搜索结果
+			// 可以添加日志记录
+		}
+	}()
+
+	return nil
+}
+
+// GetSearchQueryStats 获取搜索统计数据
+func (s *SearchService) GetSearchQueryStats(limit int, days int) ([]models.SearchQueryStats, error) {
+	var stats []models.SearchQueryStats
+
+	// 计算时间范围
+	startDate := time.Now().AddDate(0, 0, -days)
+
+	// 聚合查询：按查询词分组，统计次数和最后搜索时间
+	err := s.db.Model(&models.SearchQuery{}).
+		Select("query, COUNT(*) as count, MAX(created_at) as last_searched").
+		Where("created_at >= ?", startDate).
+		Group("query").
+		Order("count DESC").
+		Limit(limit).
+		Scan(&stats).Error
+
+	return stats, err
+}
+
+// GetTotalSearchCount 获取总搜索次数
+func (s *SearchService) GetTotalSearchCount(days int) (int64, error) {
+	var count int64
+
+	startDate := time.Now().AddDate(0, 0, -days)
+
+	err := s.db.Model(&models.SearchQuery{}).
+		Where("created_at >= ?", startDate).
+		Count(&count).Error
+
+	return count, err
+}
+
+// GetUniqueSearchCount 获取唯一搜索词数量
+func (s *SearchService) GetUniqueSearchCount(days int) (int64, error) {
+	var count int64
+
+	startDate := time.Now().AddDate(0, 0, -days)
+
+	err := s.db.Model(&models.SearchQuery{}).
+		Select("COUNT(DISTINCT query)").
+		Where("created_at >= ?", startDate).
+		Count(&count).Error
+
+	return count, err
+}
+
+// GetSearchTrends 获取搜索趋势数据
+func (s *SearchService) GetSearchTrends(days int) ([]map[string]interface{}, error) {
+	var trends []map[string]interface{}
+
+	startDate := time.Now().AddDate(0, 0, -days)
+
+	// 按日期分组统计搜索次数
+	type DailyCount struct {
+		Date  string `json:"date"`
+		Count int64  `json:"count"`
+	}
+
+	var dailyCounts []DailyCount
+	err := s.db.Model(&models.SearchQuery{}).
+		Select("DATE(created_at) as date, COUNT(*) as count").
+		Where("created_at >= ?", startDate).
+		Group("DATE(created_at)").
+		Order("date ASC").
+		Scan(&dailyCounts).Error
+
+	if err != nil {
+		return trends, err
+	}
+
+	// 转换为通用格式
+	for _, dc := range dailyCounts {
+		trends = append(trends, map[string]interface{}{
+			"date":  dc.Date,
+			"count": dc.Count,
+		})
+	}
+
+	return trends, nil
 }

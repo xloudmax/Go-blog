@@ -39,6 +39,7 @@ fragment BlogPostInfo on BlogPost {
   lastEditedAt
   createdAt
   updatedAt
+  isLiked
 }
 
 fragment BlogPostSummary on BlogPost {
@@ -51,6 +52,8 @@ fragment BlogPostSummary on BlogPost {
   coverImageUrl
   status
   publishedAt
+  createdAt
+  isLiked
   author {
     ...UserSummary
   }

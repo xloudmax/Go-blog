@@ -13,7 +13,8 @@ import {
   Avatar,
   Typography,
   Tooltip,
-  Badge
+  Badge,
+  Spin
 } from 'antd';
 import {
   EditOutlined,
@@ -26,7 +27,7 @@ import {
   LockOutlined,
   FileDoneOutlined
 } from '@ant-design/icons';
-import { usePostsQuery, useUpdatePostMutation, useDeletePostMutation } from '@/generated/graphql';
+import { usePostsQuery, usePostQuery, useUpdatePostMutation, useDeletePostMutation } from '@/generated/graphql';
 import type { UpdatePostInput, PostStatus, AccessLevel } from '@/generated/graphql';
 import dayjs from 'dayjs';
 
@@ -34,10 +35,9 @@ const { Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-interface PostManagementProps {}
-
-const PostManagement: React.FC<PostManagementProps> = () => {
+const PostManagement: React.FC = () => {
   const [editingPost, setEditingPost] = useState<any>(null);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [form] = Form.useForm();
 
@@ -47,29 +47,45 @@ const PostManagement: React.FC<PostManagementProps> = () => {
     errorPolicy: 'all'
   });
 
+  // 获取单个文章详情（包含完整content）
+  const { data: postDetailData, loading: loadingDetail } = usePostQuery({
+    variables: { id: editingPostId || '' },
+    skip: !editingPostId,
+    errorPolicy: 'all'
+  });
+
   const [updatePost, { loading: updateLoading }] = useUpdatePostMutation();
   const [deletePost, { loading: deleteLoading }] = useDeletePostMutation();
 
+  // 当文章详情加载完成时，填充表单
+  React.useEffect(() => {
+    if (postDetailData?.post && isEditModalOpen) {
+      const post = postDetailData.post;
+      form.setFieldsValue({
+        title: post.title,
+        excerpt: post.excerpt,
+        content: post.content,
+        tags: post.tags,
+        categories: post.categories,
+        status: post.status,
+        accessLevel: post.accessLevel,
+        coverImageUrl: post.coverImageUrl
+      });
+      setEditingPost(post);
+    }
+  }, [postDetailData, isEditModalOpen, form]);
+
   // 打开编辑模态框
   const handleEdit = useCallback((post: any) => {
-    setEditingPost(post);
-    form.setFieldsValue({
-      title: post.title,
-      excerpt: post.excerpt,
-      content: post.content,
-      tags: post.tags,
-      categories: post.categories,
-      status: post.status,
-      accessLevel: post.accessLevel,
-      coverImageUrl: post.coverImageUrl
-    });
+    setEditingPostId(post.id);
     setIsEditModalOpen(true);
-  }, [form]);
+  }, []);
 
   // 关闭编辑模态框
   const handleCloseEdit = useCallback(() => {
     setIsEditModalOpen(false);
     setEditingPost(null);
+    setEditingPostId(null);
     form.resetFields();
   }, [form]);
 
@@ -100,7 +116,6 @@ const PostManagement: React.FC<PostManagementProps> = () => {
       handleCloseEdit();
       refetch();
     } catch (error) {
-      console.error('更新文章失败:', error);
       message.error('更新文章失败');
     }
   }, [form, editingPost, updatePost, refetch, handleCloseEdit]);
@@ -114,7 +129,6 @@ const PostManagement: React.FC<PostManagementProps> = () => {
       message.success(`文章 "${postTitle}" 删除成功`);
       refetch();
     } catch (error) {
-      console.error('删除文章失败:', error);
       message.error('删除文章失败');
     }
   }, [deletePost, refetch]);
@@ -367,11 +381,12 @@ const PostManagement: React.FC<PostManagementProps> = () => {
         width={800}
         destroyOnClose
       >
-        <Form
-          form={form}
-          layout="vertical"
-          preserve={false}
-        >
+        <Spin spinning={loadingDetail} tip="正在加载文章详情...">
+          <Form
+            form={form}
+            layout="vertical"
+            preserve={false}
+          >
           <Form.Item
             name="title"
             label="标题"
@@ -460,6 +475,7 @@ const PostManagement: React.FC<PostManagementProps> = () => {
             <Input placeholder="请输入封面图片URL" />
           </Form.Item>
         </Form>
+        </Spin>
       </Modal>
     </div>
   );

@@ -165,10 +165,10 @@ export const useBlogDashboard = () => {
     variables: { limit: 10 }
   });
 
-  const popularPosts = popularData?.getPopularPosts || [];
-  const recentPosts = recentData?.getRecentPosts || [];
+  const popularPosts = useMemo(() => popularData?.getPopularPosts || [], [popularData?.getPopularPosts]);
+  const recentPosts = useMemo(() => recentData?.getRecentPosts || [], [recentData?.getRecentPosts]);
   const trendingTags = tagsData?.getTrendingTags || [];
-  
+
   const stats = useMemo<DashboardStats>(() => {
     const totalViews = popularPosts.reduce((sum, post) => sum + (post.stats?.viewCount || 0), 0);
     const totalLikes = popularPosts.reduce((sum, post) => sum + (post.stats?.likeCount || 0), 0);

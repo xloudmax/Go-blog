@@ -206,10 +206,12 @@ describe('MarkdownEditor Component Tests', () => {
 
     // Click save button (use the primary button)
     const saveButtons = screen.getAllByText('保存');
-    const primarySaveButton = saveButtons.find(btn => 
+    const primarySaveButton = saveButtons.find(btn =>
       btn.closest('button')?.classList.contains('primary-button')
-    )?.closest('button')!;
-    fireEvent.click(primarySaveButton);
+    )?.closest('button');
+
+    expect(primarySaveButton).toBeTruthy();
+    fireEvent.click(primarySaveButton!);
 
     // Wait for save to complete and success message to show
     await waitFor(() => {
@@ -233,10 +235,12 @@ describe('MarkdownEditor Component Tests', () => {
 
     // Click save button (use the primary button)
     const saveButtons = screen.getAllByText('保存');
-    const primarySaveButton = saveButtons.find(btn => 
+    const primarySaveButton = saveButtons.find(btn =>
       btn.closest('button')?.classList.contains('primary-button')
-    )?.closest('button')!;
-    fireEvent.click(primarySaveButton);
+    )?.closest('button');
+
+    expect(primarySaveButton).toBeTruthy();
+    fireEvent.click(primarySaveButton!);
 
     // Wait for error handling
     await waitFor(() => {

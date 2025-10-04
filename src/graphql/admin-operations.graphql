@@ -27,6 +27,32 @@ query InviteCodes($limit: Int, $offset: Int, $isActive: Boolean) {
   }
 }
 
+# Admin Comments Management
+query AllComments($limit: Int, $offset: Int, $filter: CommentFilterInput, $sort: CommentSortInput) {
+  comments(limit: $limit, offset: $offset, filter: $filter, sort: $sort) {
+    comments {
+      id
+      content
+      isApproved
+      likeCount
+      reportCount
+      createdAt
+      updatedAt
+      user {
+        id
+        username
+        avatar
+      }
+      blogPost {
+        id
+        title
+        slug
+      }
+    }
+    total
+  }
+}
+
 mutation AdminCreateUser($input: AdminCreateUserInput!) {
   adminCreateUser(input: $input) {
     id
@@ -78,5 +104,40 @@ mutation ClearCache {
 mutation RebuildSearchIndex {
   rebuildSearchIndex {
     ...GeneralResponseInfo
+  }
+}
+
+# Comment Management Mutations
+mutation ApproveComment($id: ID!) {
+  approveComment(id: $id) {
+    id
+    content
+    isApproved
+    likeCount
+    reportCount
+    createdAt
+    updatedAt
+    user {
+      id
+      username
+      avatar
+    }
+  }
+}
+
+mutation RejectComment($id: ID!) {
+  rejectComment(id: $id) {
+    id
+    content
+    isApproved
+    likeCount
+    reportCount
+    createdAt
+    updatedAt
+    user {
+      id
+      username
+      avatar
+    }
   }
 }

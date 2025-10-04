@@ -87,13 +87,13 @@ func (h *TestHelper) CreateTestUser(username, email, password string, isAdmin bo
 	user := &models.User{
 		Username:   username,
 		Email:      email,
-		Role:       "user",
+		Role:       "USER",
 		IsVerified: true, // 测试环境自动验证
 		IsActive:   true,
 	}
 
 	if isAdmin {
-		user.Role = "admin"
+		user.Role = "ADMIN"
 	}
 
 	if err := user.SetPassword(password); err != nil {
@@ -259,6 +259,6 @@ var TestData = struct {
 	}{
 		{"testuser1", "test1@example.com", "password123", false},
 		{"testuser2", "test2@example.com", "password123", false},
-		{"admin", "admin@example.com", "admin123", true},
+		{"ADMIN", "admin@example.com", "admin123", true},
 	},
 }

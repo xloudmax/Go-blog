@@ -57,7 +57,7 @@ func (rs *ResourceService) FindBlogPost(identifier string, userID *uint, userRol
 	default:
 		return &BlogPostQuery{
 			Post:  nil,
-			Error: fmt.Errorf("不支持的文章ID类型: %s", idInfo.Type),
+			Error: fmt.Errorf("不支持的文章ID类型: %v", idInfo.Type),
 		}
 	}
 }

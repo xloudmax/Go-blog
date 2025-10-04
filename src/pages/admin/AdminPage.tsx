@@ -11,6 +11,9 @@ import UserManagement from './UserManagement';
 import InviteCodeManagement from './InviteCodeManagement';
 import SystemManagement from './SystemManagement';
 import PostManagement from './PostManagement';
+import CommentManagement from './CommentManagement';
+import SearchAnalytics from './SearchAnalytics';
+import TagManagement from './TagManagement';
 
 const { Title } = Typography;
 
@@ -38,8 +41,14 @@ export default function AdminPage() {
         return <UserManagement />;
       case 'posts':
         return <PostManagement />;
+      case 'comments':
+        return <CommentManagement />;
       case 'invites':
         return <InviteCodeManagement />;
+      case 'tags':
+        return <TagManagement />;
+      case 'analytics':
+        return <SearchAnalytics />;
       case 'system':
         return <SystemManagement />;
       default:
@@ -107,10 +116,28 @@ export default function AdminPage() {
                 <Typography.Text type="secondary">管理博客文章内容和状态</Typography.Text>
               </>
             )}
+            {currentTab === 'comments' && (
+              <>
+                <Title level={3} style={{ margin: '0 0 8px 0' }}>评论管理</Title>
+                <Typography.Text type="secondary">审核和管理用户评论</Typography.Text>
+              </>
+            )}
             {currentTab === 'invites' && (
               <>
                 <Title level={3} style={{ margin: '0 0 8px 0' }}>邀请码管理</Title>
                 <Typography.Text type="secondary">创建和管理邀请码</Typography.Text>
+              </>
+            )}
+            {currentTab === 'tags' && (
+              <>
+                <Title level={3} style={{ margin: '0 0 8px 0' }}>标签管理</Title>
+                <Typography.Text type="secondary">管理标签和分类，合并重复项</Typography.Text>
+              </>
+            )}
+            {currentTab === 'analytics' && (
+              <>
+                <Title level={3} style={{ margin: '0 0 8px 0' }}>搜索分析</Title>
+                <Typography.Text type="secondary">搜索统计和趋势分析</Typography.Text>
               </>
             )}
             {currentTab === 'system' && (

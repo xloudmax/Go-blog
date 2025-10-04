@@ -486,15 +486,15 @@ input CommentSortInput {
 }
 
 extend type Query {
-  # 获取文章评论列表
+  # 获取文章评论列表（管理员可不传blogPostId查看所有评论）
   comments(
-    blogPostId: ID!
+    blogPostId: ID
     limit: Int = 10
     offset: Int = 0
     filter: CommentFilterInput
     sort: CommentSortInput
   ): CommentResult!
-  
+
   # 获取单个评论
   comment(id: ID!): BlogPostComment
 }
@@ -502,25 +502,106 @@ extend type Query {
 extend type Mutation {
   # 创建评论
   createComment(input: CreateCommentInput!): BlogPostComment!
-  
+
   # 更新评论
   updateComment(id: ID!, input: UpdateCommentInput!): BlogPostComment!
-  
+
   # 删除评论
   deleteComment(id: ID!): GeneralResponse!
-  
+
   # 点赞评论
   likeComment(id: ID!): BlogPostComment!
-  
+
   # 取消点赞评论
   unlikeComment(id: ID!): BlogPostComment!
-  
+
   # 举报评论
   reportComment(id: ID!): BlogPostComment!
+
+  # 审核评论（管理员）
+  approveComment(id: ID!): BlogPostComment!
+  rejectComment(id: ID!): BlogPostComment!
 }
 
 # 评论结果类型
 type CommentResult {
   comments: [BlogPostComment!]!
   total: Int!
+}
+
+# --------------------
+# TAG & CATEGORY MANAGEMENT
+# --------------------
+
+# 标签信息类型
+type TagInfo {
+  name: String!
+  count: Int!
+  posts: [BlogPost!]!
+}
+
+# 分类信息类型
+type CategoryInfo {
+  name: String!
+  count: Int!
+  posts: [BlogPost!]!
+}
+
+# 标签/分类统计信息
+type TagCategoryStats {
+  totalTags: Int!
+  totalCategories: Int!
+  tags: [TagInfo!]!
+  categories: [CategoryInfo!]!
+}
+
+# 批量更新标签输入
+input BatchUpdateTagsInput {
+  postIds: [ID!]!
+  tags: [String!]!
+  operation: TagOperation! # ADD or REPLACE
+}
+
+# 批量更新分类输入
+input BatchUpdateCategoriesInput {
+  postIds: [ID!]!
+  categories: [String!]!
+  operation: TagOperation! # ADD or REPLACE
+}
+
+# 标签操作类型
+enum TagOperation {
+  ADD      # 添加到现有标签
+  REPLACE  # 替换所有标签
+}
+
+extend type Query {
+  # 获取所有标签（带使用次数）
+  getTags(limit: Int, offset: Int, search: String): [TagInfo!]!
+
+  # 获取所有分类（带使用次数）
+  getCategories(limit: Int, offset: Int, search: String): [CategoryInfo!]!
+
+  # 获取标签和分类统计信息
+  getTagCategoryStats: TagCategoryStats!
+}
+
+extend type Mutation {
+  # 合并标签（将 sourceTag 的所有文章移到 targetTag）
+  mergeTags(sourceTag: String!, targetTag: String!): GeneralResponse!
+
+  # 合并分类
+  mergeCategories(sourceCategory: String!, targetCategory: String!): GeneralResponse!
+
+  # 批量更新文章标签
+  batchUpdateTags(input: BatchUpdateTagsInput!): GeneralResponse!
+
+  # 批量更新文章分类
+  batchUpdateCategories(input: BatchUpdateCategoriesInput!): GeneralResponse!
+
+  # 删除未使用的标签（不关联任何文章的标签）
+  deleteUnusedTags: GeneralResponse!
+
+  # 删除未使用的分类
+  deleteUnusedCategories: GeneralResponse!
 }

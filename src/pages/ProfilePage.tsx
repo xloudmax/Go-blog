@@ -26,9 +26,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
 
-interface ProfilePageProps {}
-
-const ProfilePage: React.FC<ProfilePageProps> = () => {
+const ProfilePage: React.FC = () => {
   const { user, refreshUser } = useAppUser();
   const [form] = Form.useForm();
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(user?.avatar || undefined);
@@ -39,7 +37,6 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
       refreshUser();
     },
     onError: (error) => {
-      console.error('更新个人资料失败:', error);
       message.error(`更新失败: ${error.message}`);
     }
   });
@@ -73,7 +70,6 @@ const ProfilePage: React.FC<ProfilePageProps> = () => {
         variables: { input: filteredInput }
       });
     } catch (error) {
-      console.error('更新个人资料失败:', error);
       message.error('更新失败，请重试');
     }
   };

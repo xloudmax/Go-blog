@@ -110,7 +110,7 @@ func (s *FileService) DeleteImage(filename string, userID uint, userRole string)
 	// 权限检查：只有管理员或文件所有者可以删除
 	// 从文件名中提取用户ID（格式：userID_timestamp.ext）
 	parts := strings.Split(filename, "_")
-	if len(parts) >= 2 && userRole != "admin" {
+	if len(parts) >= 2 && userRole != "ADMIN" {
 		// 提取文件名中的用户ID进行权限验证（简化实现）
 		// 实际项目中应该在数据库中记录文件归属
 		if !strings.HasPrefix(filename, fmt.Sprintf("%d_", userID)) {

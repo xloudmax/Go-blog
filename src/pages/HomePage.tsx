@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Button,
   Typography
@@ -29,7 +29,18 @@ export default function HomePage() {
 
   // 当前显示的文章列表
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
-  const [allTags, setAllTags] = useState<string[]>([]);
+
+  // 使用 useMemo 缓存所有标签列表
+  const allTags = useMemo(() => {
+    if (!posts) return [];
+    const tags = new Set<string>();
+    posts.forEach(post => {
+      if (post.tags) {
+        post.tags.forEach(tag => tags.add(tag));
+      }
+    });
+    return Array.from(tags);
+  }, [posts]);
 
   // 更新筛选后的文章列表
   React.useEffect(() => {
@@ -40,7 +51,7 @@ export default function HomePage() {
     // 应用搜索筛选
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(post => 
+      result = result.filter(post =>
         post.title.toLowerCase().includes(query) ||
         (post.excerpt && post.excerpt.toLowerCase().includes(query)) ||
         (post.tags && post.tags.some(tag => tag.toLowerCase().includes(query)))
@@ -49,7 +60,7 @@ export default function HomePage() {
 
     // 应用标签筛选
     if (filters.tags && filters.tags.length > 0) {
-      result = result.filter(post => 
+      result = result.filter(post =>
         post.tags && filters.tags?.every(tag => post.tags?.includes(tag))
       );
     }
@@ -60,15 +71,6 @@ export default function HomePage() {
     }
 
     setFilteredPosts(result);
-
-    // 收集所有标签
-    const tags = new Set<string>();
-    posts.forEach(post => {
-      if (post.tags) {
-        post.tags.forEach(tag => tags.add(tag));
-      }
-    });
-    setAllTags(Array.from(tags));
   }, [posts, searchQuery, filters]);
 
   // 处理搜索
@@ -93,9 +95,8 @@ export default function HomePage() {
   };
 
   // 处理文章操作
-  const handlePostAction = (action: 'view' | 'edit' | 'share', post: BlogPost) => {
+  const handlePostAction = (_action: 'view' | 'edit' | 'share', _post: BlogPost) => {
     // 这里可以添加全局的操作处理逻辑
-    console.log(`执行操作: ${action} on post: ${post.title}`);
   };
 
   return (

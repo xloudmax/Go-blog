@@ -43,7 +43,7 @@ export const useEnhancedSearchHook = (): UseEnhancedSearchReturn => {
     try {
       await search(input);
     } catch (err) {
-      console.error('Search error:', err);
+      // 错误已经在 GraphQL 层处理
     }
   }, [search]);
   

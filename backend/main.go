@@ -71,13 +71,21 @@ func initLogger(cfg *config.Config) {
 }
 
 func setupCORS(r *gin.Engine, cfg *config.Config) {
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     cfg.AllowedOrigins,
+	corsConfig := cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
 		MaxAge:           24 * time.Hour,
-	}))
+	}
+
+	// 开发环境允许所有来源
+	if cfg.IsDevelopment() {
+		corsConfig.AllowAllOrigins = true
+	} else {
+		corsConfig.AllowOrigins = cfg.AllowedOrigins
+	}
+
+	r.Use(cors.New(corsConfig))
 }
 
 func startServer(r *gin.Engine, cfg *config.Config) {

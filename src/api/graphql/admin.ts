@@ -469,7 +469,8 @@ export const useAdminAuth = () => {
   };
 
   const isAdmin = (): boolean => {
-    return getCurrentUserRole() === 'admin';
+    const role = getCurrentUserRole();
+    return role === 'admin' || role === 'ADMIN';
   };
 
   const requireAdmin = (): void => {
@@ -515,5 +516,189 @@ export const useSystemStats = () => {
     loading,
     error,
     refetch,
+  };
+};
+
+// ==================== COMMENT MANAGEMENT ====================
+
+// 获取所有评论（管理员）
+export const ALL_COMMENTS_QUERY = gql`
+  query AllComments($limit: Int, $offset: Int, $filter: CommentFilterInput, $sort: CommentSortInput) {
+    comments(limit: $limit, offset: $offset, filter: $filter, sort: $sort) {
+      comments {
+        id
+        content
+        isApproved
+        likeCount
+        reportCount
+        createdAt
+        updatedAt
+        user {
+          id
+          username
+          avatar
+        }
+        blogPost {
+          id
+          title
+          slug
+        }
+      }
+      total
+    }
+  }
+`;
+
+// 审核评论
+export const APPROVE_COMMENT_MUTATION = gql`
+  mutation ApproveComment($id: ID!) {
+    approveComment(id: $id) {
+      id
+      content
+      isApproved
+      likeCount
+      reportCount
+      createdAt
+      updatedAt
+      user {
+        id
+        username
+        avatar
+      }
+    }
+  }
+`;
+
+// 拒绝评论
+export const REJECT_COMMENT_MUTATION = gql`
+  mutation RejectComment($id: ID!) {
+    rejectComment(id: $id) {
+      id
+      content
+      isApproved
+      likeCount
+      reportCount
+      createdAt
+      updatedAt
+      user {
+        id
+        username
+        avatar
+      }
+    }
+  }
+`;
+
+// 管理员评论列表 Hook
+export const useAdminComments = (filter?: { isApproved?: boolean }, limit: number = 20) => {
+  const { data, loading, error, fetchMore, refetch } = useQuery(ALL_COMMENTS_QUERY, {
+    variables: { limit, offset: 0, filter },
+    errorPolicy: 'all',
+    context: { endpoint: 'admin' },
+  });
+
+  const loadMore = () => {
+    return fetchMore({
+      variables: {
+        offset: data?.comments?.comments?.length || 0,
+      },
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult) return prev;
+        return {
+          ...prev,
+          comments: {
+            ...prev.comments,
+            comments: [
+              ...(prev.comments?.comments || []),
+              ...(fetchMoreResult.comments?.comments || []),
+            ],
+          },
+        };
+      },
+    });
+  };
+
+  return {
+    comments: data?.comments?.comments || [],
+    total: data?.comments?.total || 0,
+    loading,
+    error,
+    loadMore,
+    refetch,
+  };
+};
+
+// 评论审核操作 Hook
+export const useCommentModeration = () => {
+  // 批准评论
+  const [approveCommentMutation, { loading: approveLoading, error: approveError }] = useMutation(
+    APPROVE_COMMENT_MUTATION,
+    {
+      context: { endpoint: 'admin' },
+      refetchQueries: [{ query: ALL_COMMENTS_QUERY }],
+      awaitRefetchQueries: true,
+    }
+  );
+
+  // 拒绝评论
+  const [rejectCommentMutation, { loading: rejectLoading, error: rejectError }] = useMutation(
+    REJECT_COMMENT_MUTATION,
+    {
+      context: { endpoint: 'admin' },
+      refetchQueries: [{ query: ALL_COMMENTS_QUERY }],
+      awaitRefetchQueries: true,
+    }
+  );
+
+  const approveComment = async (id: string) => {
+    const result = await approveCommentMutation({
+      variables: { id },
+      update: (cache, { data }) => {
+        if (data?.approveComment) {
+          cache.modify({
+            id: cache.identify({ __typename: 'BlogPostComment', id }),
+            fields: {
+              isApproved: () => true,
+            },
+          });
+        }
+      },
+    });
+    return result.data?.approveComment;
+  };
+
+  const rejectComment = async (id: string) => {
+    const result = await rejectCommentMutation({
+      variables: { id },
+      update: (cache, { data }) => {
+        if (data?.rejectComment) {
+          cache.modify({
+            id: cache.identify({ __typename: 'BlogPostComment', id }),
+            fields: {
+              isApproved: () => false,
+            },
+          });
+        }
+      },
+    });
+    return result.data?.rejectComment;
+  };
+
+  return {
+    // API 函数
+    approveComment,
+    rejectComment,
+
+    // 加载状态
+    loading: {
+      approve: approveLoading,
+      reject: rejectLoading,
+    },
+
+    // 错误状态
+    errors: {
+      approve: approveError,
+      reject: rejectError,
+    },
   };
 };

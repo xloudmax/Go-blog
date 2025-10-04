@@ -156,7 +156,7 @@ func (s *CommentService) UpdateComment(commentID uint, content string, userID ui
 	}
 
 	// 检查权限（评论作者或管理员）
-	if comment.UserID != userID && userRole != "admin" {
+	if comment.UserID != userID && userRole != "ADMIN" {
 		return nil, errors.New("无权限修改此评论")
 	}
 
@@ -186,7 +186,7 @@ func (s *CommentService) DeleteComment(commentID uint, userID uint, userRole str
 	}
 
 	// 检查权限（评论作者或管理员）
-	if comment.UserID != userID && userRole != "admin" {
+	if comment.UserID != userID && userRole != "ADMIN" {
 		return errors.New("无权限删除此评论")
 	}
 

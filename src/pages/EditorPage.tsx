@@ -3,8 +3,8 @@
 // 使用 lazy 与 Suspense 按需加载编辑器，减少首屏体积
 import React, { useEffect, useState, Suspense, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { 
-  Spin, 
+import {
+  Spin,
   Input,
     Card,
   Button,
@@ -18,7 +18,7 @@ import {
   Col,
   Modal
 } from 'antd';
-import { 
+import {
     LoadingOutlined,
     InfoCircleOutlined,
     FileTextOutlined,
@@ -26,8 +26,9 @@ import {
     CloudUploadOutlined,
     PlusOutlined
 } from '@ant-design/icons';
+import { useQuery } from '@apollo/client';
 import MarkdownEditor from '@/components/MarkdownEditor'
-import { useBlogActions } from '@/api/graphql/blog'
+import { useBlogActions, POST_QUERY } from '@/api/graphql/blog'
 
 
 const { Title, Text, Paragraph } = Typography;
@@ -35,12 +36,11 @@ const { Title, Text, Paragraph } = Typography;
 export default function EditorPage() {
     const { file: fileNameFromParams } = useParams<{ file?: string }>()
     const navigate = useNavigate()
-    const { createPost } = useBlogActions()
+    const { createPost, updatePost } = useBlogActions()
 
     const [markdownContent, setMarkdownContent] = useState('')
     const [newFileTitle, setNewFileTitle] = useState('')
     const [initialContentLoaded, setInitialContentLoaded] = useState(false)
-    const [loading, setLoading] = useState(!!fileNameFromParams)
 
     const [tags, setTags] = useState<string[]>([])
     const [newTag, setNewTag] = useState('')
@@ -51,20 +51,35 @@ export default function EditorPage() {
 
     const isEditMode = !!fileNameFromParams
 
+    // 在编辑模式下加载文章数据
+    const { data: postData, loading: loadingPost } = useQuery(POST_QUERY, {
+        variables: { slug: fileNameFromParams },
+        skip: !isEditMode,
+        errorPolicy: 'all',
+    });
+
+    const post = postData?.post;
+
     // 根据是否编辑模式加载初始内容
     useEffect(() => {
-        if (isEditMode && fileNameFromParams) {
-            setLoading(true)
-            // 简化实现，直接设置空内容
-            setMarkdownContent('')
-            setLoading(false)
+        if (isEditMode && post) {
+            // 编辑模式：加载文章数据
+            setNewFileTitle(post.title || '')
+            setMarkdownContent(post.content || '')
+            setTags(post.tags || [])
+            setCoverImage(post.coverImageUrl || '')
+            setExcerpt(post.excerpt || '')
             setInitialContentLoaded(true)
-        } else {
+        } else if (!isEditMode) {
+            // 新建模式：清空表单
             setMarkdownContent('')
             setNewFileTitle('')
+            setTags([])
+            setCoverImage('')
+            setExcerpt('')
             setInitialContentLoaded(true)
         }
-    }, [fileNameFromParams, isEditMode])
+    }, [isEditMode, post])
 
     // 提取文章摘要
     const extractExcerpt = useCallback((content: string, maxLength: number = 200) => {
@@ -121,7 +136,7 @@ export default function EditorPage() {
 
         if (!currentMarkdown.trim()) {
             notification.error({
-                message: '错误', 
+                message: '错误',
                 description: '文章内容不能为空',
                 duration: 3,
             });
@@ -131,30 +146,50 @@ export default function EditorPage() {
         setIsSaving(true);
 
         try {
-            // 准备文章数据
-            const postData = {
-                title: newFileTitle.trim(),
-                content: currentMarkdown,
-                tags: tags.length > 0 ? tags : [],
-                categories: [], // 可以后续添加分类功能
-                coverImageUrl: coverImage.trim() || undefined,
-                excerpt: excerpt.trim() || undefined,
-            };
+            if (isEditMode && post) {
+                // 编辑模式：更新文章
+                const updateData = {
+                    title: newFileTitle.trim(),
+                    content: currentMarkdown,
+                    tags: tags.length > 0 ? tags : [],
+                    categories: post.categories || [],
+                    coverImageUrl: coverImage.trim() || undefined,
+                    excerpt: excerpt.trim() || undefined,
+                };
 
-            // 调用 GraphQL API 创建文章
-            const result = await createPost(postData);
+                const result = await updatePost(post.id, updateData);
 
-            if (result) {
-                notification.success({
-                    message: '成功',
-                    description: '文章保存成功！',
-                    duration: 5,
-                });
-                // 导航到文章详情页面
-                navigate(`/post/${result.slug}`);
+                if (result) {
+                    notification.success({
+                        message: '成功',
+                        description: '文章更新成功！',
+                        duration: 5,
+                    });
+                    navigate(`/post/${result.slug}`);
+                }
+            } else {
+                // 新建模式：创建文章
+                const postData = {
+                    title: newFileTitle.trim(),
+                    content: currentMarkdown,
+                    tags: tags.length > 0 ? tags : [],
+                    categories: [],
+                    coverImageUrl: coverImage.trim() || undefined,
+                    excerpt: excerpt.trim() || undefined,
+                };
+
+                const result = await createPost(postData);
+
+                if (result) {
+                    notification.success({
+                        message: '成功',
+                        description: '文章保存成功！',
+                        duration: 5,
+                    });
+                    navigate(`/post/${result.slug}`);
+                }
             }
         } catch (error) {
-            console.error('保存文章失败:', error);
             notification.error({
                 message: '保存失败',
                 description: error instanceof Error ? error.message : '保存文章时发生错误，请重试',
@@ -172,20 +207,16 @@ export default function EditorPage() {
         setIsPreviewVisible(false);
     };
 
-    if (loading && isEditMode && !initialContentLoaded) {
+    if (loadingPost && isEditMode && !initialContentLoaded) {
         return (
-            <div className="flex justify-center p-6">
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '1.5rem' }}>
                 <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
             </div>
         )
     }
 
-    if (!initialContentLoaded && isEditMode) {
-        return <p>正在准备编辑器...</p>
-    }
-
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" style={{ padding: '0 40px', boxSizing: 'border-box' }}>
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" style={{ padding: '0 20px', boxSizing: 'border-box' }}>
             <div className="max-w-7xl mx-auto py-12">
                 {/* 标准页面标题 */}
                 <div className="mb-6">
@@ -196,27 +227,30 @@ export default function EditorPage() {
                         {isEditMode ? '修改现有文章内容' : '创作新的精彩内容'}
                     </Paragraph>
                 </div>
-            
-            {!isEditMode && (
-                <Card className="mb-5 optimized-card mx-8">
-                    <Title level={4} className="text-heading-3">文章信息</Title>
-                    <Divider className="my-3" />
-                    <Row gutter={[16, 16]}>
-                        <Col xs={24} md={12}>
-                            <div className="space-y-4">
-                                <div>
-                                    <Text className="optimized-label">文章标题 <span className="text-red-500">*</span></Text>
-                                    <Input
-                                        placeholder="请输入文章标题（将作为文件名，不含.md）"
-                                        value={newFileTitle}
-                                        onChange={e => setNewFileTitle(e.target.value)}
-                                        style={{ width: '100%' }}
-                                        maxLength={100}
-                                        className="optimized-input"
-                                    />
-                                </div>
+
+            <Card className="mb-5 optimized-card mx-8">
+                <Title level={4} className="text-heading-3">文章信息</Title>
+                <Divider className="my-3" />
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} md={12}>
+                        <div className="space-y-4">
+                            <div>
+                                <Text className="optimized-label">
+                                    文章标题 <span className="text-red-500">*</span>
+                                    {isEditMode && <Text type="secondary" style={{ fontSize: '12px', marginLeft: '8px' }}>(编辑模式下标题固定)</Text>}
+                                </Text>
+                                <Input
+                                    placeholder="请输入文章标题"
+                                    value={newFileTitle}
+                                    onChange={e => setNewFileTitle(e.target.value)}
+                                    style={{ width: '100%' }}
+                                    maxLength={100}
+                                    className="optimized-input"
+                                    disabled={isEditMode}
+                                />
                             </div>
-                        </Col>
+                        </div>
+                    </Col>
                         <Col xs={24} md={12}>
                             <div className="space-y-4">
                                 <div>
@@ -275,8 +309,7 @@ export default function EditorPage() {
                         />
                     </div>
                 </Card>
-            )}
-            
+
             {/* 操作按钮栏 */}
             <Card className="mb-5 optimized-card mx-8">
                 <div className="flex flex-wrap items-center justify-between gap-2">

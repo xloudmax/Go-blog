@@ -1,4 +1,4 @@
-import { useLazyQuery } from '@apollo/client';
+import { useLazyQuery, ApolloCache, NormalizedCacheObject } from '@apollo/client';
 import type {
     CreatePostInput,
     UpdatePostInput,
@@ -192,7 +192,7 @@ export const useBlogActions = () => {
     const updatePost = async (id: string, postData: UpdatePostInput) => {
         const result = await updatePostMutation({
             variables: {id, input: postData},
-            update: (cache: any, {data}) => {
+            update: (cache: ApolloCache<NormalizedCacheObject>, {data}) => {
                 if (data?.updatePost) {
                     cache.writeQuery({
                         query: POST_QUERY,
@@ -208,7 +208,7 @@ export const useBlogActions = () => {
     const deletePost = async (id: string) => {
         const result = await deletePostMutation({
             variables: {id},
-            update: (cache: any) => {
+            update: (cache: ApolloCache<NormalizedCacheObject>) => {
                 cache.evict({id: cache.identify({__typename: 'BlogPost', id})});
                 cache.gc();
             },
@@ -219,7 +219,7 @@ export const useBlogActions = () => {
     const publishPost = async (id: string) => {
         const result = await publishPostMutation({
             variables: {id},
-            update: (cache: any, {data}) => {
+            update: (cache: ApolloCache<NormalizedCacheObject>, {data}) => {
                 if (data?.publishPost) {
                     cache.modify({
                         id: cache.identify({__typename: 'BlogPost', id}),
@@ -237,7 +237,7 @@ export const useBlogActions = () => {
     const archivePost = async (id: string) => {
         const result = await archivePostMutation({
             variables: {id},
-            update: (cache: any, {data}) => {
+            update: (cache: ApolloCache<NormalizedCacheObject>, {data}) => {
                 if (data?.archivePost) {
                     cache.modify({
                         id: cache.identify({__typename: 'BlogPost', id}),

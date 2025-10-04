@@ -76,21 +76,19 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
   if (posts.length === 0) {
     return (
       <div className="text-center py-16">
-        <div className="text-6xl mb-6 opacity-50">📄</div>
         <Title level={3} className="text-gray-400 mb-4 font-normal">
           还没有文章
         </Title>
-        <Text className="text-gray-400">开始写作，分享你的想法</Text>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
       {posts.map((post) => (
-        <ArticleCard 
-          key={post.id} 
-          post={post} 
+        <ArticleCard
+          key={post.id}
+          post={post}
           onNavigate={handleNavigate}
           onAction={handlePostAction}
         />

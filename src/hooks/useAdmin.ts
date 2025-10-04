@@ -281,7 +281,7 @@ export const useSystemAdmin = () => {
 // 管理员权限和导航hook
 export const useAdminNavigation = () => {
   const { isAdmin, requireAdmin, userRole } = useAdminAuth();
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'users' | 'posts' | 'invites' | 'system'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'users' | 'posts' | 'comments' | 'invites' | 'tags' | 'analytics' | 'system'>('dashboard');
 
   // 导航项配置
   const navigationItems = useMemo(() => [
@@ -304,10 +304,28 @@ export const useAdminNavigation = () => {
       description: '管理博客文章',
     },
     {
+      id: 'comments',
+      label: '评论管理',
+      icon: 'comments',
+      description: '审核和管理评论',
+    },
+    {
       id: 'invites',
       label: '邀请码',
       icon: 'ticket',
       description: '邀请码管理',
+    },
+    {
+      id: 'tags',
+      label: '标签管理',
+      icon: 'tags',
+      description: '标签和分类管理',
+    },
+    {
+      id: 'analytics',
+      label: '搜索分析',
+      icon: 'analytics',
+      description: '搜索统计和趋势',
     },
     {
       id: 'system',

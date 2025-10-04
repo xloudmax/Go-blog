@@ -21,6 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `cd backend && go mod tidy` - Clean up dependencies
 - `cd backend && go test ./...` - Run all tests
 - `cd backend && go build -o bin/server` - Build production binary
+- `cd backend && go generate ./...` - Generate GraphQL resolvers and types
 
 ## Architecture Overview
 
@@ -118,5 +119,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. Test both frontend build and backend compilation after changes
 4. Use proper error handling in resolvers (don't leave panic statements)
 5. Maintain type consistency between generated types and custom types
-- repair-platform/services
-services/auth.go:82:5: syntax error: unexpected newline in composite literal; possibly missing comma or }
+
+## Important Notes
+
+- **React 19 Compatibility**: Uses `@ant-design/v5-patch-for-react-19`
+- **Package Manager**: Uses pnpm with lockfile committed
+- **Module Name**: Backend module is `repair-platform` (legacy name)
+- **Port Configuration**: Frontend dev server (5173), Backend server (11451)
+- **GraphQL Playground**: Available in development at `/graphql` (GET request)
+- **Authentication**: JWT tokens with optional authentication on GraphQL operations
+- **GraphQL Generation**: Backend uses gqlgen.yml for code generation configuration
+- **Database**: SQLite for development (blog_platform.db), automatic migrations

@@ -63,7 +63,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   // 计算派生状态
   const isAuthenticated = !!user;
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'admin';
   const isLoading = userLoading;
 
   // 监听用户错误

@@ -20,6 +20,8 @@ func RunMigrations(db *gorm.DB) error {
 		&models.BlogPostComment{},     // 添加评论模型
 		&models.BlogPostCommentLike{}, // 添加评论点赞模型
 		&models.InviteCode{},
+		&models.PasswordResetToken{},  // 添加密码重置令牌模型
+		&models.SearchQuery{},         // 添加搜索查询记录模型
 	)
 	if err != nil {
 		return err

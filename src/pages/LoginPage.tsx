@@ -208,8 +208,7 @@ export default function LoginPage() {
                 // 清空之前的验证码输入
                 setVerificationCode('');
                 setCountdown(60); // 重新开始60秒倒计时
-                // 可以显示成功消息，但不设置错误
-                console.log('验证码重新发送成功');
+                // 验证码重新发送成功
             }
         } catch (err: any) {
             setError(err.message || "发送验证码失败，请稍后重试");

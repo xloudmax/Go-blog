@@ -16,9 +16,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-gonic/gin"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"gorm.io/gorm"
 )
 
@@ -61,6 +63,18 @@ func setupGraphQLRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// 创建 GraphQL 服务器
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
+	// 添加错误处理和日志记录
+	srv.SetErrorPresenter(func(ctx context.Context, e error) *gqlerror.Error {
+		err := graphql.DefaultErrorPresenter(ctx, e)
+		logger.Errorw("GraphQL错误", "error", err.Message, "path", err.Path)
+		return err
+	})
+
+	srv.SetRecoverFunc(func(ctx context.Context, err interface{}) error {
+		logger.Errorw("GraphQL panic", "error", err)
+		return fmt.Errorf("internal server error")
+	})
+
 	// 注册 GraphQL 端点 - 添加可选JWT认证中间件
 	r.POST("/graphql", middleware.OptionalJWTAuthMiddleware(), func(c *gin.Context) {
 		// 将Gin上下文注入到GraphQL上下文中
@@ -69,8 +83,8 @@ func setupGraphQLRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		srv.ServeHTTP(c.Writer, c.Request)
 	})
 
-	// 注册 GraphQL Playground（仅开发环境）
-	if cfg.IsDevelopment() {
+	// 注册 GraphQL Playground（开发和测试环境）
+	if cfg.IsDevelopment() || cfg.IsTest() {
 		r.GET("/graphql", func(c *gin.Context) {
 			playground.Handler("GraphQL", "/graphql").ServeHTTP(c.Writer, c.Request)
 		})

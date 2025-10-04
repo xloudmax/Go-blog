@@ -330,8 +330,15 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
                             fullscreen={false} // 我们自己实现全屏功能
                         />
                     </div>
-                    <div style={{ flex: 1, padding: '16px', overflow: 'auto', border: '1px solid #d9d9d9', borderRadius: '8px' }}>
-                        <h3 style={{ marginTop: 0 }}>预览效果</h3>
+                    <div style={{
+                        flex: 1,
+                        padding: '16px',
+                        overflow: 'auto',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--color-bg)'
+                    }}>
+                        <h3 style={{ marginTop: 0, color: 'var(--color-text)' }}>预览效果</h3>
                         <MDEditor.Markdown source={value || ''} />
                     </div>
                 </div>

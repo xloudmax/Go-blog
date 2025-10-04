@@ -163,7 +163,7 @@ func (r *mutationResolver) VerifyEmailAndLogin(ctx context.Context, input Verify
 
 	// 验证成功，删除验证码
 	deleteVerificationCode(input.Email)
-	
+
 	// 生成JWT token
 	token, err := models.GenerateJWT(user.ID, user.Username, user.Role, false)
 	if err != nil {
@@ -221,19 +221,78 @@ func (r *mutationResolver) RefreshToken(ctx context.Context) (*AuthPayload, erro
 
 // SendVerificationCode is the resolver for the sendVerificationCode field.
 func (r *mutationResolver) SendVerificationCode(ctx context.Context, email string, typeArg VerificationType) (*GeneralResponse, error) {
-	// 简单实现：在实际生产中应该发送真实的验证码
-	// 这里我们只是返回成功响应
+	// 验证邮箱格式
+	if email == "" {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("邮箱地址不能为空"),
+			Code:    strPtr("EMAIL_REQUIRED"),
+		}, nil
+	}
+
+	// 根据验证类型检查用户是否存在
+	var user models.User
+	err := r.Resolver.DB.Where("email = ?", email).First(&user).Error
+
+	if typeArg == VerificationTypeRegister {
+		// 注册验证：邮箱不应该存在
+		if err == nil {
+			return &GeneralResponse{
+				Success: false,
+				Message: strPtr("该邮箱已被注册"),
+				Code:    strPtr("EMAIL_EXISTS"),
+			}, nil
+		}
+	} else {
+		// 登录或重置密码：邮箱必须存在
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &GeneralResponse{
+				Success: false,
+				Message: strPtr("用户不存在"),
+				Code:    strPtr("USER_NOT_FOUND"),
+			}, nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("数据库查询失败: %w", err)
+		}
+	}
+
+	// 生成验证码
+	code, err := generateSecureCode()
+	if err != nil {
+		return nil, fmt.Errorf("生成验证码失败: %w", err)
+	}
+
+	// 存储验证码
+	storeVerificationCode(email, code)
+
+	// 发送验证码邮件
+	if err := sendVerificationCode(email, code); err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("发送验证码失败，请稍后重试"),
+			Code:    strPtr("EMAIL_SEND_FAILED"),
+		}, nil
+	}
+
 	return &GeneralResponse{
 		Success: true,
-		Message: strPtr("验证码已发送"),
-		Code:    strPtr("SUCCESS"),
+		Message: strPtr("验证码已发送到您的邮箱"),
+		Code:    strPtr("VERIFICATION_CODE_SENT"),
 	}, nil
 }
 
 // VerifyEmail is the resolver for the verifyEmail field.
 func (r *mutationResolver) VerifyEmail(ctx context.Context, input VerifyEmailInput) (*GeneralResponse, error) {
-	// 简单实现：在实际生产中应该验证真实的验证码
-	// 这里我们假设验证码总是正确的
+	// 验证输入参数
+	if input.Email == "" {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("邮箱地址不能为空"),
+			Code:    strPtr("EMAIL_REQUIRED"),
+		}, nil
+	}
+
 	if len(input.Code) < 4 {
 		return &GeneralResponse{
 			Success: false,
@@ -242,23 +301,59 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, input VerifyEmailInp
 		}, nil
 	}
 
+	// 验证验证码
+	if !verifyCode(input.Email, input.Code) {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("验证码错误或已过期"),
+			Code:    strPtr("INVALID_OR_EXPIRED_CODE"),
+		}, nil
+	}
+
+	// 查找用户
+	var user models.User
+	if err := r.Resolver.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 验证成功但用户不存在，删除验证码
+			deleteVerificationCode(input.Email)
+			return &GeneralResponse{
+				Success: false,
+				Message: strPtr("用户不存在"),
+				Code:    strPtr("USER_NOT_FOUND"),
+			}, nil
+		}
+		return nil, fmt.Errorf("数据库查询失败: %w", err)
+	}
+
+	// 根据验证类型执行相应操作
+	switch input.Type {
+	case VerificationTypeRegister, VerificationTypeLogin:
+		// 注册或登录验证：标记邮箱为已验证
+		if !user.IsVerified {
+			now := time.Now()
+			user.IsVerified = true
+			user.EmailVerifiedAt = &now
+			if err := r.Resolver.DB.Save(&user).Error; err != nil {
+				return nil, fmt.Errorf("更新用户验证状态失败: %w", err)
+			}
+		}
+	case VerificationTypeResetPassword:
+		// 密码重置验证：验证成功即可，不需要更新用户状态
+		// 实际的密码重置在 confirmPasswordReset 中处理
+	}
+
+	// 验证成功，删除验证码
+	deleteVerificationCode(input.Email)
+
 	return &GeneralResponse{
 		Success: true,
 		Message: strPtr("邮箱验证成功"),
-		Code:    strPtr("SUCCESS"),
+		Code:    strPtr("EMAIL_VERIFIED"),
 	}, nil
 }
 
 // RequestPasswordReset is the resolver for the requestPasswordReset field.
 func (r *mutationResolver) RequestPasswordReset(ctx context.Context, input RequestPasswordResetInput) (*GeneralResponse, error) {
-	// 简化实现：发送密码重置邮件
-	// 实际项目中需要：
-	// 1. 验证邮箱格式
-	// 2. 检查用户是否存在
-	// 3. 生成重置token
-	// 4. 发送重置邮件
-	// 5. 存储重置token（设置过期时间）
-
 	// 检查邮箱格式
 	if input.Email == "" {
 		return &GeneralResponse{
@@ -279,8 +374,29 @@ func (r *mutationResolver) RequestPasswordReset(ctx context.Context, input Reque
 		}, nil
 	}
 
-	// 简化实现：直接返回成功
-	// 实际项目中应该发送真实的重置邮件
+	// 删除该用户之前的所有重置令牌
+	r.Resolver.DB.Where("user_id = ?", user.ID).Delete(&models.PasswordResetToken{})
+
+	// 生成新的重置令牌
+	resetToken := &models.PasswordResetToken{
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(1 * time.Hour), // 1小时有效期
+	}
+	if err := resetToken.GenerateToken(); err != nil {
+		return nil, fmt.Errorf("生成重置令牌失败: %w", err)
+	}
+
+	// 保存令牌到数据库
+	if err := r.Resolver.DB.Create(resetToken).Error; err != nil {
+		return nil, fmt.Errorf("保存重置令牌失败: %w", err)
+	}
+
+	// 发送密码重置邮件
+	if err := sendPasswordResetEmail(input.Email, resetToken.Token); err != nil {
+		middleware.GetLogger().Errorw("发送密码重置邮件失败", "error", err, "email", input.Email)
+		// 不向用户暴露具体错误
+	}
+
 	return &GeneralResponse{
 		Success: true,
 		Message: strPtr("密码重置邮件已发送，请检查您的邮箱"),
@@ -290,14 +406,6 @@ func (r *mutationResolver) RequestPasswordReset(ctx context.Context, input Reque
 
 // ConfirmPasswordReset is the resolver for the confirmPasswordReset field.
 func (r *mutationResolver) ConfirmPasswordReset(ctx context.Context, input ConfirmPasswordResetInput) (*GeneralResponse, error) {
-	// 简化实现：确认密码重置
-	// 实际项目中需要：
-	// 1. 验证重置token
-	// 2. 检查token是否过期
-	// 3. 验证新密码格式
-	// 4. 更新用户密码
-	// 5. 清除重置token
-
 	// 检查输入参数
 	if input.Token == "" {
 		return &GeneralResponse{
@@ -315,15 +423,55 @@ func (r *mutationResolver) ConfirmPasswordReset(ctx context.Context, input Confi
 		}, nil
 	}
 
-	// 简化实现：假设token总是有效的
-	// 实际项目中应该验证存储的重置token
-	
-	// 简化实现：不进行实际的密码更新
-	// 实际项目中应该：
-	// 1. 根据token找到用户
-	// 2. 加密新密码
-	// 3. 更新数据库
-	// 4. 清除重置token
+	// 查找并验证重置令牌
+	var resetToken models.PasswordResetToken
+	if err := r.Resolver.DB.Where("token = ?", input.Token).First(&resetToken).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &GeneralResponse{
+				Success: false,
+				Message: strPtr("无效的重置令牌"),
+				Code:    strPtr("INVALID_TOKEN"),
+			}, nil
+		}
+		return nil, fmt.Errorf("查询重置令牌失败: %w", err)
+	}
+
+	// 检查令牌是否过期
+	if time.Now().After(resetToken.ExpiresAt) {
+		// 删除过期的令牌
+		r.Resolver.DB.Delete(&resetToken)
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("重置令牌已过期，请重新申请"),
+			Code:    strPtr("TOKEN_EXPIRED"),
+		}, nil
+	}
+
+	// 查找用户
+	var user models.User
+	if err := r.Resolver.DB.First(&user, resetToken.UserID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &GeneralResponse{
+				Success: false,
+				Message: strPtr("用户不存在"),
+				Code:    strPtr("USER_NOT_FOUND"),
+			}, nil
+		}
+		return nil, fmt.Errorf("查询用户失败: %w", err)
+	}
+
+	// 更新密码
+	if err := user.SetPassword(input.NewPassword); err != nil {
+		return nil, fmt.Errorf("密码加密失败: %w", err)
+	}
+
+	// 保存新密码
+	if err := r.Resolver.DB.Save(&user).Error; err != nil {
+		return nil, fmt.Errorf("更新密码失败: %w", err)
+	}
+
+	// 删除已使用的重置令牌
+	r.Resolver.DB.Delete(&resetToken)
 
 	return &GeneralResponse{
 		Success: true,
@@ -381,7 +529,7 @@ func (r *mutationResolver) UpdateProfile(ctx context.Context, input UpdateProfil
 // ChangePassword is the resolver for the changePassword field.
 func (r *mutationResolver) ChangePassword(ctx context.Context, currentPassword string, newPassword string) (*GeneralResponse, error) {
 	// 获取当前用户
-	_, err := getUserFromContext(ctx, r.Resolver.DB)
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
 	if err != nil {
 		return nil, fmt.Errorf("未授权访问: %w", err)
 	}
@@ -403,21 +551,33 @@ func (r *mutationResolver) ChangePassword(ctx context.Context, currentPassword s
 		}, nil
 	}
 
-	// 简化实现：不验证当前密码
-	// 实际项目中应该：
-	// 1. 验证当前密码是否正确
-	// 2. 检查新密码和当前密码是否相同
-	// 3. 加密新密码
-	// 4. 更新数据库
-	
-	// authService := services.NewAuthService(r.Resolver.DB)
-	// if !authService.CheckPassword(user, currentPassword) {
-	//     return &GeneralResponse{
-	//         Success: false,
-	//         Message: strPtr("当前密码错误"),
-	//         Code:    strPtr("INVALID_CURRENT_PASSWORD"),
-	//     }, nil
-	// }
+	// 验证当前密码是否正确
+	if !user.CheckPassword(currentPassword) {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("当前密码错误"),
+			Code:    strPtr("INVALID_CURRENT_PASSWORD"),
+		}, nil
+	}
+
+	// 检查新密码和当前密码是否相同
+	if currentPassword == newPassword {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("新密码不能与当前密码相同"),
+			Code:    strPtr("PASSWORD_UNCHANGED"),
+		}, nil
+	}
+
+	// 设置新密码
+	if err := user.SetPassword(newPassword); err != nil {
+		return nil, fmt.Errorf("密码加密失败: %w", err)
+	}
+
+	// 保存到数据库
+	if err := r.Resolver.DB.Save(user).Error; err != nil {
+		return nil, fmt.Errorf("更新密码失败: %w", err)
+	}
 
 	return &GeneralResponse{
 		Success: true,
@@ -498,9 +658,9 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input CreatePostInput
 	post, err := blogService.CreatePostFromInput(createInput, user.ID)
 	if err != nil {
 		// 添加详细错误日志
-		middleware.GetLogger().Errorw("CreatePost 失败", 
-			"error", err, 
-			"userID", user.ID, 
+		middleware.GetLogger().Errorw("CreatePost 失败",
+			"error", err,
+			"userID", user.ID,
 			"title", input.Title,
 			"contentLength", len(input.Content))
 		return nil, fmt.Errorf("创建文章失败: %w", err)
@@ -858,7 +1018,10 @@ func (r *mutationResolver) AdminUpdateUser(ctx context.Context, id string, usern
 		user.Email = *email
 	}
 
+	logger := middleware.GetLogger()
+
 	if role != nil {
+		logger.Infow("更新用户角色", "userId", userID, "oldRole", user.Role, "newRole", string(*role))
 		user.Role = string(*role)
 	}
 
@@ -872,8 +1035,11 @@ func (r *mutationResolver) AdminUpdateUser(ctx context.Context, id string, usern
 
 	// 保存更新
 	if err := r.DB.Save(&user).Error; err != nil {
+		logger.Errorw("更新用户失败", "userId", userID, "error", err)
 		return nil, fmt.Errorf("更新用户失败: %w", err)
 	}
+
+	logger.Infow("用户更新成功", "userId", userID, "username", user.Username, "role", user.Role)
 
 	return convertToGraphQLUser(&user), nil
 }
@@ -902,7 +1068,7 @@ func (r *mutationResolver) AdminDeleteUser(ctx context.Context, id string) (*Gen
 	}
 
 	// 不能删除管理员账户（安全限制）
-	if user.Role == "admin" {
+	if user.Role == "ADMIN" {
 		return &GeneralResponse{
 			Success: false,
 			Message: strPtr("不能删除管理员账户"),
@@ -957,7 +1123,7 @@ func (r *mutationResolver) CreateInviteCode(ctx context.Context, input CreateInv
 
 	// 生成唯一的邀请码
 	code := models.GenerateInviteCode()
-	
+
 	// 验证邀请码唯一性
 	var existingCode models.InviteCode
 	if err := r.DB.Where("code = ?", code).First(&existingCode).Error; err == nil {
@@ -1084,16 +1250,33 @@ func (r *mutationResolver) ClearCache(ctx context.Context) (*GeneralResponse, er
 		return nil, err
 	}
 
-	// 在这个简化版本中，我们主要清理搜索服务的缓存
-	// 实际项目中，这里可能需要清理Redis缓存、内存缓存等
-	if r.Resolver.SearchService != nil {
-		// 如果搜索服务有清理缓存的方法，可以在这里调用
-		// r.Resolver.SearchService.ClearCache()
+	// 统计清理的缓存数量
+	var clearedCount int
+
+	// 1. 清理全局缓存
+	globalCache := models.GetCache()
+	if globalCache != nil {
+		clearedCount += globalCache.Count()
+		globalCache.Clear()
+	}
+
+	// 2. 清理搜索缓存
+	searchCache := services.GetGlobalSearchCache()
+	if searchCache != nil {
+		clearedCount += searchCache.GetCacheStats()["total_items"].(int)
+		searchCache.InvalidateAll()
+	}
+
+	// 3. 清理邮箱验证缓存（过期的验证码）
+	emailVerificationSvc := models.GetEmailVerificationService()
+	if emailVerificationSvc != nil {
+		// 只能清理过期的，无法访问未导出的 cache 字段
+		// 这个服务会自动清理过期的验证码
 	}
 
 	return &GeneralResponse{
 		Success: true,
-		Message: strPtr("缓存清理成功"),
+		Message: strPtr(fmt.Sprintf("缓存清理成功，共清理 %d 项缓存", clearedCount)),
 		Code:    strPtr("CACHE_CLEARED"),
 	}, nil
 }
@@ -1106,26 +1289,49 @@ func (r *mutationResolver) RebuildSearchIndex(ctx context.Context) (*GeneralResp
 		return nil, err
 	}
 
-	// 重建搜索索引（简化版本）
-	// 实际项目中，这里可能需要：
-	// 1. 清除现有索引
-	// 2. 重新索引所有文章
-	// 3. 更新搜索统计
-	if r.Resolver.SearchService != nil {
-		// 如果搜索服务有重建索引的方法，可以在这里调用
-		// err := r.Resolver.SearchService.RebuildIndex()
-		// if err != nil {
-		//     return &GeneralResponse{
-		//         Success: false,
-		//         Message: strPtr("重建搜索索引失败"),
-		//         Code:    strPtr("REBUILD_INDEX_FAILED"),
-		//     }, nil
-		// }
+	logger := middleware.GetLogger()
+	logger.Infow("开始重建搜索索引")
+
+	// 1. 清空 FTS 表
+	if err := r.DB.Exec("DELETE FROM blog_post_fts").Error; err != nil {
+		logger.Errorw("清空FTS表失败", "error", err)
+		// 如果表不存在，继续执行
 	}
+
+	// 2. 获取所有已发布的文章
+	var posts []models.BlogPost
+	if err := r.DB.Where("status = ?", "PUBLISHED").Find(&posts).Error; err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("获取文章失败: %v", err)),
+			Code:    strPtr("REBUILD_INDEX_FAILED"),
+		}, nil
+	}
+
+	// 3. 重新索引所有文章到FTS表
+	successCount := 0
+	for _, post := range posts {
+		insertSQL := `INSERT INTO blog_post_fts(rowid, title, content, tags, categories)
+			VALUES (?, ?, ?, ?, ?)`
+
+		if err := r.DB.Exec(insertSQL, post.ID, post.Title, post.Content, post.Tags, post.Categories).Error; err != nil {
+			logger.Errorw("索引文章失败", "post_id", post.ID, "error", err)
+			continue
+		}
+		successCount++
+	}
+
+	// 4. 清空搜索缓存
+	searchCache := services.GetGlobalSearchCache()
+	if searchCache != nil {
+		searchCache.InvalidateAll()
+	}
+
+	logger.Infow("搜索索引重建完成", "total", len(posts), "success", successCount)
 
 	return &GeneralResponse{
 		Success: true,
-		Message: strPtr("搜索索引重建成功"),
+		Message: strPtr(fmt.Sprintf("搜索索引重建完成，共索引 %d/%d 篇文章", successCount, len(posts))),
 		Code:    strPtr("INDEX_REBUILT"),
 	}, nil
 }
@@ -1313,6 +1519,268 @@ func (r *mutationResolver) ReportComment(ctx context.Context, id string) (*BlogP
 	return convertToGraphQLComment(comment), nil
 }
 
+// ApproveComment is the resolver for the approveComment field.
+func (r *mutationResolver) ApproveComment(ctx context.Context, id string) (*BlogPostComment, error) {
+	// 获取当前用户
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	if err != nil {
+		return nil, fmt.Errorf("未授权访问: %w", err)
+	}
+
+	// 检查管理员权限
+	if user.Role != "ADMIN" {
+		return nil, fmt.Errorf("需要管理员权限")
+	}
+
+	// 转换评论ID
+	commentID, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("无效的评论ID: %w", err)
+	}
+
+	// 获取评论
+	var comment models.BlogPostComment
+	if err := r.Resolver.DB.Preload("User").Preload("BlogPost").First(&comment, commentID).Error; err != nil {
+		return nil, fmt.Errorf("评论不存在: %w", err)
+	}
+
+	// 更新审核状态
+	comment.IsApproved = true
+	if err := r.Resolver.DB.Save(&comment).Error; err != nil {
+		return nil, fmt.Errorf("审核评论失败: %w", err)
+	}
+
+	// 转换为GraphQL类型
+	return convertToGraphQLComment(&comment), nil
+}
+
+// RejectComment is the resolver for the rejectComment field.
+func (r *mutationResolver) RejectComment(ctx context.Context, id string) (*BlogPostComment, error) {
+	// 获取当前用户
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	if err != nil {
+		return nil, fmt.Errorf("未授权访问: %w", err)
+	}
+
+	// 检查管理员权限
+	if user.Role != "ADMIN" {
+		return nil, fmt.Errorf("需要管理员权限")
+	}
+
+	// 转换评论ID
+	commentID, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("无效的评论ID: %w", err)
+	}
+
+	// 获取评论
+	var comment models.BlogPostComment
+	if err := r.Resolver.DB.Preload("User").Preload("BlogPost").First(&comment, commentID).Error; err != nil {
+		return nil, fmt.Errorf("评论不存在: %w", err)
+	}
+
+	// 更新审核状态
+	comment.IsApproved = false
+	if err := r.Resolver.DB.Save(&comment).Error; err != nil {
+		return nil, fmt.Errorf("拒绝评论失败: %w", err)
+	}
+
+	// 转换为GraphQL类型
+	return convertToGraphQLComment(&comment), nil
+}
+
+// MergeTags is the resolver for the mergeTags field.
+func (r *mutationResolver) MergeTags(ctx context.Context, sourceTag string, targetTag string) (*GeneralResponse, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建标签服务
+	tagService := services.NewTagService(r.Resolver.DB)
+
+	// 执行合并操作
+	if err := tagService.MergeTags(sourceTag, targetTag); err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("合并标签失败: %v", err)),
+			Code:    strPtr("MERGE_FAILED"),
+		}, nil
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr(fmt.Sprintf("成功将标签 '%s' 合并到 '%s'", sourceTag, targetTag)),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
+// MergeCategories is the resolver for the mergeCategories field.
+func (r *mutationResolver) MergeCategories(ctx context.Context, sourceCategory string, targetCategory string) (*GeneralResponse, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建标签服务
+	tagService := services.NewTagService(r.Resolver.DB)
+
+	// 执行合并操作
+	if err := tagService.MergeCategories(sourceCategory, targetCategory); err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("合并分类失败: %v", err)),
+			Code:    strPtr("MERGE_FAILED"),
+		}, nil
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr(fmt.Sprintf("成功将分类 '%s' 合并到 '%s'", sourceCategory, targetCategory)),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
+// BatchUpdateTags is the resolver for the batchUpdateTags field.
+func (r *mutationResolver) BatchUpdateTags(ctx context.Context, input BatchUpdateTagsInput) (*GeneralResponse, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// 转换 postIDs 为 uint
+	postIDs := make([]uint, len(input.PostIds))
+	for i, id := range input.PostIds {
+		postID, err := strconv.ParseUint(id, 10, 32)
+		if err != nil {
+			return &GeneralResponse{
+				Success: false,
+				Message: strPtr(fmt.Sprintf("无效的文章ID: %s", id)),
+				Code:    strPtr("INVALID_POST_ID"),
+			}, nil
+		}
+		postIDs[i] = uint(postID)
+	}
+
+	// 创建标签服务
+	tagService := services.NewTagService(r.Resolver.DB)
+
+	// 执行批量更新
+	if err := tagService.BatchUpdateTags(postIDs, input.Tags, string(input.Operation)); err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("批量更新标签失败: %v", err)),
+			Code:    strPtr("BATCH_UPDATE_FAILED"),
+		}, nil
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr(fmt.Sprintf("成功更新 %d 篇文章的标签", len(postIDs))),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
+// BatchUpdateCategories is the resolver for the batchUpdateCategories field.
+func (r *mutationResolver) BatchUpdateCategories(ctx context.Context, input BatchUpdateCategoriesInput) (*GeneralResponse, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// 转换 postIDs 为 uint
+	postIDs := make([]uint, len(input.PostIds))
+	for i, id := range input.PostIds {
+		postID, err := strconv.ParseUint(id, 10, 32)
+		if err != nil {
+			return &GeneralResponse{
+				Success: false,
+				Message: strPtr(fmt.Sprintf("无效的文章ID: %s", id)),
+				Code:    strPtr("INVALID_POST_ID"),
+			}, nil
+		}
+		postIDs[i] = uint(postID)
+	}
+
+	// 创建标签服务
+	tagService := services.NewTagService(r.Resolver.DB)
+
+	// 执行批量更新
+	if err := tagService.BatchUpdateCategories(postIDs, input.Categories, string(input.Operation)); err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("批量更新分类失败: %v", err)),
+			Code:    strPtr("BATCH_UPDATE_FAILED"),
+		}, nil
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr(fmt.Sprintf("成功更新 %d 篇文章的分类", len(postIDs))),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
+// DeleteUnusedTags is the resolver for the deleteUnusedTags field.
+func (r *mutationResolver) DeleteUnusedTags(ctx context.Context) (*GeneralResponse, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建标签服务
+	tagService := services.NewTagService(r.Resolver.DB)
+
+	// 执行清理操作
+	cleaned, err := tagService.DeleteUnusedTags()
+	if err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("清理未使用标签失败: %v", err)),
+			Code:    strPtr("DELETE_FAILED"),
+		}, nil
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr(fmt.Sprintf("成功清理 %d 个未使用的标签", cleaned)),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
+// DeleteUnusedCategories is the resolver for the deleteUnusedCategories field.
+func (r *mutationResolver) DeleteUnusedCategories(ctx context.Context) (*GeneralResponse, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建标签服务
+	tagService := services.NewTagService(r.Resolver.DB)
+
+	// 执行清理操作
+	cleaned, err := tagService.DeleteUnusedCategories()
+	if err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("清理未使用分类失败: %v", err)),
+			Code:    strPtr("DELETE_FAILED"),
+		}, nil
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr(fmt.Sprintf("成功清理 %d 个未使用的分类", cleaned)),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*User, error) {
 	// 获取当前用户信息
@@ -1351,6 +1819,12 @@ func (r *queryResolver) User(ctx context.Context, id string) (*User, error) {
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, search *string, role *UserRole, isVerified *bool) ([]*User, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
 	// 设置默认值
 	defaultLimit := 10
 	defaultOffset := 0
@@ -1376,9 +1850,9 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, sear
 		var roleStr string
 		switch *role {
 		case UserRoleAdmin:
-			roleStr = "admin"
+			roleStr = "ADMIN"
 		case UserRoleUser:
-			roleStr = "user"
+			roleStr = "USER"
 		}
 		dbQuery = dbQuery.Where("role = ?", roleStr)
 	}
@@ -1390,7 +1864,7 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int, sear
 
 	// 获取结果
 	var users []models.User
-	err := dbQuery.Offset(*offset).Limit(*limit).Find(&users).Error
+	err = dbQuery.Offset(*offset).Limit(*limit).Find(&users).Error
 	if err != nil {
 		return nil, fmt.Errorf("获取用户列表失败: %w", err)
 	}
@@ -1434,9 +1908,9 @@ func (r *queryResolver) Post(ctx context.Context, id *string, slug *string) (*Bl
 	}
 
 	// 权限过滤
-	if currentUser == nil || currentUser.Role != "admin" {
+	if currentUser == nil || currentUser.Role != "ADMIN" {
 		dbQuery = dbQuery.Where("status = 'PUBLISHED' AND access_level = 'PUBLIC'")
-	} else if currentUser.Role != "admin" {
+	} else if currentUser.Role != "ADMIN" {
 		dbQuery = dbQuery.Where("(status = 'PUBLISHED' AND access_level = 'PUBLIC') OR author_id = ?", currentUser.ID)
 	}
 
@@ -1479,9 +1953,9 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, filt
 		Preload("Stats")
 
 	// 权限过滤
-	if currentUser == nil || currentUser.Role != "admin" {
+	if currentUser == nil || currentUser.Role != "ADMIN" {
 		dbQuery = dbQuery.Where("status = 'PUBLISHED' AND access_level = 'PUBLIC'")
-	} else if currentUser.Role != "admin" {
+	} else if currentUser.Role != "ADMIN" {
 		dbQuery = dbQuery.Where("(status = 'PUBLISHED' AND access_level = 'PUBLIC') OR author_id = ?", currentUser.ID)
 	}
 
@@ -1621,7 +2095,7 @@ func (r *queryResolver) PostVersions(ctx context.Context, postID string) ([]*Blo
 	}
 
 	// 只有文章作者或管理员可以查看版本
-	if post.AuthorID != currentUser.ID && currentUser.Role != "admin" {
+	if post.AuthorID != currentUser.ID && currentUser.Role != "ADMIN" {
 		return nil, fmt.Errorf("权限不足")
 	}
 
@@ -1669,7 +2143,7 @@ func (r *queryResolver) SearchPosts(ctx context.Context, query string, limit *in
 
 	// 获取当前用户信息（如果有的话）
 	var userID *uint
-	var userRole string = "user"
+	var userRole string = "USER"
 
 	if user, err := getUserFromContext(ctx, r.Resolver.DB); err == nil {
 		userID = &user.ID
@@ -1718,7 +2192,7 @@ func (r *queryResolver) EnhancedSearch(ctx context.Context, input SearchInput) (
 
 	// 获取当前用户信息（如果有的话）
 	var userID *uint
-	var userRole string = "user"
+	var userRole string = "USER"
 
 	if user, err := getUserFromContext(ctx, r.Resolver.DB); err == nil {
 		userID = &user.ID
@@ -1831,31 +2305,50 @@ func (r *queryResolver) GetTrendingSearches(ctx context.Context, limit *int) ([]
 
 // GetSearchStats is the resolver for the getSearchStats field.
 func (r *queryResolver) GetSearchStats(ctx context.Context) (*SearchStats, error) {
-	// 获取基本统计信息
-	var totalSearches int64
-	if err := r.Resolver.DB.Model(&models.BlogPost{}).Count(&totalSearches).Error; err != nil {
-		return nil, fmt.Errorf("获取文章总数失败: %w", err)
-	}
-
-	// 获取热门查询（简化实现：使用热门标签）
 	searchService := r.Resolver.SearchService
-	trendingTags, err := searchService.GetTrendingSearches(10)
+
+	// 统计最近30天的数据
+	days := 30
+
+	// 1. 获取总搜索次数
+	totalSearches, err := searchService.GetTotalSearchCount(days)
 	if err != nil {
-		trendingTags = []string{}
+		totalSearches = 0
 	}
 
-	// 构建热门查询数据
-	popularQueries := make([]*PopularQuery, len(trendingTags))
-	for i, tag := range trendingTags {
+	// 2. 获取热门查询
+	stats, err := searchService.GetSearchQueryStats(10, days)
+	if err != nil {
+		stats = []models.SearchQueryStats{}
+	}
+
+	// 转换为 GraphQL 类型
+	popularQueries := make([]*PopularQuery, len(stats))
+	for i, stat := range stats {
 		popularQueries[i] = &PopularQuery{
-			Query:        tag,
-			Count:        0, // 简化实现，实际应该统计查询次数
-			LastSearched: time.Now(),
+			Query:        stat.Query,
+			Count:        int(stat.Count),
+			LastSearched: stat.LastSearched,
 		}
 	}
 
-	// 构建搜索趋势数据（简化实现）
-	searchTrends := make([]*SearchTrend, 0)
+	// 3. 获取搜索趋势
+	trendData, err := searchService.GetSearchTrends(days)
+	if err != nil {
+		trendData = []map[string]interface{}{}
+	}
+
+	searchTrends := make([]*SearchTrend, len(trendData))
+	for i, trend := range trendData {
+		date, _ := trend["date"].(string)
+		count, _ := trend["count"].(int64)
+
+		searchTrends[i] = &SearchTrend{
+			Date:        date,
+			SearchCount: int(count),
+			TopQueries:  []string{}, // 暂时为空，可以后续添加每日热门查询
+		}
+	}
 
 	return &SearchStats{
 		TotalSearches:  int(totalSearches),
@@ -1872,7 +2365,7 @@ func (r *queryResolver) InviteCodes(ctx context.Context, limit *int, offset *int
 		return nil, HandleAuthError(err)
 	}
 
-	if user.Role != "admin" {
+	if user.Role != "ADMIN" {
 		return nil, HandleForbidden()
 	}
 
@@ -2138,7 +2631,7 @@ func (r *queryResolver) GetTrendingTags(ctx context.Context, limit *int) ([]stri
 }
 
 // Comments is the resolver for the comments field.
-func (r *queryResolver) Comments(ctx context.Context, blogPostID string, limit *int, offset *int, filter *CommentFilterInput, sort *CommentSortInput) (*CommentResult, error) {
+func (r *queryResolver) Comments(ctx context.Context, blogPostID *string, limit *int, offset *int, filter *CommentFilterInput, sort *CommentSortInput) (*CommentResult, error) {
 	// 设置默认值
 	defaultLimit := 10
 	defaultOffset := 0
@@ -2151,12 +2644,6 @@ func (r *queryResolver) Comments(ctx context.Context, blogPostID string, limit *
 		offset = &defaultOffset
 	}
 
-	// 解析文章ID
-	postID, err := strconv.ParseUint(blogPostID, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("无效的文章ID: %w", err)
-	}
-
 	// 获取当前用户信息（如果有的话）
 	var currentUser *models.User
 	if user, err := getUserFromContext(ctx, r.Resolver.DB); err == nil {
@@ -2166,12 +2653,23 @@ func (r *queryResolver) Comments(ctx context.Context, blogPostID string, limit *
 	// 构建查询
 	dbQuery := r.Resolver.DB.Model(&models.BlogPostComment{}).
 		Preload("User").
+		Preload("BlogPost").
+		Preload("BlogPost.Author").
+		Preload("BlogPost.Stats").
 		Preload("Parent").
-		Preload("Replies").
-		Where("blog_post_id = ?", postID)
+		Preload("Replies")
 
-	// 权限过滤 - 只显示已审核的评论，除非是管理员或作者
-	if currentUser == nil || (currentUser.Role != "admin" && postID != 0) {
+	// 如果提供了 blogPostID，按文章筛选
+	if blogPostID != nil {
+		postID, err := strconv.ParseUint(*blogPostID, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("无效的文章ID: %w", err)
+		}
+		dbQuery = dbQuery.Where("blog_post_id = ?", postID)
+	}
+
+	// 权限过滤 - 只显示已审核的评论，除非是管理员
+	if currentUser == nil || currentUser.Role != "ADMIN" {
 		dbQuery = dbQuery.Where("is_approved = ?", true)
 	}
 
@@ -2215,7 +2713,7 @@ func (r *queryResolver) Comments(ctx context.Context, blogPostID string, limit *
 
 	// 获取结果
 	var comments []models.BlogPostComment
-	err = dbQuery.Offset(*offset).Limit(*limit).Find(&comments).Error
+	err := dbQuery.Offset(*offset).Limit(*limit).Find(&comments).Error
 	if err != nil {
 		return nil, fmt.Errorf("获取评论列表失败: %w", err)
 	}
@@ -2255,7 +2753,7 @@ func (r *queryResolver) Comment(ctx context.Context, id string) (*BlogPostCommen
 		Where("id = ?", commentID)
 
 	// 权限过滤 - 只显示已审核的评论，除非是管理员或作者
-	if currentUser == nil || currentUser.Role != "admin" {
+	if currentUser == nil || currentUser.Role != "ADMIN" {
 		dbQuery = dbQuery.Where("is_approved = ?", true)
 	}
 
@@ -2270,6 +2768,130 @@ func (r *queryResolver) Comment(ctx context.Context, id string) (*BlogPostCommen
 	}
 
 	return convertToGraphQLComment(&comment), nil
+}
+
+// GetTags is the resolver for the getTags field.
+func (r *queryResolver) GetTags(ctx context.Context, limit *int, offset *int, search *string) ([]*TagInfo, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建标签服务
+	tagService := services.NewTagService(r.Resolver.DB)
+
+	// 获取标签列表
+	tags, err := tagService.GetTags(limit, offset, search)
+	if err != nil {
+		return nil, fmt.Errorf("获取标签列表失败: %w", err)
+	}
+
+	// 转换为GraphQL类型
+	result := make([]*TagInfo, len(tags))
+	for i, tag := range tags {
+		posts := make([]*BlogPost, len(tag.Posts))
+		for j, post := range tag.Posts {
+			posts[j] = convertToGraphQLBlogPostWithUser(post, nil)
+		}
+
+		result[i] = &TagInfo{
+			Name:  tag.Name,
+			Count: tag.Count,
+			Posts: posts,
+		}
+	}
+
+	return result, nil
+}
+
+// GetCategories is the resolver for the getCategories field.
+func (r *queryResolver) GetCategories(ctx context.Context, limit *int, offset *int, search *string) ([]*CategoryInfo, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建标签服务
+	tagService := services.NewTagService(r.Resolver.DB)
+
+	// 获取分类列表
+	categories, err := tagService.GetCategories(limit, offset, search)
+	if err != nil {
+		return nil, fmt.Errorf("获取分类列表失败: %w", err)
+	}
+
+	// 转换为GraphQL类型
+	result := make([]*CategoryInfo, len(categories))
+	for i, category := range categories {
+		posts := make([]*BlogPost, len(category.Posts))
+		for j, post := range category.Posts {
+			posts[j] = convertToGraphQLBlogPostWithUser(post, nil)
+		}
+
+		result[i] = &CategoryInfo{
+			Name:  category.Name,
+			Count: category.Count,
+			Posts: posts,
+		}
+	}
+
+	return result, nil
+}
+
+// GetTagCategoryStats is the resolver for the getTagCategoryStats field.
+func (r *queryResolver) GetTagCategoryStats(ctx context.Context) (*TagCategoryStats, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建标签服务
+	tagService := services.NewTagService(r.Resolver.DB)
+
+	// 获取统计信息
+	stats, err := tagService.GetTagCategoryStats()
+	if err != nil {
+		return nil, fmt.Errorf("获取标签分类统计失败: %w", err)
+	}
+
+	// 转换为GraphQL类型
+	tags := make([]*TagInfo, len(stats.Tags))
+	for i, tag := range stats.Tags {
+		posts := make([]*BlogPost, len(tag.Posts))
+		for j, post := range tag.Posts {
+			posts[j] = convertToGraphQLBlogPostWithUser(post, nil)
+		}
+
+		tags[i] = &TagInfo{
+			Name:  tag.Name,
+			Count: tag.Count,
+			Posts: posts,
+		}
+	}
+
+	categories := make([]*CategoryInfo, len(stats.Categories))
+	for i, category := range stats.Categories {
+		posts := make([]*BlogPost, len(category.Posts))
+		for j, post := range category.Posts {
+			posts[j] = convertToGraphQLBlogPostWithUser(post, nil)
+		}
+
+		categories[i] = &CategoryInfo{
+			Name:  category.Name,
+			Count: category.Count,
+			Posts: posts,
+		}
+	}
+
+	return &TagCategoryStats{
+		TotalTags:       stats.TotalTags,
+		TotalCategories: stats.TotalCategories,
+		Tags:            tags,
+		Categories:      categories,
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.

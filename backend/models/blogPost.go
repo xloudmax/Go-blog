@@ -69,7 +69,7 @@ func (bp *BlogPost) CanBeViewedBy(userID *uint, userRole string) bool {
 	}
 
 	// 管理员可以查看所有文章
-	if userRole == "admin" {
+	if userRole == "ADMIN" {
 		return true
 	}
 

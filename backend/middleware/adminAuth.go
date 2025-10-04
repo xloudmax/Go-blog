@@ -23,8 +23,8 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 			"method", c.Request.Method,
 		)
 
-		// 检查角色是否为 "admin"
-		if role != "admin" {
+		// 检查角色是否为 "ADMIN"
+		if role != "ADMIN" {
 			// 如果用户名为空，则使用 "anonymous"
 			if username == "" {
 				username = "anonymous"

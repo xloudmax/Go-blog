@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {useSystemAdmin, useAdminNavigation} from '../../hooks';
 import {useAppUser} from '../../hooks';
 // 导入Ant Design组件
@@ -13,7 +13,12 @@ import {
     Typography,
     notification,
     Descriptions,
-    Space
+    Space,
+    Progress,
+    Tag,
+    Modal,
+    Switch,
+    Tooltip
 } from 'antd';
 import {
     ReloadOutlined,
@@ -22,8 +27,20 @@ import {
     ApiOutlined,
     ClusterOutlined,
     ClockCircleOutlined,
-    CalendarOutlined
+    CalendarOutlined,
+    ExclamationCircleOutlined,
+    ThunderboltOutlined
 } from '@ant-design/icons';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip as RechartsTooltip,
+    ResponsiveContainer,
+    Cell
+} from 'recharts';
 
 const {Text} = Typography;
 
@@ -44,6 +61,19 @@ export default function SystemManagement() {
 
     // 本地状态
     const [operationLoading, setOperationLoading] = useState<string | null>(null);
+    const [autoRefresh, setAutoRefresh] = useState(false);
+
+    // 自动刷新
+    useEffect(() => {
+        if (!autoRefresh) return;
+
+        const interval = setInterval(() => {
+            refetchDashboard();
+            refetchStats();
+        }, 30000); // 每30秒刷新一次
+
+        return () => clearInterval(interval);
+    }, [autoRefresh, refetchDashboard, refetchStats]);
 
     // 权限检查
     if (!isAdmin || !checkAdminAccess()) {
@@ -57,46 +87,65 @@ export default function SystemManagement() {
         );
     }
 
-    // 清理缓存
-    const handleClearCacheAction = async () => {
-        setOperationLoading('cache');
-        try {
-            await handleClearCache();
-            notification.success({
-                message: '成功',
-                description: '缓存清理成功！',
-                duration: 3,
-            });
-        } catch (error: any) {
-            notification.error({
-                message: '错误',
-                description: error.message || '清理缓存失败',
-                duration: 5,
-            });
-        } finally {
-            setOperationLoading(null);
-        }
+    // 清理缓存（带确认）
+    const handleClearCacheAction = () => {
+        Modal.confirm({
+            title: '确认清理缓存',
+            icon: <ExclamationCircleOutlined />,
+            content: '清理缓存可能会暂时影响性能，确定要继续吗？',
+            okText: '确认',
+            okType: 'danger',
+            cancelText: '取消',
+            async onOk() {
+                setOperationLoading('cache');
+                try {
+                    await handleClearCache();
+                    notification.success({
+                        message: '成功',
+                        description: '缓存清理成功！',
+                        duration: 3,
+                    });
+                } catch (error: any) {
+                    notification.error({
+                        message: '错误',
+                        description: error.message || '清理缓存失败',
+                        duration: 5,
+                    });
+                } finally {
+                    setOperationLoading(null);
+                }
+            },
+        });
     };
 
-    // 重建搜索索引
-    const handleRebuildSearchIndexAction = async () => {
-        setOperationLoading('search');
-        try {
-            await handleRebuildSearchIndex();
-            notification.success({
-                message: '成功',
-                description: '搜索索引重建成功！',
-                duration: 3,
-            });
-        } catch (error: any) {
-            notification.error({
-                message: '错误',
-                description: error.message || '重建搜索索引失败',
-                duration: 5,
-            });
-        } finally {
-            setOperationLoading(null);
-        }
+    // 重建搜索索引（带确认）
+    const handleRebuildSearchIndexAction = () => {
+        Modal.confirm({
+            title: '确认重建搜索索引',
+            icon: <ExclamationCircleOutlined />,
+            content: '重建索引需要一定时间，期间搜索功能可能受影响，确定要继续吗？',
+            okText: '确认',
+            cancelText: '取消',
+            async onOk() {
+                setOperationLoading('search');
+                try {
+                    await handleRebuildSearchIndex();
+                    notification.success({
+                        message: '成功',
+                        description: '搜索索引重建成功！',
+                        duration: 3,
+                    });
+                } catch (error: any) {
+                    notification.error({
+                        message: '错误',
+                        description: error.message || '重建搜索索引失败',
+                        duration: 5,
+                    });
+                } finally {
+                    setOperationLoading(null);
+                }
+            },
+        });
     };
 
     // 刷新数据
@@ -121,7 +170,15 @@ export default function SystemManagement() {
     };
 
     // 格式化运行时间
-    const formatUptime = (seconds: number) => {
+    const formatUptime = (uptimeStr: string) => {
+        // 后端返回的是字符串格式，直接返回
+        if (typeof uptimeStr === 'string') {
+            return uptimeStr;
+        }
+        // 如果是数字，转换为友好格式
+        const seconds = Number(uptimeStr);
+        if (isNaN(seconds)) return uptimeStr;
+
         const days = Math.floor(seconds / 86400);
         const hours = Math.floor((seconds % 86400) / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
@@ -135,8 +192,122 @@ export default function SystemManagement() {
         }
     };
 
+    // 计算内存使用率
+    const calculateMemoryUsage = () => {
+        if (!dashboard) return 0;
+
+        const parseMemory = (str: string) => {
+            const num = parseFloat(str);
+            return isNaN(num) ? 0 : num;
+        };
+
+        const alloc = parseMemory(dashboard.memory.alloc);
+        const sys = parseMemory(dashboard.memory.sys);
+
+        if (sys === 0) return 0;
+        return Math.round((alloc / sys) * 100);
+    };
+
+    // 计算系统健康度
+    const calculateSystemHealth = () => {
+        if (!dashboard) return {
+            score: 0,
+            status: 'unknown',
+            color: '#d9d9d9',
+            memoryUsage: 0,
+            goroutineCount: 0
+        };
+
+        const memoryUsage = calculateMemoryUsage();
+        const goroutineCount = dashboard.goroutines;
+
+        let healthScore = 100;
+
+        // 内存使用率过高扣分
+        if (memoryUsage > 80) healthScore -= 30;
+        else if (memoryUsage > 60) healthScore -= 15;
+
+        // Goroutine过多扣分
+        if (goroutineCount > 1000) healthScore -= 20;
+        else if (goroutineCount > 500) healthScore -= 10;
+
+        let status: string;
+        let color: string;
+        if (healthScore >= 90) {
+            status = '优秀';
+            color = '#52c41a';
+        } else if (healthScore >= 70) {
+            status = '良好';
+            color = '#1890ff';
+        } else if (healthScore >= 50) {
+            status = '警告';
+            color = '#faad14';
+        } else {
+            status = '危险';
+            color = '#ff4d4f';
+        }
+
+        return {
+            score: Math.max(0, healthScore),
+            status,
+            color,
+            memoryUsage,
+            goroutineCount,
+        };
+    };
+
+    // 准备内存使用图表数据
+    const getMemoryChartData = () => {
+        if (!dashboard) return [];
+
+        const parseMemory = (str: string) => {
+            const num = parseFloat(str);
+            return isNaN(num) ? 0 : num;
+        };
+
+        return [
+            {
+                name: '当前分配',
+                value: parseMemory(dashboard.memory.alloc),
+                color: '#1890ff',
+            },
+            {
+                name: '堆内存',
+                value: parseMemory(dashboard.memory.heapAlloc),
+                color: '#52c41a',
+            },
+            {
+                name: '系统内存',
+                value: parseMemory(dashboard.memory.sys),
+                color: '#faad14',
+            },
+        ];
+    };
+
     return (
         <div>
+            {/* 页面头部 - 自动刷新开关 */}
+            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Space>
+                    <Tooltip title="每30秒自动刷新数据">
+                        <span>自动刷新:</span>
+                    </Tooltip>
+                    <Switch
+                        checked={autoRefresh}
+                        onChange={setAutoRefresh}
+                        checkedChildren="开"
+                        unCheckedChildren="关"
+                    />
+                </Space>
+                <Button
+                    icon={<ReloadOutlined spin={loading} />}
+                    onClick={handleRefreshData}
+                    loading={loading}
+                >
+                    刷新数据
+                </Button>
+            </div>
+
             {/* 加载状态 */}
             {loading && (
                 <div style={{textAlign: 'center', padding: '48px'}}>
@@ -162,6 +333,63 @@ export default function SystemManagement() {
                     style={{marginBottom: '24px'}}
                 />
             )}
+
+            {/* 系统健康度卡片 */}
+            {dashboard && (() => {
+                const health = calculateSystemHealth();
+                return (
+                    <Card style={{ marginBottom: '24px', background: `linear-gradient(135deg, ${health.color}15 0%, ${health.color}05 100%)` }}>
+                        <Row gutter={16} align="middle">
+                            <Col xs={24} md={8}>
+                                <Statistic
+                                    title={
+                                        <Space>
+                                            <ThunderboltOutlined />
+                                            <span>系统健康度</span>
+                                        </Space>
+                                    }
+                                    value={health.score}
+                                    suffix="/ 100"
+                                    valueStyle={{ color: health.color, fontSize: '36px', fontWeight: 'bold' }}
+                                />
+                                <Tag color={health.color} style={{ marginTop: '8px' }}>
+                                    {health.status}
+                                </Tag>
+                            </Col>
+                            <Col xs={24} md={8}>
+                                <div style={{ marginBottom: '8px' }}>
+                                    <Text type="secondary">内存使用率</Text>
+                                </div>
+                                <Progress
+                                    percent={health.memoryUsage}
+                                    status={health.memoryUsage > 80 ? 'exception' : health.memoryUsage > 60 ? 'normal' : 'success'}
+                                    strokeColor={
+                                        health.memoryUsage > 80 ? '#ff4d4f' :
+                                        health.memoryUsage > 60 ? '#faad14' : '#52c41a'
+                                    }
+                                />
+                            </Col>
+                            <Col xs={24} md={8}>
+                                <Descriptions column={1} size="small">
+                                    <Descriptions.Item label="协程数">
+                                        <Space>
+                                            <Text strong>{health.goroutineCount}</Text>
+                                            {health.goroutineCount > 500 && (
+                                                <Tooltip title="协程数较高，请注意监控">
+                                                    <WarningOutlined style={{ color: '#faad14' }} />
+                                                </Tooltip>
+                                            )}
+                                        </Space>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="运行时间">
+                                        <Text>{formatUptime(dashboard.uptime)}</Text>
+                                    </Descriptions.Item>
+                                </Descriptions>
+                            </Col>
+                        </Row>
+                    </Card>
+                );
+            })()}
 
             {/* 服务器信息 */}
             {dashboard && (
@@ -204,26 +432,40 @@ export default function SystemManagement() {
                         </Card>
                     </Col>
 
-                    {/* 内存使用情况 */}
+                    {/* 内存使用情况 - 图表展示 */}
                     <Col xs={24} lg={12}>
-                        <Card title="内存使用" bordered={false}>
-                            <Descriptions column={1} layout="horizontal" size="small">
-                                <Descriptions.Item label="当前分配">
-                                    <Text code>{formatMemoryUsage(dashboard.memory.alloc)}</Text>
-                                </Descriptions.Item>
-                                <Descriptions.Item label="累计分配">
-                                    <Text code>{formatMemoryUsage(dashboard.memory.totalAlloc)}</Text>
-                                </Descriptions.Item>
-                                <Descriptions.Item label="系统内存">
-                                    <Text code>{formatMemoryUsage(dashboard.memory.sys)}</Text>
-                                </Descriptions.Item>
-                                <Descriptions.Item label="堆内存分配">
-                                    <Text code>{formatMemoryUsage(dashboard.memory.heapAlloc)}</Text>
-                                </Descriptions.Item>
-                                <Descriptions.Item label="堆内存系统">
-                                    <Text code>{formatMemoryUsage(dashboard.memory.heapSys)}</Text>
-                                </Descriptions.Item>
-                            </Descriptions>
+                        <Card title="内存使用情况" bordered={false}>
+                            <ResponsiveContainer width="100%" height={200}>
+                                <BarChart data={getMemoryChartData()}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis
+                                        dataKey="name"
+                                        tick={{ fontSize: 12 }}
+                                    />
+                                    <YAxis
+                                        tick={{ fontSize: 12 }}
+                                        label={{ value: 'MB', angle: -90, position: 'insideLeft' }}
+                                    />
+                                    <RechartsTooltip
+                                        formatter={(value: number) => [`${value.toFixed(2)} MB`, '内存']}
+                                    />
+                                    <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                                        {getMemoryChartData().map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                            <div style={{ marginTop: '16px' }}>
+                                <Descriptions column={2} size="small">
+                                    <Descriptions.Item label="累计分配">
+                                        <Text code>{formatMemoryUsage(dashboard.memory.totalAlloc)}</Text>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="堆内存系统">
+                                        <Text code>{formatMemoryUsage(dashboard.memory.heapSys)}</Text>
+                                    </Descriptions.Item>
+                                </Descriptions>
+                            </div>
                         </Card>
                     </Col>
                 </Row>
@@ -327,17 +569,6 @@ export default function SystemManagement() {
                     </Col>
                 </Row>
             </Card>
-
-            {/* 刷新按钮 */}
-            <div style={{textAlign: 'center'}}>
-                <Button
-                    icon={<ReloadOutlined/>}
-                    onClick={handleRefreshData}
-                    disabled={loading}
-                >
-                    刷新数据
-                </Button>
-            </div>
         </div>
     );
 }

@@ -21,19 +21,30 @@ interface ArticleCardProps {
 const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction }) => {
   const { user, isAuthenticated } = useAppUser();
 
-  // 格式化相对时间
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '今天';
-    if (diffDays === 2) return '昨天';
-    if (diffDays <= 7) return `${diffDays}天前`;
-    if (diffDays <= 30) return `${Math.ceil(diffDays/7)}周前`;
-    if (diffDays <= 365) return `${Math.ceil(diffDays/30)}个月前`;
-    return `${Math.ceil(diffDays/365)}年前`;
+  // 格式化日期时间
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '未知时间';
+
+    try {
+      const date = new Date(dateString);
+
+      // 检查日期是否有效
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date:', dateString);
+        return '未知时间';
+      }
+
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error, dateString);
+      return '未知时间';
+    }
   };
 
   // 文章操作菜单
@@ -61,19 +72,20 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction })
   ];
 
   return (
-    <Card 
-      className="article-card modern-card-hover"
+    <Card
+      className="article-card modern-card-hover h-full flex flex-col"
       cover={
         post.coverImageUrl ? (
-          <div className="relative h-48 overflow-hidden">
-            <img 
-              alt={post.title} 
-              src={post.coverImageUrl} 
+          <div className="relative h-48 overflow-hidden flex-shrink-0">
+            <img
+              alt={post.title}
+              src={post.coverImageUrl}
               className="w-full h-full object-cover image-hover-scale"
             />
           </div>
         ) : null
       }
+      styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column' } }}
     >
       <div className="flex flex-col h-full">
         {/* 标题 */}
@@ -99,14 +111,39 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction })
         {post.tags && post.tags.length > 0 && (
           <div className="mb-4">
             <Space size={[0, 8]} wrap>
-              {post.tags.slice(0, 3).map(tag => (
-                <Tag 
-                  key={tag} 
-                  className="rounded-full px-3 py-1 text-xs"
-                >
-                  {tag}
-                </Tag>
-              ))}
+              {post.tags.slice(0, 3).map((tag) => {
+                // 美观的渐变色配置
+                const tagColorSchemes = [
+                  { bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', text: '#fff' },  // 紫色渐变
+                  { bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', text: '#fff' },  // 粉红渐变
+                  { bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', text: '#fff' },  // 蓝色渐变
+                  { bg: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', text: '#fff' },  // 绿色渐变
+                  { bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', text: '#fff' },  // 橙粉渐变
+                  { bg: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)', text: '#fff' },  // 青紫渐变
+                  { bg: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', text: '#333' },  // 淡蓝粉渐变
+                  { bg: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', text: '#333' },  // 浅粉渐变
+                  { bg: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', text: '#333' },  // 暖橙渐变
+                  { bg: 'linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)', text: '#fff' },  // 红蓝渐变
+                ];
+
+                const colorIndex = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const colorScheme = tagColorSchemes[colorIndex % tagColorSchemes.length];
+
+                return (
+                  <Tag
+                    key={tag}
+                    className="rounded-full px-3 py-1 text-xs border-0"
+                    style={{
+                      background: colorScheme.bg,
+                      color: colorScheme.text,
+                      fontWeight: 500,
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                    }}
+                  >
+                    {tag}
+                  </Tag>
+                );
+              })}
             </Space>
           </div>
         )}
@@ -129,7 +166,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction })
           <div className="article-card-stats">
             <span className="article-card-stat text-xs text-gray-500">
               <ClockCircleOutlined />
-              {formatRelativeTime(post.publishedAt || post.createdAt)}
+              {formatDate(post.publishedAt || post.createdAt)}
             </span>
             <span className="article-card-stat text-xs text-gray-500">
               <EyeOutlined />
