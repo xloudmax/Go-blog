@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 /backend/uploads/
+backend/bin/
+*.id0
+*.id1
