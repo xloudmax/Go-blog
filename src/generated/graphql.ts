@@ -225,6 +225,7 @@ export type Mutation = {
   batchUpdateCategories: GeneralResponse;
   batchUpdateTags: GeneralResponse;
   changePassword: GeneralResponse;
+  clearAllNotifications: GeneralResponse;
   clearCache: GeneralResponse;
   confirmPasswordReset: GeneralResponse;
   createComment: BlogPostComment;
@@ -232,6 +233,7 @@ export type Mutation = {
   createPost: BlogPost;
   deactivateInviteCode: GeneralResponse;
   deleteComment: GeneralResponse;
+  deleteNotification: GeneralResponse;
   deletePost: GeneralResponse;
   deleteUnusedCategories: GeneralResponse;
   deleteUnusedTags: GeneralResponse;
@@ -240,6 +242,8 @@ export type Mutation = {
   likePost: BlogPost;
   login: AuthPayload;
   logout: GeneralResponse;
+  markAllNotificationsAsRead: GeneralResponse;
+  markNotificationAsRead: Notification;
   mergeCategories: GeneralResponse;
   mergeTags: GeneralResponse;
   publishPost: BlogPost;
@@ -337,6 +341,11 @@ export type MutationDeleteCommentArgs = {
 };
 
 
+export type MutationDeleteNotificationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeletePostArgs = {
   id: Scalars['ID']['input'];
 };
@@ -359,6 +368,11 @@ export type MutationLikePostArgs = {
 
 export type MutationLoginArgs = {
   input: LoginInput;
+};
+
+
+export type MutationMarkNotificationAsReadArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -446,6 +460,26 @@ export type MutationVerifyEmailAndLoginArgs = {
   input: VerifyEmailInput;
 };
 
+export type Notification = {
+  __typename?: 'Notification';
+  content: Scalars['String']['output'];
+  createdAt: Scalars['Time']['output'];
+  id: Scalars['ID']['output'];
+  isRead: Scalars['Boolean']['output'];
+  recipient: User;
+  relatedComment?: Maybe<BlogPostComment>;
+  relatedPost?: Maybe<BlogPost>;
+  relatedUser?: Maybe<User>;
+  title: Scalars['String']['output'];
+  type: NotificationType;
+};
+
+export type NotificationType =
+  | 'COMMENT_REPLY'
+  | 'POST_COMMENT'
+  | 'POST_LIKE'
+  | 'SYSTEM';
+
 export type PopularQuery = {
   __typename?: 'PopularQuery';
   count: Scalars['Int']['output'];
@@ -490,11 +524,13 @@ export type Query = {
   getTrendingTags: Array<Scalars['String']['output']>;
   inviteCodes: Array<InviteCode>;
   me?: Maybe<User>;
+  notifications: Array<Notification>;
   post?: Maybe<BlogPost>;
   postVersions: Array<BlogPostVersion>;
   posts: Array<BlogPost>;
   searchPosts: SearchResult;
   serverDashboard: ServerDashboard;
+  unreadNotificationCount: Scalars['Int']['output'];
   user?: Maybe<User>;
   users: Array<User>;
 };
@@ -561,6 +597,12 @@ export type QueryGetTrendingTagsArgs = {
 
 export type QueryInviteCodesArgs = {
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryNotificationsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -772,6 +814,106 @@ export type VerifyEmailInput = {
   email: Scalars['String']['input'];
   type: VerificationType;
 };
+
+export type NotificationsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type NotificationsQueryData = { __typename?: 'Query', notifications: Array<{ __typename?: 'Notification', id: string, type: NotificationType, title: string, content: string, isRead: boolean, createdAt: string, relatedPost?: { __typename?: 'BlogPost', id: string, title: string, slug: string } | null, relatedComment?: { __typename?: 'BlogPostComment', id: string, content: string } | null, relatedUser?: { __typename?: 'User', id: string, username: string, avatar?: string | null } | null }> };
+
+export type UnreadNotificationCountQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type UnreadNotificationCountQueryData = { __typename?: 'Query', unreadNotificationCount: number };
+
+export type MarkNotificationAsReadMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type MarkNotificationAsReadMutationData = { __typename?: 'Mutation', markNotificationAsRead: { __typename?: 'Notification', id: string, isRead: boolean } };
+
+export type MarkAllNotificationsAsReadMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MarkAllNotificationsAsReadMutationData = { __typename?: 'Mutation', markAllNotificationsAsRead: { __typename?: 'GeneralResponse', success: boolean, message?: string | null } };
+
+export type DeleteNotificationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteNotificationMutationData = { __typename?: 'Mutation', deleteNotification: { __typename?: 'GeneralResponse', success: boolean, message?: string | null } };
+
+export type ClearAllNotificationsMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ClearAllNotificationsMutationData = { __typename?: 'Mutation', clearAllNotifications: { __typename?: 'GeneralResponse', success: boolean, message?: string | null } };
+
+export type GetTagsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type GetTagsQueryData = { __typename?: 'Query', getTags: Array<{ __typename?: 'TagInfo', name: string, count: number, posts: Array<{ __typename?: 'BlogPost', id: string, title: string, slug: string }> }> };
+
+export type GetCategoriesQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type GetCategoriesQueryData = { __typename?: 'Query', getCategories: Array<{ __typename?: 'CategoryInfo', name: string, count: number, posts: Array<{ __typename?: 'BlogPost', id: string, title: string, slug: string }> }> };
+
+export type GetTagCategoryStatsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetTagCategoryStatsQueryData = { __typename?: 'Query', getTagCategoryStats: { __typename?: 'TagCategoryStats', totalTags: number, totalCategories: number, tags: Array<{ __typename?: 'TagInfo', name: string, count: number, posts: Array<{ __typename?: 'BlogPost', id: string, title: string }> }>, categories: Array<{ __typename?: 'CategoryInfo', name: string, count: number, posts: Array<{ __typename?: 'BlogPost', id: string, title: string }> }> } };
+
+export type MergeTagsMutationVariables = Exact<{
+  sourceTag: Scalars['String']['input'];
+  targetTag: Scalars['String']['input'];
+}>;
+
+
+export type MergeTagsMutationData = { __typename?: 'Mutation', mergeTags: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
+
+export type MergeCategoriesMutationVariables = Exact<{
+  sourceCategory: Scalars['String']['input'];
+  targetCategory: Scalars['String']['input'];
+}>;
+
+
+export type MergeCategoriesMutationData = { __typename?: 'Mutation', mergeCategories: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
+
+export type BatchUpdateTagsMutationVariables = Exact<{
+  input: BatchUpdateTagsInput;
+}>;
+
+
+export type BatchUpdateTagsMutationData = { __typename?: 'Mutation', batchUpdateTags: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
+
+export type BatchUpdateCategoriesMutationVariables = Exact<{
+  input: BatchUpdateCategoriesInput;
+}>;
+
+
+export type BatchUpdateCategoriesMutationData = { __typename?: 'Mutation', batchUpdateCategories: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
+
+export type DeleteUnusedTagsMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type DeleteUnusedTagsMutationData = { __typename?: 'Mutation', deleteUnusedTags: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
+
+export type DeleteUnusedCategoriesMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type DeleteUnusedCategoriesMutationData = { __typename?: 'Mutation', deleteUnusedCategories: { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null } };
 
 export type UsersQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -1192,6 +1334,181 @@ export const InviteCodeInfoFragmentDoc = /*#__PURE__*/ {"kind":"Document","defin
 export const AuthPayloadInfoFragmentDoc = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuthPayloadInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuthPayload"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserInfo"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
 export const ServerDashboardInfoFragmentDoc = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ServerDashboardInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ServerDashboard"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"serverTime"}},{"kind":"Field","name":{"kind":"Name","value":"hostname"}},{"kind":"Field","name":{"kind":"Name","value":"goVersion"}},{"kind":"Field","name":{"kind":"Name","value":"cpuCount"}},{"kind":"Field","name":{"kind":"Name","value":"goroutines"}},{"kind":"Field","name":{"kind":"Name","value":"memory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alloc"}},{"kind":"Field","name":{"kind":"Name","value":"totalAlloc"}},{"kind":"Field","name":{"kind":"Name","value":"sys"}},{"kind":"Field","name":{"kind":"Name","value":"heapAlloc"}},{"kind":"Field","name":{"kind":"Name","value":"heapSys"}}]}},{"kind":"Field","name":{"kind":"Name","value":"uptime"}},{"kind":"Field","name":{"kind":"Name","value":"userCount"}},{"kind":"Field","name":{"kind":"Name","value":"postCount"}},{"kind":"Field","name":{"kind":"Name","value":"todayRegistrations"}},{"kind":"Field","name":{"kind":"Name","value":"todayPosts"}}]}}]} as unknown as DocumentNode;
 export const GeneralResponseInfoFragmentDoc = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GeneralResponseInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralResponse"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]} as unknown as DocumentNode;
+export const NotificationsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Notifications"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"notifications"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"isRead"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"relatedPost"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}},{"kind":"Field","name":{"kind":"Name","value":"relatedComment"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}}]}},{"kind":"Field","name":{"kind":"Name","value":"relatedUser"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]} as unknown as DocumentNode;
+export function useNotificationsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<NotificationsQueryData, NotificationsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<NotificationsQueryData, NotificationsQueryVariables>(NotificationsDocument, options);
+      }
+export function useNotificationsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<NotificationsQueryData, NotificationsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<NotificationsQueryData, NotificationsQueryVariables>(NotificationsDocument, options);
+        }
+export function useNotificationsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<NotificationsQueryData, NotificationsQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<NotificationsQueryData, NotificationsQueryVariables>(NotificationsDocument, options);
+        }
+export type NotificationsQueryHookResult = ReturnType<typeof useNotificationsQuery>;
+export type NotificationsLazyQueryHookResult = ReturnType<typeof useNotificationsLazyQuery>;
+export type NotificationsSuspenseQueryHookResult = ReturnType<typeof useNotificationsSuspenseQuery>;
+export type NotificationsQueryResult = Apollo.QueryResult<NotificationsQueryData, NotificationsQueryVariables>;
+export const UnreadNotificationCountDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"UnreadNotificationCount"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unreadNotificationCount"}}]}}]} as unknown as DocumentNode;
+export function useUnreadNotificationCountQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<UnreadNotificationCountQueryData, UnreadNotificationCountQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<UnreadNotificationCountQueryData, UnreadNotificationCountQueryVariables>(UnreadNotificationCountDocument, options);
+      }
+export function useUnreadNotificationCountLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<UnreadNotificationCountQueryData, UnreadNotificationCountQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<UnreadNotificationCountQueryData, UnreadNotificationCountQueryVariables>(UnreadNotificationCountDocument, options);
+        }
+export function useUnreadNotificationCountSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<UnreadNotificationCountQueryData, UnreadNotificationCountQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<UnreadNotificationCountQueryData, UnreadNotificationCountQueryVariables>(UnreadNotificationCountDocument, options);
+        }
+export type UnreadNotificationCountQueryHookResult = ReturnType<typeof useUnreadNotificationCountQuery>;
+export type UnreadNotificationCountLazyQueryHookResult = ReturnType<typeof useUnreadNotificationCountLazyQuery>;
+export type UnreadNotificationCountSuspenseQueryHookResult = ReturnType<typeof useUnreadNotificationCountSuspenseQuery>;
+export type UnreadNotificationCountQueryResult = Apollo.QueryResult<UnreadNotificationCountQueryData, UnreadNotificationCountQueryVariables>;
+export const MarkNotificationAsReadDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MarkNotificationAsRead"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"markNotificationAsRead"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"isRead"}}]}}]}}]} as unknown as DocumentNode;
+export type MarkNotificationAsReadMutationFn = Apollo.MutationFunction<MarkNotificationAsReadMutationData, MarkNotificationAsReadMutationVariables>;
+export function useMarkNotificationAsReadMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<MarkNotificationAsReadMutationData, MarkNotificationAsReadMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<MarkNotificationAsReadMutationData, MarkNotificationAsReadMutationVariables>(MarkNotificationAsReadDocument, options);
+      }
+export type MarkNotificationAsReadMutationHookResult = ReturnType<typeof useMarkNotificationAsReadMutation>;
+export type MarkNotificationAsReadMutationResult = Apollo.MutationResult<MarkNotificationAsReadMutationData>;
+export type MarkNotificationAsReadMutationOptions = Apollo.BaseMutationOptions<MarkNotificationAsReadMutationData, MarkNotificationAsReadMutationVariables>;
+export const MarkAllNotificationsAsReadDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MarkAllNotificationsAsRead"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"markAllNotificationsAsRead"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]} as unknown as DocumentNode;
+export type MarkAllNotificationsAsReadMutationFn = Apollo.MutationFunction<MarkAllNotificationsAsReadMutationData, MarkAllNotificationsAsReadMutationVariables>;
+export function useMarkAllNotificationsAsReadMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<MarkAllNotificationsAsReadMutationData, MarkAllNotificationsAsReadMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<MarkAllNotificationsAsReadMutationData, MarkAllNotificationsAsReadMutationVariables>(MarkAllNotificationsAsReadDocument, options);
+      }
+export type MarkAllNotificationsAsReadMutationHookResult = ReturnType<typeof useMarkAllNotificationsAsReadMutation>;
+export type MarkAllNotificationsAsReadMutationResult = Apollo.MutationResult<MarkAllNotificationsAsReadMutationData>;
+export type MarkAllNotificationsAsReadMutationOptions = Apollo.BaseMutationOptions<MarkAllNotificationsAsReadMutationData, MarkAllNotificationsAsReadMutationVariables>;
+export const DeleteNotificationDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteNotification"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteNotification"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]} as unknown as DocumentNode;
+export type DeleteNotificationMutationFn = Apollo.MutationFunction<DeleteNotificationMutationData, DeleteNotificationMutationVariables>;
+export function useDeleteNotificationMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteNotificationMutationData, DeleteNotificationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<DeleteNotificationMutationData, DeleteNotificationMutationVariables>(DeleteNotificationDocument, options);
+      }
+export type DeleteNotificationMutationHookResult = ReturnType<typeof useDeleteNotificationMutation>;
+export type DeleteNotificationMutationResult = Apollo.MutationResult<DeleteNotificationMutationData>;
+export type DeleteNotificationMutationOptions = Apollo.BaseMutationOptions<DeleteNotificationMutationData, DeleteNotificationMutationVariables>;
+export const ClearAllNotificationsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ClearAllNotifications"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"clearAllNotifications"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]} as unknown as DocumentNode;
+export type ClearAllNotificationsMutationFn = Apollo.MutationFunction<ClearAllNotificationsMutationData, ClearAllNotificationsMutationVariables>;
+export function useClearAllNotificationsMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ClearAllNotificationsMutationData, ClearAllNotificationsMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ClearAllNotificationsMutationData, ClearAllNotificationsMutationVariables>(ClearAllNotificationsDocument, options);
+      }
+export type ClearAllNotificationsMutationHookResult = ReturnType<typeof useClearAllNotificationsMutation>;
+export type ClearAllNotificationsMutationResult = Apollo.MutationResult<ClearAllNotificationsMutationData>;
+export type ClearAllNotificationsMutationOptions = Apollo.BaseMutationOptions<ClearAllNotificationsMutationData, ClearAllNotificationsMutationVariables>;
+export const GetTagsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTags"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTags"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"posts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}}]}}]}}]} as unknown as DocumentNode;
+export function useGetTagsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetTagsQueryData, GetTagsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetTagsQueryData, GetTagsQueryVariables>(GetTagsDocument, options);
+      }
+export function useGetTagsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetTagsQueryData, GetTagsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetTagsQueryData, GetTagsQueryVariables>(GetTagsDocument, options);
+        }
+export function useGetTagsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<GetTagsQueryData, GetTagsQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetTagsQueryData, GetTagsQueryVariables>(GetTagsDocument, options);
+        }
+export type GetTagsQueryHookResult = ReturnType<typeof useGetTagsQuery>;
+export type GetTagsLazyQueryHookResult = ReturnType<typeof useGetTagsLazyQuery>;
+export type GetTagsSuspenseQueryHookResult = ReturnType<typeof useGetTagsSuspenseQuery>;
+export type GetTagsQueryResult = Apollo.QueryResult<GetTagsQueryData, GetTagsQueryVariables>;
+export const GetCategoriesDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetCategories"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getCategories"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"posts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}}]}}]}}]} as unknown as DocumentNode;
+export function useGetCategoriesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetCategoriesQueryData, GetCategoriesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetCategoriesQueryData, GetCategoriesQueryVariables>(GetCategoriesDocument, options);
+      }
+export function useGetCategoriesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetCategoriesQueryData, GetCategoriesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetCategoriesQueryData, GetCategoriesQueryVariables>(GetCategoriesDocument, options);
+        }
+export function useGetCategoriesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<GetCategoriesQueryData, GetCategoriesQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetCategoriesQueryData, GetCategoriesQueryVariables>(GetCategoriesDocument, options);
+        }
+export type GetCategoriesQueryHookResult = ReturnType<typeof useGetCategoriesQuery>;
+export type GetCategoriesLazyQueryHookResult = ReturnType<typeof useGetCategoriesLazyQuery>;
+export type GetCategoriesSuspenseQueryHookResult = ReturnType<typeof useGetCategoriesSuspenseQuery>;
+export type GetCategoriesQueryResult = Apollo.QueryResult<GetCategoriesQueryData, GetCategoriesQueryVariables>;
+export const GetTagCategoryStatsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTagCategoryStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTagCategoryStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalTags"}},{"kind":"Field","name":{"kind":"Name","value":"totalCategories"}},{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"posts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"categories"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"posts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]}}]}}]} as unknown as DocumentNode;
+export function useGetTagCategoryStatsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetTagCategoryStatsQueryData, GetTagCategoryStatsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetTagCategoryStatsQueryData, GetTagCategoryStatsQueryVariables>(GetTagCategoryStatsDocument, options);
+      }
+export function useGetTagCategoryStatsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetTagCategoryStatsQueryData, GetTagCategoryStatsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetTagCategoryStatsQueryData, GetTagCategoryStatsQueryVariables>(GetTagCategoryStatsDocument, options);
+        }
+export function useGetTagCategoryStatsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<GetTagCategoryStatsQueryData, GetTagCategoryStatsQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetTagCategoryStatsQueryData, GetTagCategoryStatsQueryVariables>(GetTagCategoryStatsDocument, options);
+        }
+export type GetTagCategoryStatsQueryHookResult = ReturnType<typeof useGetTagCategoryStatsQuery>;
+export type GetTagCategoryStatsLazyQueryHookResult = ReturnType<typeof useGetTagCategoryStatsLazyQuery>;
+export type GetTagCategoryStatsSuspenseQueryHookResult = ReturnType<typeof useGetTagCategoryStatsSuspenseQuery>;
+export type GetTagCategoryStatsQueryResult = Apollo.QueryResult<GetTagCategoryStatsQueryData, GetTagCategoryStatsQueryVariables>;
+export const MergeTagsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MergeTags"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceTag"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"targetTag"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mergeTags"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"sourceTag"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceTag"}}},{"kind":"Argument","name":{"kind":"Name","value":"targetTag"},"value":{"kind":"Variable","name":{"kind":"Name","value":"targetTag"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]} as unknown as DocumentNode;
+export type MergeTagsMutationFn = Apollo.MutationFunction<MergeTagsMutationData, MergeTagsMutationVariables>;
+export function useMergeTagsMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<MergeTagsMutationData, MergeTagsMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<MergeTagsMutationData, MergeTagsMutationVariables>(MergeTagsDocument, options);
+      }
+export type MergeTagsMutationHookResult = ReturnType<typeof useMergeTagsMutation>;
+export type MergeTagsMutationResult = Apollo.MutationResult<MergeTagsMutationData>;
+export type MergeTagsMutationOptions = Apollo.BaseMutationOptions<MergeTagsMutationData, MergeTagsMutationVariables>;
+export const MergeCategoriesDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MergeCategories"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceCategory"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"targetCategory"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mergeCategories"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"sourceCategory"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceCategory"}}},{"kind":"Argument","name":{"kind":"Name","value":"targetCategory"},"value":{"kind":"Variable","name":{"kind":"Name","value":"targetCategory"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]} as unknown as DocumentNode;
+export type MergeCategoriesMutationFn = Apollo.MutationFunction<MergeCategoriesMutationData, MergeCategoriesMutationVariables>;
+export function useMergeCategoriesMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<MergeCategoriesMutationData, MergeCategoriesMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<MergeCategoriesMutationData, MergeCategoriesMutationVariables>(MergeCategoriesDocument, options);
+      }
+export type MergeCategoriesMutationHookResult = ReturnType<typeof useMergeCategoriesMutation>;
+export type MergeCategoriesMutationResult = Apollo.MutationResult<MergeCategoriesMutationData>;
+export type MergeCategoriesMutationOptions = Apollo.BaseMutationOptions<MergeCategoriesMutationData, MergeCategoriesMutationVariables>;
+export const BatchUpdateTagsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUpdateTags"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"BatchUpdateTagsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batchUpdateTags"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]} as unknown as DocumentNode;
+export type BatchUpdateTagsMutationFn = Apollo.MutationFunction<BatchUpdateTagsMutationData, BatchUpdateTagsMutationVariables>;
+export function useBatchUpdateTagsMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<BatchUpdateTagsMutationData, BatchUpdateTagsMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<BatchUpdateTagsMutationData, BatchUpdateTagsMutationVariables>(BatchUpdateTagsDocument, options);
+      }
+export type BatchUpdateTagsMutationHookResult = ReturnType<typeof useBatchUpdateTagsMutation>;
+export type BatchUpdateTagsMutationResult = Apollo.MutationResult<BatchUpdateTagsMutationData>;
+export type BatchUpdateTagsMutationOptions = Apollo.BaseMutationOptions<BatchUpdateTagsMutationData, BatchUpdateTagsMutationVariables>;
+export const BatchUpdateCategoriesDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUpdateCategories"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"BatchUpdateCategoriesInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batchUpdateCategories"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]} as unknown as DocumentNode;
+export type BatchUpdateCategoriesMutationFn = Apollo.MutationFunction<BatchUpdateCategoriesMutationData, BatchUpdateCategoriesMutationVariables>;
+export function useBatchUpdateCategoriesMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<BatchUpdateCategoriesMutationData, BatchUpdateCategoriesMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<BatchUpdateCategoriesMutationData, BatchUpdateCategoriesMutationVariables>(BatchUpdateCategoriesDocument, options);
+      }
+export type BatchUpdateCategoriesMutationHookResult = ReturnType<typeof useBatchUpdateCategoriesMutation>;
+export type BatchUpdateCategoriesMutationResult = Apollo.MutationResult<BatchUpdateCategoriesMutationData>;
+export type BatchUpdateCategoriesMutationOptions = Apollo.BaseMutationOptions<BatchUpdateCategoriesMutationData, BatchUpdateCategoriesMutationVariables>;
+export const DeleteUnusedTagsDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteUnusedTags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteUnusedTags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]} as unknown as DocumentNode;
+export type DeleteUnusedTagsMutationFn = Apollo.MutationFunction<DeleteUnusedTagsMutationData, DeleteUnusedTagsMutationVariables>;
+export function useDeleteUnusedTagsMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteUnusedTagsMutationData, DeleteUnusedTagsMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<DeleteUnusedTagsMutationData, DeleteUnusedTagsMutationVariables>(DeleteUnusedTagsDocument, options);
+      }
+export type DeleteUnusedTagsMutationHookResult = ReturnType<typeof useDeleteUnusedTagsMutation>;
+export type DeleteUnusedTagsMutationResult = Apollo.MutationResult<DeleteUnusedTagsMutationData>;
+export type DeleteUnusedTagsMutationOptions = Apollo.BaseMutationOptions<DeleteUnusedTagsMutationData, DeleteUnusedTagsMutationVariables>;
+export const DeleteUnusedCategoriesDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteUnusedCategories"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteUnusedCategories"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]} as unknown as DocumentNode;
+export type DeleteUnusedCategoriesMutationFn = Apollo.MutationFunction<DeleteUnusedCategoriesMutationData, DeleteUnusedCategoriesMutationVariables>;
+export function useDeleteUnusedCategoriesMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteUnusedCategoriesMutationData, DeleteUnusedCategoriesMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<DeleteUnusedCategoriesMutationData, DeleteUnusedCategoriesMutationVariables>(DeleteUnusedCategoriesDocument, options);
+      }
+export type DeleteUnusedCategoriesMutationHookResult = ReturnType<typeof useDeleteUnusedCategoriesMutation>;
+export type DeleteUnusedCategoriesMutationResult = Apollo.MutationResult<DeleteUnusedCategoriesMutationData>;
+export type DeleteUnusedCategoriesMutationOptions = Apollo.BaseMutationOptions<DeleteUnusedCategoriesMutationData, DeleteUnusedCategoriesMutationVariables>;
 export const UsersDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Users"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"role"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"UserRole"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}},{"kind":"Argument","name":{"kind":"Name","value":"role"},"value":{"kind":"Variable","name":{"kind":"Name","value":"role"}}},{"kind":"Argument","name":{"kind":"Name","value":"isVerified"},"value":{"kind":"Variable","name":{"kind":"Name","value":"isVerified"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"bio"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"postsCount"}}]}}]}}]} as unknown as DocumentNode;
 export function useUsersQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<UsersQueryData, UsersQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}

@@ -192,6 +192,19 @@ type LoginInput struct {
 type Mutation struct {
 }
 
+type Notification struct {
+	ID             string           `json:"id"`
+	Type           NotificationType `json:"type"`
+	Title          string           `json:"title"`
+	Content        string           `json:"content"`
+	RelatedPost    *BlogPost        `json:"relatedPost,omitempty"`
+	RelatedComment *BlogPostComment `json:"relatedComment,omitempty"`
+	RelatedUser    *User            `json:"relatedUser,omitempty"`
+	Recipient      *User            `json:"recipient"`
+	IsRead         bool             `json:"isRead"`
+	CreatedAt      time.Time        `json:"createdAt"`
+}
+
 type PopularQuery struct {
 	Query        string    `json:"query"`
 	Count        int       `json:"count"`
@@ -408,6 +421,65 @@ func (e *AccessLevel) UnmarshalJSON(b []byte) error {
 }
 
 func (e AccessLevel) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type NotificationType string
+
+const (
+	NotificationTypeCommentReply NotificationType = "COMMENT_REPLY"
+	NotificationTypePostLike     NotificationType = "POST_LIKE"
+	NotificationTypePostComment  NotificationType = "POST_COMMENT"
+	NotificationTypeSystem       NotificationType = "SYSTEM"
+)
+
+var AllNotificationType = []NotificationType{
+	NotificationTypeCommentReply,
+	NotificationTypePostLike,
+	NotificationTypePostComment,
+	NotificationTypeSystem,
+}
+
+func (e NotificationType) IsValid() bool {
+	switch e {
+	case NotificationTypeCommentReply, NotificationTypePostLike, NotificationTypePostComment, NotificationTypeSystem:
+		return true
+	}
+	return false
+}
+
+func (e NotificationType) String() string {
+	return string(e)
+}
+
+func (e *NotificationType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = NotificationType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid NotificationType", str)
+	}
+	return nil
+}
+
+func (e NotificationType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *NotificationType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e NotificationType) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

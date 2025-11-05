@@ -1,6 +1,8 @@
 schema: './backend/graph/schema.graphql'
-documents: 
+documents:
   - 'src/graphql/**/*.graphql'
+  - 'src/api/graphql/notification.ts'
+  - 'src/api/graphql/tag.ts'
 generates:
   src/generated/graphql.ts:
     plugins:

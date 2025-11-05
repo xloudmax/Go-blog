@@ -22,6 +22,7 @@ func RunMigrations(db *gorm.DB) error {
 		&models.InviteCode{},
 		&models.PasswordResetToken{},  // 添加密码重置令牌模型
 		&models.SearchQuery{},         // 添加搜索查询记录模型
+		&models.Notification{},        // 添加通知模型
 	)
 	if err != nil {
 		return err
@@ -46,6 +47,11 @@ func RunMigrations(db *gorm.DB) error {
 
 	// 创建评论相关索引
 	if err := createCommentIndexes(db); err != nil {
+		return err
+	}
+
+	// 创建通知相关索引
+	if err := createNotificationIndexes(db); err != nil {
 		return err
 	}
 
@@ -181,6 +187,42 @@ func createCommentIndexes(db *gorm.DB) error {
 		// 评论点赞表索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_comment_user ON blog_post_comment_like(blog_post_comment_id, user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_created_at ON blog_post_comment_like(created_at DESC)",
+	}
+
+	for _, indexSQL := range indexes {
+		if err := db.Exec(indexSQL).Error; err != nil {
+			// 记录错误但不中断，某些索引可能已存在
+			continue
+		}
+	}
+
+	return nil
+}
+
+// createNotificationIndexes 创建通知相关的数据库索引
+func createNotificationIndexes(db *gorm.DB) error {
+	// 为通知创建索引
+	indexes := []string{
+		// 接收者ID索引（用于查询用户的通知）
+		"CREATE INDEX IF NOT EXISTS idx_notification_recipient_id ON notifications(recipient_id)",
+
+		// 接收者ID和已读状态组合索引（用于查询未读通知）
+		"CREATE INDEX IF NOT EXISTS idx_notification_recipient_is_read ON notifications(recipient_id, is_read)",
+
+		// 关联文章ID索引
+		"CREATE INDEX IF NOT EXISTS idx_notification_related_post_id ON notifications(related_post_id)",
+
+		// 关联评论ID索引
+		"CREATE INDEX IF NOT EXISTS idx_notification_related_comment_id ON notifications(related_comment_id)",
+
+		// 关联用户ID索引
+		"CREATE INDEX IF NOT EXISTS idx_notification_related_user_id ON notifications(related_user_id)",
+
+		// 创建时间索引（用于排序）
+		"CREATE INDEX IF NOT EXISTS idx_notification_created_at ON notifications(created_at DESC)",
+
+		// 通知类型索引
+		"CREATE INDEX IF NOT EXISTS idx_notification_type ON notifications(type)",
 	}
 
 	for _, indexSQL := range indexes {

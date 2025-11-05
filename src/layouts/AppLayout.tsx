@@ -18,6 +18,8 @@ import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import offlineStorage from '@/utils/offlineStorage'
 import SearchPage from '@/pages/SearchPage'
 import ProfilePage from '@/pages/ProfilePage'
+import TagsPage from '@/pages/TagsPage'
+import NotificationPage from '@/pages/NotificationPage'
 import IconSidebar from '@/components/IconSidebar'
 
 const { Content, Footer } = Layout;
@@ -118,6 +120,8 @@ export default function AppLayout() {
                     <Routes>
                         <Route path="/home" element={<HomePage />} />
                         <Route path="/search" element={<SearchPage />} />
+                        <Route path="/tags" element={<TagsPage />} />
+                        <Route path="/notifications" element={<NotificationPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/post/:slug" element={<PostDetailPage />} />
                         <Route path="/login" element={<LoginPage />} />

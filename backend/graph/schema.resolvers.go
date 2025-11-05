@@ -1781,6 +1781,138 @@ func (r *mutationResolver) DeleteUnusedCategories(ctx context.Context) (*General
 	}, nil
 }
 
+// MarkNotificationAsRead is the resolver for the markNotificationAsRead field.
+func (r *mutationResolver) MarkNotificationAsRead(ctx context.Context, id string) (*Notification, error) {
+	// 获取当前用户
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	if err != nil {
+		return nil, fmt.Errorf("未登录: %w", err)
+	}
+
+	// 解析通知ID
+	notificationID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("无效的通知ID: %w", err)
+	}
+
+	// 创建通知服务
+	notificationService := services.NewNotificationService(r.Resolver.DB)
+
+	// 标记为已读
+	notification, err := notificationService.MarkNotificationAsRead(uint(notificationID), user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("标记通知为已读失败: %w", err)
+	}
+
+	return convertToGraphQLNotification(notification), nil
+}
+
+// MarkAllNotificationsAsRead is the resolver for the markAllNotificationsAsRead field.
+func (r *mutationResolver) MarkAllNotificationsAsRead(ctx context.Context) (*GeneralResponse, error) {
+	// 获取当前用户
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	if err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("未登录"),
+			Code:    strPtr("UNAUTHORIZED"),
+		}, nil
+	}
+
+	// 创建通知服务
+	notificationService := services.NewNotificationService(r.Resolver.DB)
+
+	// 标记所有通知为已读
+	err = notificationService.MarkAllNotificationsAsRead(user.ID)
+	if err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("标记所有通知为已读失败: %v", err)),
+			Code:    strPtr("MARK_ALL_READ_FAILED"),
+		}, nil
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr("所有通知已标记为已读"),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
+// DeleteNotification is the resolver for the deleteNotification field.
+func (r *mutationResolver) DeleteNotification(ctx context.Context, id string) (*GeneralResponse, error) {
+	// 获取当前用户
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	if err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("未登录"),
+			Code:    strPtr("UNAUTHORIZED"),
+		}, nil
+	}
+
+	// 解析通知ID
+	notificationID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("无效的通知ID"),
+			Code:    strPtr("INVALID_ID"),
+		}, nil
+	}
+
+	// 创建通知服务
+	notificationService := services.NewNotificationService(r.Resolver.DB)
+
+	// 删除通知
+	err = notificationService.DeleteNotification(uint(notificationID), user.ID)
+	if err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("删除通知失败: %v", err)),
+			Code:    strPtr("DELETE_FAILED"),
+		}, nil
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr("通知已删除"),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
+// ClearAllNotifications is the resolver for the clearAllNotifications field.
+func (r *mutationResolver) ClearAllNotifications(ctx context.Context) (*GeneralResponse, error) {
+	// 获取当前用户
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	if err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("未登录"),
+			Code:    strPtr("UNAUTHORIZED"),
+		}, nil
+	}
+
+	// 创建通知服务
+	notificationService := services.NewNotificationService(r.Resolver.DB)
+
+	// 清空所有通知
+	err = notificationService.ClearAllNotifications(user.ID)
+	if err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("清空所有通知失败: %v", err)),
+			Code:    strPtr("CLEAR_ALL_FAILED"),
+		}, nil
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr("所有通知已清空"),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*User, error) {
 	// 获取当前用户信息
@@ -2772,12 +2904,6 @@ func (r *queryResolver) Comment(ctx context.Context, id string) (*BlogPostCommen
 
 // GetTags is the resolver for the getTags field.
 func (r *queryResolver) GetTags(ctx context.Context, limit *int, offset *int, search *string) ([]*TagInfo, error) {
-	// 验证管理员权限
-	_, err := requireAdmin(ctx, r.DB)
-	if err != nil {
-		return nil, err
-	}
-
 	// 创建标签服务
 	tagService := services.NewTagService(r.Resolver.DB)
 
@@ -2807,12 +2933,6 @@ func (r *queryResolver) GetTags(ctx context.Context, limit *int, offset *int, se
 
 // GetCategories is the resolver for the getCategories field.
 func (r *queryResolver) GetCategories(ctx context.Context, limit *int, offset *int, search *string) ([]*CategoryInfo, error) {
-	// 验证管理员权限
-	_, err := requireAdmin(ctx, r.DB)
-	if err != nil {
-		return nil, err
-	}
-
 	// 创建标签服务
 	tagService := services.NewTagService(r.Resolver.DB)
 
@@ -2892,6 +3012,62 @@ func (r *queryResolver) GetTagCategoryStats(ctx context.Context) (*TagCategorySt
 		Tags:            tags,
 		Categories:      categories,
 	}, nil
+}
+
+// Notifications is the resolver for the notifications field.
+func (r *queryResolver) Notifications(ctx context.Context, limit *int, offset *int) ([]*Notification, error) {
+	// 获取当前用户
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	if err != nil {
+		return nil, fmt.Errorf("未登录: %w", err)
+	}
+
+	// 设置默认值
+	defaultLimit := 20
+	defaultOffset := 0
+	if limit == nil {
+		limit = &defaultLimit
+	}
+	if offset == nil {
+		offset = &defaultOffset
+	}
+
+	// 创建通知服务
+	notificationService := services.NewNotificationService(r.Resolver.DB)
+
+	// 获取通知列表
+	notifications, _, err := notificationService.GetNotifications(user.ID, *limit, *offset)
+	if err != nil {
+		return nil, fmt.Errorf("获取通知列表失败: %w", err)
+	}
+
+	// 转换为GraphQL类型
+	result := make([]*Notification, len(notifications))
+	for i, notification := range notifications {
+		result[i] = convertToGraphQLNotification(notification)
+	}
+
+	return result, nil
+}
+
+// UnreadNotificationCount is the resolver for the unreadNotificationCount field.
+func (r *queryResolver) UnreadNotificationCount(ctx context.Context) (int, error) {
+	// 获取当前用户
+	user, err := getUserFromContext(ctx, r.Resolver.DB)
+	if err != nil {
+		return 0, fmt.Errorf("未登录: %w", err)
+	}
+
+	// 创建通知服务
+	notificationService := services.NewNotificationService(r.Resolver.DB)
+
+	// 获取未读数量
+	count, err := notificationService.GetUnreadNotificationCount(user.ID)
+	if err != nil {
+		return 0, fmt.Errorf("获取未读通知数量失败: %w", err)
+	}
+
+	return int(count), nil
 }
 
 // Mutation returns MutationResolver implementation.

@@ -8,8 +8,11 @@ import {
   SunOutlined,
   MoonOutlined,
   EditOutlined,
+  BookOutlined,
+  BellOutlined,
 } from '@ant-design/icons';
 import { useAppUser } from '@/hooks';
+import { useUnreadNotificationCount } from '@/api/graphql/notification';
 
 interface MenuItem {
   key: string;
@@ -30,6 +33,10 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
   const location = useLocation();
   const { isAuthenticated, isAdmin, user } = useAppUser();
 
+  // 获取未读通知数量
+  const { data: unreadData } = useUnreadNotificationCount();
+  const unreadCount = unreadData?.unreadNotificationCount || 0;
+
   // 顶部导航菜单项
   const topMenuItems: MenuItem[] = [
     {
@@ -39,11 +46,24 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
       path: '/home',
     },
     {
+      key: 'tags',
+      icon: <BookOutlined />,
+      label: '标签分类',
+      path: '/tags',
+    },
+    {
       key: 'search',
       icon: <SearchOutlined />,
       label: '搜索',
       path: '/search',
     },
+    ...(isAuthenticated ? [{
+      key: 'notifications',
+      icon: <BellOutlined />,
+      label: '通知中心',
+      path: '/notifications',
+      requireAuth: true,
+    }] : []),
     ...(isAuthenticated ? [{
       key: 'editor',
       icon: <EditOutlined />,
@@ -90,6 +110,7 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
           color: isActive(item.path)
             ? isDarkMode ? '#ffffff' : '#111827'
             : isDarkMode ? '#6b7280' : '#9ca3af',
+          position: 'relative',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.color = isDarkMode ? '#ffffff' : '#111827';
@@ -101,6 +122,30 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
         }}
       >
         <span style={{ fontSize: '24px' }}>{item.icon}</span>
+        {/* 通知红点徽章 */}
+        {item.key === 'notifications' && unreadCount > 0 && (
+          <span
+            style={{
+              position: 'absolute',
+              top: '6px',
+              right: '6px',
+              backgroundColor: '#ff4d4f',
+              color: '#ffffff',
+              borderRadius: '10px',
+              padding: '0 5px',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              minWidth: '18px',
+              height: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: '1',
+            }}
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
       </div>
     </Tooltip>
   );

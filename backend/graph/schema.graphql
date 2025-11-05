@@ -28,6 +28,13 @@ enum VerificationType {
   RESET_PASSWORD
 }
 
+enum NotificationType {
+  COMMENT_REPLY  # 评论回复
+  POST_LIKE      # 文章点赞
+  POST_COMMENT   # 文章评论
+  SYSTEM         # 系统通知
+}
+
 # --------------------
 # CORE TYPES
 # --------------------
@@ -604,4 +611,44 @@ extend type Mutation {
 
   # 删除未使用的分类
   deleteUnusedCategories: GeneralResponse!
+}
+
+# --------------------
+# NOTIFICATION SYSTEM
+# --------------------
+
+# 通知类型
+type Notification {
+  id: ID!
+  type: NotificationType!
+  title: String!
+  content: String!
+  relatedPost: BlogPost
+  relatedComment: BlogPostComment
+  relatedUser: User  # 触发通知的用户（如点赞者、评论者）
+  recipient: User!   # 通知接收者
+  isRead: Boolean!
+  createdAt: Time!
+}
+
+extend type Query {
+  # 获取当前用户的通知列表
+  notifications(limit: Int = 20, offset: Int = 0): [Notification!]!
+
+  # 获取未读通知数量
+  unreadNotificationCount: Int!
+}
+
+extend type Mutation {
+  # 标记通知为已读
+  markNotificationAsRead(id: ID!): Notification!
+
+  # 标记所有通知为已读
+  markAllNotificationsAsRead: GeneralResponse!
+
+  # 删除通知
+  deleteNotification(id: ID!): GeneralResponse!
+
+  # 清空所有通知
+  clearAllNotifications: GeneralResponse!
 }

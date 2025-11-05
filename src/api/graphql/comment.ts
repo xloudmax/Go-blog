@@ -271,10 +271,7 @@ export const useComment = (id: string) => {
 // 评论操作 Hook
 export const useCommentActions = () => {
   // 创建评论
-  const [createCommentMutation, { loading: createLoading, error: createError }] = useMutation(CREATE_COMMENT_MUTATION, {
-    refetchQueries: [{ query: COMMENTS_QUERY }],
-    awaitRefetchQueries: true,
-  });
+  const [createCommentMutation, { loading: createLoading, error: createError }] = useMutation(CREATE_COMMENT_MUTATION);
 
   // 更新评论
   const [updateCommentMutation, { loading: updateLoading, error: updateError }] = useMutation(UPDATE_COMMENT_MUTATION);
