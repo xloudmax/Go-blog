@@ -3,6 +3,7 @@ package graph
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math/big"
@@ -222,6 +223,15 @@ func generateSecureCode() (string, error) {
 	return fmt.Sprintf("%06d", n.Int64()), nil
 }
 
+// generateSecureRefreshToken 生成安全的刷新令牌
+func generateSecureRefreshToken() (string, error) {
+	bytes := make([]byte, 32) // 256 bits
+	if _, err := rand.Read(bytes); err != nil {
+		return "", fmt.Errorf("无法生成安全随机令牌: %w", err)
+	}
+	return base64.URLEncoding.EncodeToString(bytes), nil
+}
+
 // sendVerificationCode 发送邮件验证码
 func sendVerificationCode(to, code string) error {
 	logger := middleware.GetLogger()
@@ -233,11 +243,21 @@ func sendVerificationCode(to, code string) error {
 		return nil
 	}
 
-	// 生产环境的邮件发送代码
-	from := "xloudmaxx@gmail.com"
-	password := "mbbf hrde wlpk bphe"
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
+	// 生产环境的邮件发送代码 - 从环境变量读取配置
+	from := os.Getenv("SMTP_USERNAME")
+	password := os.Getenv("SMTP_PASSWORD")
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+
+	// 检查SMTP配置
+	if from == "" || password == "" || smtpHost == "" {
+		logger.Errorw("SMTP配置缺失", "email", to)
+		return fmt.Errorf("SMTP配置缺失")
+	}
+
+	if smtpPort == "" {
+		smtpPort = "587"
+	}
 
 	subject := "Subject: 邮箱验证码\n"
 	body := fmt.Sprintf("您的验证码是: %s\n有效期为 %d 分钟", code, VerificationCodeTTL/time.Minute)
@@ -264,11 +284,21 @@ func sendPasswordResetEmail(to, token string) error {
 		return nil
 	}
 
-	// 生产环境的邮件发送代码
-	from := "xloudmaxx@gmail.com"
-	password := "mbbf hrde wlpk bphe"
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
+	// 生产环境的邮件发送代码 - 从环境变量读取配置
+	from := os.Getenv("SMTP_USERNAME")
+	password := os.Getenv("SMTP_PASSWORD")
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+
+	// 检查SMTP配置
+	if from == "" || password == "" || smtpHost == "" {
+		logger.Errorw("SMTP配置缺失", "email", to)
+		return fmt.Errorf("SMTP配置缺失")
+	}
+
+	if smtpPort == "" {
+		smtpPort = "587"
+	}
 
 	subject := "Subject: 密码重置\n"
 	// 在实际生产中，这里应该是一个指向前端密码重置页面的链接

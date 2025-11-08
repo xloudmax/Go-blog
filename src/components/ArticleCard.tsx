@@ -30,7 +30,9 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction })
 
       // 检查日期是否有效
       if (isNaN(date.getTime())) {
-        console.error('Invalid date:', dateString);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Invalid date:', dateString);
+        }
         return '未知时间';
       }
 
@@ -42,7 +44,9 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction })
         minute: '2-digit'
       });
     } catch (error) {
-      console.error('Date formatting error:', error, dateString);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Date formatting error:', error, dateString);
+      }
       return '未知时间';
     }
   };

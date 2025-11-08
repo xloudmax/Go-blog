@@ -24,31 +24,36 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
 
   const [likePost] = useMutation(LIKE_POST_MUTATION, {
     onError: (error) => {
-      // 回滚乐观更新
-      setIsLiked(false);
-      setLikeCount(prev => prev - 1);
-      
-      notification.error({
-        message: '错误',
-        description: `点赞失败: ${error.message}`,
-        duration: 5,
-      });
+      // 错误时回滚本地状态
+      setIsLiked(initialIsLiked);
+      setLikeCount(initialLikeCount);
+
+      // 静默处理可预期的错误（如重复点赞）
+      const errorMessage = error.message.toLowerCase();
+      const isSilentError = errorMessage.includes('已经点赞') ||
+                            errorMessage.includes('already liked');
+
+      if (!isSilentError) {
+        notification.error({
+          message: '点赞失败',
+          description: error.message,
+          duration: 3,
+        });
+      }
     },
-    // 乐观响应 - 假设操作会成功
-    optimisticResponse: {
-      likePost: {
-        __typename: 'BlogPost',
-        id: postId,
-        stats: {
-          __typename: 'BlogPostStats',
-          likeCount: likeCount + 1,
-        },
-        isLiked: true,
-      },
+    onCompleted: (data) => {
+      // 成功时同步最新数据
+      if (data?.likePost) {
+        setIsLiked(true);
+        setLikeCount(data.likePost.stats?.likeCount || likeCount + 1);
+      }
     },
     // 更新缓存
     update: (cache, { data }) => {
-      if (data?.likePost) {
+      // 只在成功时更新缓存
+      if (!data?.likePost) return;
+
+      try {
         // 更新 POST_QUERY 缓存
         const existingPost = cache.readQuery<PostQueryData>({
           query: POST_QUERY,
@@ -64,12 +69,17 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
                 ...existingPost.post,
                 stats: {
                   ...existingPost.post.stats,
-                  likeCount: data.likePost.stats?.likeCount || likeCount + 1,
+                  likeCount: data.likePost.stats?.likeCount ?? (initialLikeCount + 1),
                 },
                 isLiked: true,
               },
             },
           });
+        }
+      } catch (error) {
+        // 缓存更新失败时静默处理，避免影响用户体验
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to update cache after like:', error);
         }
       }
     },
@@ -77,31 +87,36 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
 
   const [unlikePost] = useMutation(UNLIKE_POST_MUTATION, {
     onError: (error) => {
-      // 回滚乐观更新
-      setIsLiked(true);
-      setLikeCount(prev => prev + 1);
-      
-      notification.error({
-        message: '错误',
-        description: `取消点赞失败: ${error.message}`,
-        duration: 5,
-      });
+      // 错误时回滚本地状态
+      setIsLiked(initialIsLiked);
+      setLikeCount(initialLikeCount);
+
+      // 静默处理可预期的错误（如重复取消点赞）
+      const errorMessage = error.message.toLowerCase();
+      const isSilentError = errorMessage.includes('尚未点赞') ||
+                            errorMessage.includes('not liked');
+
+      if (!isSilentError) {
+        notification.error({
+          message: '取消点赞失败',
+          description: error.message,
+          duration: 3,
+        });
+      }
     },
-    // 乐观响应 - 假设操作会成功
-    optimisticResponse: {
-      unlikePost: {
-        __typename: 'BlogPost',
-        id: postId,
-        stats: {
-          __typename: 'BlogPostStats',
-          likeCount: Math.max(0, likeCount - 1),
-        },
-        isLiked: false,
-      },
+    onCompleted: (data) => {
+      // 成功时同步最新数据
+      if (data?.unlikePost) {
+        setIsLiked(false);
+        setLikeCount(data.unlikePost.stats?.likeCount || Math.max(0, likeCount - 1));
+      }
     },
     // 更新缓存
     update: (cache, { data }) => {
-      if (data?.unlikePost) {
+      // 只在成功时更新缓存
+      if (!data?.unlikePost) return;
+
+      try {
         // 更新 POST_QUERY 缓存
         const existingPost = cache.readQuery<PostQueryData>({
           query: POST_QUERY,
@@ -117,13 +132,16 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
                 ...existingPost.post,
                 stats: {
                   ...existingPost.post.stats,
-                  likeCount: data.unlikePost.stats?.likeCount || Math.max(0, likeCount - 1),
+                  likeCount: data.unlikePost.stats?.likeCount ?? Math.max(0, initialLikeCount - 1),
                 },
                 isLiked: false,
               },
             },
           });
         }
+      } catch (error) {
+        // 缓存更新失败时静默处理，避免影响用户体验
+        console.warn('Failed to update cache after unlike:', error);
       }
     },
   });
@@ -140,19 +158,11 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
 
     try {
       if (isLiked) {
-        // 乐观更新 - 立即更新UI
-        setIsLiked(false);
-        setLikeCount(prev => Math.max(0, prev - 1));
-
         // 发送取消点赞请求
         await unlikePost({
           variables: { id: postId },
         });
       } else {
-        // 乐观更新 - 立即更新UI
-        setIsLiked(true);
-        setLikeCount(prev => prev + 1);
-
         // 发送点赞请求
         await likePost({
           variables: { id: postId },
@@ -161,7 +171,7 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
     } catch (error) {
       // 错误处理已经在 mutation 的 onError 中处理
     }
-  }, [isAuthenticated, isLiked, likeCount, postId, likePost, unlikePost]);
+  }, [isAuthenticated, isLiked, postId, likePost, unlikePost]);
 
   return {
     isLiked,

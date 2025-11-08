@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -54,15 +55,33 @@ func (s *FileService) UploadImage(file graphql.Upload, userID uint) (*ImageUploa
 		return nil, fmt.Errorf("不支持的文件类型，仅支持 JPG, PNG, GIF, WEBP")
 	}
 
-	// 验证文件大小 - 简化实现，跳过文件大小检查
-	// 在实际项目中可以通过读取部分文件内容来检查大小
+	// 清理文件名，防止路径遍历攻击
+	safeFilename, err := sanitizeFilename(file.Filename)
+	if err != nil {
+		return nil, fmt.Errorf("非法的文件名: %w", err)
+	}
 
 	// 生成唯一文件名
-	ext := filepath.Ext(file.Filename)
+	ext := filepath.Ext(safeFilename)
 	filename := fmt.Sprintf("%d_%d%s", userID, time.Now().Unix(), ext)
 
-	// 构建完整路径
+	// 验证文件大小
+	size, err := getFileSize(file.File)
+	if err != nil {
+		return nil, fmt.Errorf("读取文件大小失败: %w", err)
+	}
+	if size > s.maxSize {
+		return nil, fmt.Errorf("文件大小超过限制（%d MB）", s.maxSize/(1024*1024))
+	}
+
+	// 构建完整路径（使用Clean防止路径遍历）
 	fullPath := filepath.Join(s.uploadDir, "images", filename)
+	fullPath = filepath.Clean(fullPath)
+
+	// 确保最终路径在上传目录内（双重检查）
+	if !strings.HasPrefix(fullPath, filepath.Clean(s.uploadDir)) {
+		return nil, fmt.Errorf("非法的文件路径")
+	}
 
 	// 创建目标文件
 	dst, err := os.Create(fullPath)
@@ -72,7 +91,7 @@ func (s *FileService) UploadImage(file graphql.Upload, userID uint) (*ImageUploa
 	defer dst.Close()
 
 	// 复制文件内容
-	size, err := io.Copy(dst, file.File)
+	written, err := io.Copy(dst, file.File)
 	if err != nil {
 		// 删除可能部分写入的文件
 		os.Remove(fullPath)
@@ -93,14 +112,26 @@ func (s *FileService) UploadImage(file graphql.Upload, userID uint) (*ImageUploa
 		ImageURL:  imageURL,
 		DeleteURL: &deleteURL,
 		Filename:  filename,
-		Size:      int(size),
+		Size:      int(written),
 	}, nil
 }
 
 // DeleteImage 删除图片
 func (s *FileService) DeleteImage(filename string, userID uint, userRole string) error {
+	// 清理文件名，防止路径遍历
+	safeFilename, err := sanitizeFilename(filename)
+	if err != nil {
+		return fmt.Errorf("非法的文件名: %w", err)
+	}
+
 	// 构建文件路径
-	fullPath := filepath.Join(s.uploadDir, "images", filename)
+	fullPath := filepath.Join(s.uploadDir, "images", safeFilename)
+	fullPath = filepath.Clean(fullPath)
+
+	// 确保路径在上传目录内
+	if !strings.HasPrefix(fullPath, filepath.Clean(s.uploadDir)) {
+		return fmt.Errorf("非法的文件路径")
+	}
 
 	// 检查文件是否存在
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
@@ -200,4 +231,49 @@ func (s *FileService) CleanupOldFiles(daysOld int) error {
 
 	fmt.Printf("清理完成，删除了 %d 个旧文件\n", deletedCount)
 	return nil
+}
+
+// sanitizeFilename 清理文件名，防止路径遍历攻击
+func sanitizeFilename(filename string) (string, error) {
+	// 使用filepath.Base去除任何路径成分
+	clean := filepath.Base(filename)
+
+	// 禁止 .. 和隐藏文件
+	if strings.Contains(clean, "..") || strings.HasPrefix(clean, ".") {
+		return "", fmt.Errorf("文件名包含非法字符")
+	}
+
+	// 移除路径分隔符（额外的安全检查）
+	if strings.ContainsAny(clean, "/\\") {
+		return "", fmt.Errorf("文件名包含路径分隔符")
+	}
+
+	// 只允许字母数字、下划线、连字符和点号
+	if !regexp.MustCompile(`^[a-zA-Z0-9_.-]+$`).MatchString(clean) {
+		return "", fmt.Errorf("文件名包含非法字符")
+	}
+
+	// 限制文件名长度
+	if len(clean) > 255 {
+		return "", fmt.Errorf("文件名过长")
+	}
+
+	return clean, nil
+}
+
+// getFileSize 获取文件大小
+func getFileSize(file io.ReadSeeker) (int64, error) {
+	// 移动到文件末尾获取大小
+	size, err := file.Seek(0, io.SeekEnd)
+	if err != nil {
+		return 0, err
+	}
+
+	// 重置文件指针到开始
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		return 0, err
+	}
+
+	return size, nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,6 +12,7 @@ import (
 	"repair-platform/routes"
 	"time"
 
+	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 
 	"github.com/gin-contrib/cors"
@@ -18,6 +20,11 @@ import (
 )
 
 func main() {
+	// 加载 .env 文件
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found, using environment variables")
+	}
+
 	// 加载配置
 	cfg := config.GetConfig()
 

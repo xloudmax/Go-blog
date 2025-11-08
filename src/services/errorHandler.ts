@@ -24,6 +24,24 @@ const defaultConfig: ErrorHandlerConfig = {
   defaultErrorMessage: '操作失败，请稍后重试',
 };
 
+// 静默错误关键字列表（这些错误不会显示通知）
+const silentErrorPatterns = [
+  '已经点赞',
+  '尚未点赞',
+  'already liked',
+  'not liked',
+  '已收藏',
+  '未收藏',
+];
+
+// 检查错误是否应该静默处理
+const shouldSilenceError = (message: string): boolean => {
+  const lowerMessage = message.toLowerCase();
+  return silentErrorPatterns.some(pattern =>
+    lowerMessage.includes(pattern.toLowerCase())
+  );
+};
+
 // 全局错误处理配置
 let config: ErrorHandlerConfig = { ...defaultConfig };
 
@@ -99,7 +117,12 @@ const parseNetworkError = (error: unknown): AppError => {
 // 显示错误通知
 const showNotification = (error: AppError) => {
   if (!config.showNotifications) return;
-  
+
+  // 检查是否应该静默处理
+  if (shouldSilenceError(error.message)) {
+    return;
+  }
+
   switch (error.type) {
     case 'auth':
       // 认证错误特殊处理，自动跳转到登录页
@@ -109,7 +132,7 @@ const showNotification = (error: AppError) => {
       break;
     case 'validation':
       notification.warning({
-        message: '警告',
+        message: '提示',
         description: error.message,
         duration: 3,
       });
@@ -118,14 +141,14 @@ const showNotification = (error: AppError) => {
       notification.error({
         message: '服务器错误',
         description: error.message,
-        duration: 5,
+        duration: 4,
       });
       break;
     default:
       notification.error({
-        message: '错误',
+        message: '操作失败',
         description: error.message,
-        duration: 5,
+        duration: 3,
       });
   }
 };

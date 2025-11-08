@@ -94,7 +94,9 @@ export default function NotificationPage() {
       try {
         await markAsRead({ variables: { id: notification.id } });
       } catch (error) {
-        console.error('标记通知为已读失败:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('标记通知为已读失败:', error);
+        }
       }
     }
 

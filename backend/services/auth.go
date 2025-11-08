@@ -71,8 +71,14 @@ func (s *AuthService) RegisterUser(input *models.RegisterInput) (*models.User, s
 
 	// 创建用户
 	role := "user" // 默认角色
-	if input.InviteCode == "realJNUtechnicians" {
-		role = "ADMIN" // 使用特殊邀请码时设置为管理员
+
+	// 检查管理员邀请码（从环境变量读取）
+	adminInviteCode := os.Getenv("ADMIN_INVITE_CODE")
+	if adminInviteCode != "" && input.InviteCode == adminInviteCode {
+		role = "ADMIN"
+		// 记录安全审计日志
+		fmt.Printf("[SECURITY AUDIT] 使用管理员邀请码注册 - Username: %s, Email: %s, Time: %s\n",
+			input.Username, input.Email, time.Now().Format(time.RFC3339))
 	}
 
 	user := &models.User{
@@ -103,8 +109,12 @@ func (s *AuthService) RegisterUser(input *models.RegisterInput) (*models.User, s
 
 	// 使用邀请码
 	if inviteCode != nil {
-		// 特殊邀请码不需要消耗，只有真实的邀请码才需要记录使用
-		if inviteCode.Code != "realJNUtechnicians" {
+		// 检查是否为管理员邀请码（无需消耗）
+		adminInviteCode := os.Getenv("ADMIN_INVITE_CODE")
+		isAdminCode := adminInviteCode != "" && inviteCode.Code == adminInviteCode
+
+		// 只有真实的邀请码才需要记录使用
+		if !isAdminCode {
 			if err := inviteCode.UseInviteCode(user.ID, tx); err != nil {
 				tx.Rollback()
 				return nil, "", err
@@ -185,7 +195,7 @@ func (s *AuthService) LoginUser(input *models.LoginInput) (*models.User, string,
 		return nil, "", "", models.ErrInternalServerError
 	}
 
-	// 生成刷新令牌
+	// 生成刷新令牌（使用简单格式，避免循环依赖）
 	refreshToken := fmt.Sprintf("refresh_%d_%d", user.ID, time.Now().Unix())
 
 	return &user, token, refreshToken, nil
@@ -259,7 +269,7 @@ func (s *AuthService) VerifyEmailAndLogin(input *models.VerifyEmailInput) (*mode
 		return nil, "", "", models.ErrInternalServerError
 	}
 
-	// 生成刷新令牌
+	// 生成刷新令牌（使用简单格式）
 	refreshToken := fmt.Sprintf("refresh_%d_%d", user.ID, time.Now().Unix())
 
 	return &user, token, refreshToken, nil
@@ -395,14 +405,64 @@ func (s *AuthService) validateRegisterInput(input *models.RegisterInput) error {
 		return models.ErrInvalidUsername
 	}
 
-	// 验证密码强度
-	if len(input.Password) < 6 {
-		return models.ErrPasswordTooWeak
+	// 增强密码强度验证
+	if err := validatePasswordStrength(input.Password); err != nil {
+		return err
 	}
 
 	// 验证邮箱格式
 	if matched, _ := regexp.MatchString(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`, input.Email); !matched {
 		return models.ErrInvalidEmail
+	}
+
+	return nil
+}
+
+// validatePasswordStrength 验证密码强度
+func validatePasswordStrength(password string) error {
+	// 检查长度（至少8个字符）
+	if len(password) < 8 {
+		return errors.New("密码至少需要8个字符")
+	}
+
+	// 检查最大长度（防止DoS攻击）
+	if len(password) > 128 {
+		return errors.New("密码过长（最多128个字符）")
+	}
+
+	// 检查是否包含大写字母
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	// 检查是否包含小写字母
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	// 检查是否包含数字
+	hasNumber := regexp.MustCompile(`[0-9]`).MatchString(password)
+
+	// 至少需要包含大写、小写和数字中的任意两种
+	strength := 0
+	if hasUpper {
+		strength++
+	}
+	if hasLower {
+		strength++
+	}
+	if hasNumber {
+		strength++
+	}
+
+	if strength < 2 {
+		return errors.New("密码必须包含大写字母、小写字母和数字中的至少两种")
+	}
+
+	// 检查常见弱密码
+	commonPasswords := []string{
+		"12345678", "password", "Password", "password123", "Password123",
+		"qwerty123", "abc12345", "welcome123", "admin123", "user1234",
+	}
+	lowerPassword := strings.ToLower(password)
+	for _, common := range commonPasswords {
+		if lowerPassword == strings.ToLower(common) {
+			return errors.New("密码过于常见，请使用更强的密码")
+		}
 	}
 
 	return nil
@@ -429,8 +489,9 @@ func (s *AuthService) checkUserExists(username, email string) error {
 
 // validateInviteCode 验证邀请码
 func (s *AuthService) validateInviteCode(code string) (*models.InviteCode, error) {
-	// 特殊邀请码处理 - "realJNUtechnicians" 用于管理员注册
-	if code == "realJNUtechnicians" {
+	// 检查管理员邀请码（从环境变量读取）
+	adminInviteCode := os.Getenv("ADMIN_INVITE_CODE")
+	if adminInviteCode != "" && code == adminInviteCode {
 		// 创建一个虚拟的邀请码对象用于管理员注册
 		expiresAt := time.Now().AddDate(10, 0, 0) // 10年后过期
 		return &models.InviteCode{
@@ -438,7 +499,7 @@ func (s *AuthService) validateInviteCode(code string) (*models.InviteCode, error
 			MaxUses:     999999, // 无限使用
 			CurrentUses: 0,
 			IsActive:    true,
-			Description: "管理员专用邀请码",
+			Description: "管理员专用邀请码（通过环境变量配置）",
 			ExpiresAt:   &expiresAt,
 		}, nil
 	}
@@ -475,12 +536,9 @@ func (s *AuthService) sendVerificationEmail(email, code, emailType string) error
 	smtpUsername := os.Getenv("SMTP_USERNAME")
 	smtpPassword := os.Getenv("SMTP_PASSWORD")
 
-	// 如果没有配置SMTP，使用默认配置
-	if smtpHost == "" {
-		smtpHost = "smtp.gmail.com"
-		smtpPort = "587"
-		smtpUsername = "xloudmaxx@gmail.com"
-		smtpPassword = "mbbf hrde wlpk bphe"
+	// 如果没有配置SMTP，返回错误
+	if smtpHost == "" || smtpUsername == "" || smtpPassword == "" {
+		return fmt.Errorf("SMTP配置缺失，请设置环境变量: SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD")
 	}
 
 	// 根据邮件类型选择主题和内容
@@ -515,15 +573,12 @@ func (s *AuthService) sendPasswordResetEmail(email, token string) error {
 	smtpUsername := os.Getenv("SMTP_USERNAME")
 	smtpPassword := os.Getenv("SMTP_PASSWORD")
 
-	// 如果没有配置SMTP，使用默认配置
-	if smtpHost == "" {
-		smtpHost = "smtp.gmail.com"
-		smtpPort = "587"
-		smtpUsername = "xloudmaxx@gmail.com"
-		smtpPassword = "mbbf hrde wlpk bphe"
+	// 如果没有配置SMTP，返回错误
+	if smtpHost == "" || smtpUsername == "" || smtpPassword == "" {
+		return fmt.Errorf("SMTP配置缺失，请设置环境变量: SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD")
 	}
 
-	// 构建重置链接 - 在实际项目中应该指向前端重置页面
+	// 构建重置链接
 	baseURL := os.Getenv("FRONTEND_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:5173"

@@ -22,7 +22,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backend
 /backend/uploads/
 backend/bin/
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# IDA Pro
 *.id0
 *.id1
+
+# Production
+.env.production
+.env.local

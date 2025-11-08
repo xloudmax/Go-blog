@@ -42,7 +42,10 @@ func (r *mutationResolver) Register(ctx context.Context, input RegisterInput) (*
 	}
 
 	// 生成刷新令牌
-	refreshToken := fmt.Sprintf("refresh_%d_%d", user.ID, time.Now().Unix())
+	refreshToken, err := generateSecureRefreshToken()
+	if err != nil {
+		return nil, fmt.Errorf("生成刷新令牌失败: %w", err)
+	}
 	expiresAt := time.Now().Add(24 * time.Hour) // 默认24小时过期
 
 	return &AuthPayload{
@@ -171,7 +174,10 @@ func (r *mutationResolver) VerifyEmailAndLogin(ctx context.Context, input Verify
 	}
 
 	// 生成刷新令牌
-	refreshToken := fmt.Sprintf("refresh_%d_%d", user.ID, time.Now().Unix())
+	refreshToken, err := generateSecureRefreshToken()
+	if err != nil {
+		return nil, fmt.Errorf("生成刷新令牌失败: %w", err)
+	}
 	expiresAt := time.Now().Add(24 * time.Hour)
 
 	return &AuthPayload{
