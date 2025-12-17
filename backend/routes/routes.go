@@ -29,13 +29,21 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	logger := middleware.GetLogger()
 	logger.Infow("开始注册路由")
 
-	// 全局中间件
-	r.Use(middleware.LoggingMiddleware()) // 全局日志中间件
-	r.Use(func(c *gin.Context) {          // 注入数据库实例
+	// 注入数据库和配置
+	r.Use(func(c *gin.Context) {
 		c.Set("db", db)
 		c.Set("config", cfg)
 		c.Next()
 	})
+
+	// 注册 DataLoader 中间件
+	r.Use(graph.DataLoaderMiddleware(db))
+
+	// 限流（基于配置）
+	if cfg.RateLimitEnabled {
+		r.Use(middleware.ConditionalRateLimit(time.Minute, cfg.RequestsPerMinute, "/graphql"))
+		r.Use(middleware.ConditionalRateLimit(time.Hour, cfg.RequestsPerHour, "/graphql"))
+	}
 
 	// 初始化限流中间件的清理器
 	middleware.CleanupExpiredVisits(10 * time.Minute)
@@ -191,8 +199,8 @@ func setupUploadRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	logger := middleware.GetLogger()
 	logger.Infow("设置文件上传路由")
 
-	// 创建上传目录
-	uploadDir := "uploads/avatars"
+	// 创建上传目录（使用配置的基础路径）
+	uploadDir := filepath.Join(cfg.BasePath, "avatars")
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		logger.Errorw("创建上传目录失败", "error", err)
 	}
@@ -200,15 +208,18 @@ func setupUploadRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// 上传路由组
 	upload := r.Group("/api/upload")
 	upload.Use(middleware.JWTAuthMiddleware()) // 需要认证
+	if cfg.RateLimitEnabled {
+		upload.Use(middleware.ConditionalRateLimit(time.Minute, cfg.RequestsPerMinute))
+	}
 	{
 		// 头像上传
 		upload.POST("/avatar", func(c *gin.Context) {
-			handleAvatarUpload(c, db)
+			handleAvatarUpload(c, db, cfg)
 		})
 	}
 
 	// 静态文件服务
-	r.Static("/uploads", "./uploads")
+	r.Static("/uploads", cfg.BasePath)
 
 	logger.Infow("文件上传路由已设置")
 }
@@ -219,37 +230,56 @@ func generateFileName(originalName string) string {
 	bytes := make([]byte, 16)
 	rand.Read(bytes)
 	randomStr := hex.EncodeToString(bytes)
-	
+
 	// 获取文件扩展名
 	ext := filepath.Ext(originalName)
-	
+
 	// 返回时间戳 + 随机字符串 + 扩展名
 	return fmt.Sprintf("%d_%s%s", time.Now().Unix(), randomStr, ext)
 }
 
 // validateImageFile 验证图片文件
-func validateImageFile(filename string, size int64) error {
-	// 检查文件大小（5MB限制）
-	maxSize := int64(5 * 1024 * 1024)
-	if size > maxSize {
-		return fmt.Errorf("文件大小超过限制（5MB）")
+func validateImageFile(filename string, size int64, maxSize int64, allowed []string) error {
+	// 检查文件大小
+	limit := maxSize
+	if limit <= 0 {
+		limit = int64(5 * 1024 * 1024)
+	}
+	if size > limit {
+		return fmt.Errorf("文件大小超过限制（%dMB）", limit/(1024*1024))
 	}
 
 	// 检查文件扩展名
 	ext := strings.ToLower(filepath.Ext(filename))
-	allowedExts := map[string]bool{
-		".jpg":  true,
-		".jpeg": true,
-		".png":  true,
-		".gif":  true,
-		".webp": true,
+	allowedExts := map[string]bool{}
+	for _, v := range allowed {
+		v = strings.TrimSpace(strings.ToLower(v))
+		if v != "" {
+			allowedExts[v] = true
+		}
+	}
+	// fallback 默认图片类型
+	if len(allowedExts) == 0 {
+		allowedExts[".jpg"] = true
+		allowedExts[".jpeg"] = true
+		allowedExts[".png"] = true
+		allowedExts[".gif"] = true
+		allowedExts[".webp"] = true
 	}
 
 	if !allowedExts[ext] {
-		return fmt.Errorf("不支持的文件格式，仅支持: JPG, JPEG, PNG, GIF, WebP")
+		return fmt.Errorf("不支持的文件格式，仅支持: %s", strings.Join(allowedExtsList(allowedExts), ", "))
 	}
 
 	return nil
+}
+
+func allowedExtsList(m map[string]bool) []string {
+	res := make([]string, 0, len(m))
+	for k := range m {
+		res = append(res, k)
+	}
+	return res
 }
 
 // validateMimeType 验证MIME类型
@@ -297,7 +327,7 @@ func validateMimeType(file io.Reader) error {
 }
 
 // handleAvatarUpload 处理头像上传
-func handleAvatarUpload(c *gin.Context, db *gorm.DB) {
+func handleAvatarUpload(c *gin.Context, db *gorm.DB, cfg *config.Config) {
 	logger := middleware.GetLogger()
 
 	// 获取当前用户
@@ -325,7 +355,7 @@ func handleAvatarUpload(c *gin.Context, db *gorm.DB) {
 	defer file.Close()
 
 	// 验证文件
-	if err := validateImageFile(header.Filename, header.Size); err != nil {
+	if err := validateImageFile(header.Filename, header.Size, cfg.MaxFileSize, cfg.AllowedFileTypes); err != nil {
 		logger.Warnw("文件验证失败", "filename", header.Filename, "size", header.Size, "error", err)
 		c.JSON(400, gin.H{
 			"success": false,
@@ -351,7 +381,7 @@ func handleAvatarUpload(c *gin.Context, db *gorm.DB) {
 
 	// 生成新文件名
 	filename := generateFileName(header.Filename)
-	filePath := filepath.Join("uploads", "avatars", filename)
+	filePath := filepath.Join(cfg.BasePath, "avatars", filename)
 
 	// 创建目标文件
 	dst, err := os.Create(filePath)
@@ -395,17 +425,17 @@ func handleAvatarUpload(c *gin.Context, db *gorm.DB) {
 		}
 	}
 
-	logger.Infow("头像上传成功", 
-		"user_id", user.ID, 
-		"filename", filename, 
+	logger.Infow("头像上传成功",
+		"user_id", user.ID,
+		"filename", filename,
 		"size", header.Size,
 		"url", avatarURL,
 	)
 
 	c.JSON(200, gin.H{
-		"success": true,
-		"message": "头像上传成功",
-		"url":     avatarURL,
+		"success":  true,
+		"message":  "头像上传成功",
+		"url":      avatarURL,
 		"filename": filename,
 	})
 }

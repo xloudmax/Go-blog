@@ -39,6 +39,7 @@ type BatchUpdateTagsInput struct {
 
 type BlogPost struct {
 	ID            string             `json:"id"`
+	AuthorID      string             `json:"authorId"`
 	Title         string             `json:"title"`
 	Slug          string             `json:"slug"`
 	Excerpt       *string            `json:"excerpt,omitempty"`

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"repair-platform/models"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -20,9 +21,12 @@ func RunMigrations(db *gorm.DB) error {
 		&models.BlogPostComment{},     // 添加评论模型
 		&models.BlogPostCommentLike{}, // 添加评论点赞模型
 		&models.InviteCode{},
-		&models.PasswordResetToken{},  // 添加密码重置令牌模型
-		&models.SearchQuery{},         // 添加搜索查询记录模型
-		&models.Notification{},        // 添加通知模型
+		&models.PasswordResetToken{}, // 添加密码重置令牌模型
+		&models.RefreshToken{},       // 添加刷新令牌模型
+		&models.SearchQuery{},        // 添加搜索查询记录模型
+		&models.Notification{},       // 添加通知模型
+		&models.Tag{},                // 添加标签模型
+		&models.Category{},           // 添加分类模型
 	)
 	if err != nil {
 		return err
@@ -43,6 +47,7 @@ func RunMigrations(db *gorm.DB) error {
 		// 如果不支持全文搜索，记录日志但不中断
 		// 禁用全文搜索相关功能
 		fmt.Printf("Warning: Full-text search indexes creation failed: %v\n", err)
+		fmt.Println("Hint: ensure SQLite is built with FTS5 support (e.g. run with GOFLAGS=\"-tags=sqlite_fts5\" or source backend/set_env.sh)")
 	}
 
 	// 创建评论相关索引
@@ -52,6 +57,11 @@ func RunMigrations(db *gorm.DB) error {
 
 	// 创建通知相关索引
 	if err := createNotificationIndexes(db); err != nil {
+		return err
+	}
+
+	// 迁移标签和分类数据
+	if err := migrateTagsAndCategories(db); err != nil {
 		return err
 	}
 
@@ -143,7 +153,7 @@ func createFullTextSearchIndexes(db *gorm.DB) error {
 			INSERT INTO blog_post_fts(blog_post_fts, rowid, title, content, tags, categories)
 			VALUES('delete', old.id, old.title, old.content, old.tags, old.categories);
 		END`,
-		
+
 		// 创建触发器保持同步（UPDATE）
 		`CREATE TRIGGER IF NOT EXISTS blog_post_au AFTER UPDATE ON blog_post BEGIN
 			INSERT INTO blog_post_fts(blog_post_fts, rowid, title, content, tags, categories)
@@ -151,14 +161,14 @@ func createFullTextSearchIndexes(db *gorm.DB) error {
 			INSERT INTO blog_post_fts(rowid, title, content, tags, categories)
 			VALUES(new.id, new.title, new.content, new.tags, new.categories);
 		END`,
-	}	
+	}
 	for _, indexSQL := range sqliteFullTextIndexes {
 		if err := db.Exec(indexSQL).Error; err != nil {
 			// 如果也失败，继续但不报错
 			continue
 		}
 	}
-	
+
 	return nil
 }
 
@@ -167,26 +177,26 @@ func createCommentIndexes(db *gorm.DB) error {
 	// 为博客文章评论创建索引
 	indexes := []string{
 		// 博客文章ID索引
-		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_blog_post_id ON blog_post_comment(blog_post_id)",
-		
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_blog_post_id ON blog_post_comments(blog_post_id)",
+
 		// 用户ID索引
-		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_user_id ON blog_post_comment(user_id)",
-		
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_user_id ON blog_post_comments(user_id)",
+
 		// 父评论ID索引
-		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_parent_id ON blog_post_comment(parent_id)",
-		
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_parent_id ON blog_post_comments(parent_id)",
+
 		// 创建时间索引（用于排序）
-		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_created_at ON blog_post_comment(created_at DESC)",
-		
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_created_at ON blog_post_comments(created_at DESC)",
+
 		// 是否已审核索引
-		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_is_approved ON blog_post_comment(is_approved)",
-		
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_is_approved ON blog_post_comments(is_approved)",
+
 		// 点赞数索引
-		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_count ON blog_post_comment(like_count DESC)",
-		
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_count ON blog_post_comments(like_count DESC)",
+
 		// 评论点赞表索引
-		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_comment_user ON blog_post_comment_like(blog_post_comment_id, user_id)",
-		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_created_at ON blog_post_comment_like(created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_comment_user ON blog_post_comment_likes(blog_post_comment_id, user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_comment_like_created_at ON blog_post_comment_likes(created_at DESC)",
 	}
 
 	for _, indexSQL := range indexes {
@@ -269,7 +279,7 @@ func DropSearchIndexes(db *gorm.DB) error {
 	for _, indexSQL := range indexes {
 		db.Exec(indexSQL)
 	}
-	
+
 	// 删除全文搜索相关的对象
 	fullTextObjects := []string{
 		"DROP TRIGGER IF EXISTS blog_post_search_vector_trigger",
@@ -280,7 +290,7 @@ func DropSearchIndexes(db *gorm.DB) error {
 		"DROP TRIGGER IF EXISTS blog_post_ad",
 		"DROP TRIGGER IF EXISTS blog_post_au",
 	}
-	
+
 	for _, objectSQL := range fullTextObjects {
 		db.Exec(objectSQL)
 	}
@@ -400,6 +410,94 @@ func migrateRedundantBlogPostData(db *gorm.DB) error {
 		}
 
 		fmt.Printf("成功迁移了 %d 条BlogPost记录的统计数据\n", len(oldPosts))
+		return nil
+	})
+}
+
+// migrateTagsAndCategories 迁移标签和分类数据
+func migrateTagsAndCategories(db *gorm.DB) error {
+	// 定义临时结构体读取旧数据
+	type OldBlogPost struct {
+		ID         uint
+		Tags       string
+		Categories string
+	}
+
+	var posts []OldBlogPost
+	// 只查询有标签或分类且未迁移的数据
+	if err := db.Table("blog_post").Where("tags != '' OR categories != ''").Scan(&posts).Error; err != nil {
+		// 如果表不存在或者列不存在（新库），直接忽略
+		return nil
+	}
+
+	if len(posts) == 0 {
+		return nil
+	}
+
+	// 检查是否已经迁移过（通过检查TagsList表是否有数据）
+	var count int64
+	db.Table("blog_post_tags").Count(&count)
+	if count > 0 {
+		// 只有在数据量差异很大时才尝试再次迁移，或者直接跳过
+		// 这里简单跳过，避免重复处理
+		return nil
+	}
+
+	fmt.Printf("开始迁移 %d 篇文章的标签和分类数据...\n", len(posts))
+
+	// 遍历文章进行迁移
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, p := range posts {
+			var post models.BlogPost
+			if err := tx.First(&post, p.ID).Error; err != nil {
+				continue
+			}
+
+			// 迁移标签
+			if p.Tags != "" {
+				tagNames := strings.Split(p.Tags, ",")
+				var tags []models.Tag
+				for _, name := range tagNames {
+					name = strings.TrimSpace(name)
+					if name == "" {
+						continue
+					}
+					var tag models.Tag
+					if err := tx.FirstOrCreate(&tag, models.Tag{Name: name}).Error; err != nil {
+						return err
+					}
+					tags = append(tags, tag)
+				}
+				if len(tags) > 0 {
+					if err := tx.Model(&post).Association("TagsList").Replace(tags); err != nil {
+						return err
+					}
+				}
+			}
+
+			// 迁移分类
+			if p.Categories != "" {
+				catNames := strings.Split(p.Categories, ",")
+				var cats []models.Category
+				for _, name := range catNames {
+					name = strings.TrimSpace(name)
+					if name == "" {
+						continue
+					}
+					var cat models.Category
+					if err := tx.FirstOrCreate(&cat, models.Category{Name: name}).Error; err != nil {
+						return err
+					}
+					cats = append(cats, cat)
+				}
+				if len(cats) > 0 {
+					if err := tx.Model(&post).Association("CategoriesList").Replace(cats); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		fmt.Printf("标签和分类数据迁移完成\n")
 		return nil
 	})
 }

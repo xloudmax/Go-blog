@@ -1,10 +1,13 @@
 package services
 
 import (
+	"fmt"
 	"math"
+	"repair-platform/config"
 	"repair-platform/models"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -13,12 +16,36 @@ import (
 
 // SearchService 搜索服务
 type SearchService struct {
-	db *gorm.DB
+	db      *gorm.DB
+	ftsOnce sync.Once
+	hasFTS  bool
 }
 
 // NewSearchService 创建搜索服务实例
 func NewSearchService(db *gorm.DB) *SearchService {
 	return &SearchService{db: db}
+}
+
+// supportsFTS 判断底层数据库是否存在 FTS 虚拟表
+func (s *SearchService) supportsFTS() bool {
+	s.ftsOnce.Do(func() {
+		err := s.db.Raw("SELECT 1 FROM blog_post_fts LIMIT 1").Error
+		s.hasFTS = err == nil
+	})
+	return s.hasFTS
+}
+
+// applyVisibilityFilters 根据用户角色/ID 追加文章可见性过滤
+func (s *SearchService) applyVisibilityFilters(query *gorm.DB, userID *uint, userRole string) *gorm.DB {
+	if userRole == "ADMIN" {
+		return query
+	}
+
+	if userID != nil {
+		return query.Where("(status = 'PUBLISHED' AND access_level = 'PUBLIC') OR author_id = ?", *userID)
+	}
+
+	return query.Where("status = 'PUBLISHED' AND access_level = 'PUBLIC'")
 }
 
 // SearchResult 搜索结果
@@ -31,39 +58,48 @@ type SearchResult struct {
 // AdvancedSearchPosts 高级搜索博客文章（带缓存）
 func (s *SearchService) AdvancedSearchPosts(query string, limit, offset int, userID *uint, userRole string) (*SearchResult, error) {
 	startTime := time.Now()
+	cfg := config.GetConfig()
+	cacheTTL := 5 * time.Minute
+	if ttl, err := time.ParseDuration(cfg.CacheTTL); err == nil {
+		cacheTTL = ttl
+	}
+	useCache := cfg.CacheEnabled
 
-	// 尝试从缓存获取结果
 	cacheService := GetGlobalSearchCache()
-	if cached, found := cacheService.Get(query, limit, offset, userID, userRole); found {
-		// 返回缓存结果，更新耗时为缓存查询时间
-		return &SearchResult{
-			Posts: cached.Posts,
-			Total: cached.Total,
-			Took:  time.Since(startTime), // 缓存查询耗时
-		}, nil
+	if useCache {
+		if cached, found := cacheService.Get(query, limit, offset, userID, userRole); found {
+			return &SearchResult{
+				Posts: cached.Posts,
+				Total: cached.Total,
+				Took:  time.Since(startTime),
+			}, nil
+		}
 	}
 
-	// 分词处理
 	keywords := s.tokenize(query)
 	if len(keywords) == 0 {
 		return &SearchResult{Posts: []*models.BlogPost{}, Total: 0}, nil
 	}
 
-	// 构建搜索查询
-	dbQuery := s.db.Model(&models.BlogPost{}).
-		Preload("Author").
-		Preload("Stats")
-
-	// 权限过滤
-	if userRole != "ADMIN" {
-		if userID != nil {
-			dbQuery = dbQuery.Where("(status = 'PUBLISHED' AND access_level = 'PUBLIC') OR author_id = ?", *userID)
-		} else {
-			dbQuery = dbQuery.Where("status = 'PUBLISHED' AND access_level = 'PUBLIC'")
+	if s.supportsFTS() {
+		res, err := s.searchWithFTS(keywords, limit, offset, userID, userRole)
+		if err != nil {
+			return nil, err
 		}
+		s.LogSearchQuery(query, len(res.Posts), userID)
+		if useCache {
+			cacheService.Set(query, limit, offset, userID, userRole, res, cacheTTL)
+		}
+		return res, nil
 	}
 
-	// 多字段搜索 - 使用增强的全文搜索
+	dbQuery := s.applyVisibilityFilters(
+		s.db.Model(&models.BlogPost{}).
+			Preload("Author").
+			Preload("Stats"),
+		userID, userRole,
+	)
+
 	searchConditions := s.buildFullTextSearchConditions(keywords)
 	if len(searchConditions) > 0 {
 		for _, condition := range searchConditions {
@@ -71,47 +107,40 @@ func (s *SearchService) AdvancedSearchPosts(query string, limit, offset int, use
 		}
 	}
 
-	// 获取总数
 	var total int64
-	countQuery := dbQuery
+	countQuery := dbQuery.Session(&gorm.Session{})
 	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, err
 	}
 
-	// 获取结果
 	var posts []models.BlogPost
 	err := dbQuery.
 		Offset(offset).
 		Limit(limit).
-		Order("created_at DESC"). // 基础排序，后续会用相关性重排
+		Order("created_at DESC").
 		Find(&posts).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	// 计算相关性得分并重新排序
 	scoredPosts := s.calculateRelevanceScores(posts, keywords)
-
-	// 转换为指针数组
 	result := make([]*models.BlogPost, len(scoredPosts))
 	for i := range scoredPosts {
 		result[i] = &scoredPosts[i].Post
 	}
 
 	took := time.Since(startTime)
-
 	searchResult := &SearchResult{
 		Posts: result,
 		Total: total,
 		Took:  took,
 	}
 
-	// 记录搜索查询
 	s.LogSearchQuery(query, len(result), userID)
-
-	// 缓存搜索结果（5分钟TTL）
-	cacheService.Set(query, limit, offset, userID, userRole, searchResult, 5*time.Minute)
+	if useCache {
+		cacheService.Set(query, limit, offset, userID, userRole, searchResult, cacheTTL)
+	}
 
 	return searchResult, nil
 }
@@ -120,6 +149,52 @@ func (s *SearchService) AdvancedSearchPosts(query string, limit, offset int, use
 type SearchCondition struct {
 	query string
 	args  []interface{}
+}
+
+// searchWithFTS 使用 SQLite FTS 查询
+func (s *SearchService) searchWithFTS(keywords []string, limit, offset int, userID *uint, userRole string) (*SearchResult, error) {
+	start := time.Now()
+	matchQuery := buildFTSMatchQuery(keywords)
+
+	baseQuery := s.applyVisibilityFilters(
+		s.db.Model(&models.BlogPost{}).
+			Select("blog_post.*, bm25(blog_post_fts, 1.5, 1.0, 0.75, 0.5) AS rank").
+			Joins("JOIN blog_post_fts ON blog_post_fts.rowid = blog_post.id").
+			Preload("Author").
+			Preload("Stats"),
+		userID, userRole,
+	).Where("blog_post_fts MATCH ?", matchQuery)
+
+	var total int64
+	if err := baseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	var posts []models.BlogPost
+	if err := baseQuery.Offset(offset).Limit(limit).Order("rank ASC, blog_post.created_at DESC").Find(&posts).Error; err != nil {
+		return nil, err
+	}
+
+	scored := s.calculateRelevanceScores(posts, keywords)
+	result := make([]*models.BlogPost, len(scored))
+	for i := range scored {
+		result[i] = &scored[i].Post
+	}
+
+	return &SearchResult{Posts: result, Total: total, Took: time.Since(start)}, nil
+}
+
+func buildFTSMatchQuery(keywords []string) string {
+	parts := make([]string, 0, len(keywords))
+	for _, kw := range keywords {
+		kw = strings.TrimSpace(strings.ReplaceAll(kw, "\"", "\"\""))
+		if kw == "" {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s*", kw))
+	}
+
+	return strings.Join(parts, " OR ")
 }
 
 // buildFullTextSearchConditions 构建全文搜索条件

@@ -11,30 +11,13 @@ import (
 	"os"
 	"repair-platform/middleware"
 	"repair-platform/models"
+	"repair-platform/services"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-)
-
-// 验证码相关常量
-const (
-	VerificationCodeTTL = 10 * time.Minute // 验证码有效期10分钟
-)
-
-// VerificationCode 验证码结构
-type VerificationCode struct {
-	Code      string
-	ExpiresAt time.Time
-}
-
-// 内存中的验证码存储（生产环境应使用 Redis）
-var (
-	verificationCodes = make(map[string]*VerificationCode)
-	verificationMutex = sync.RWMutex{}
 )
 
 // GraphQLError 标准 GraphQL 错误结构
@@ -58,7 +41,6 @@ var (
 	ErrEmailNotVerified   = GraphQLError{Message: "邮箱未验证", Code: "EMAIL_NOT_VERIFIED"}
 	ErrInternalError      = GraphQLError{Message: "服务器内部错误", Code: "INTERNAL_ERROR"}
 )
-
 
 // isAuthenticated 检查用户是否已认证
 func isAuthenticated(ctx context.Context) bool {
@@ -165,29 +147,29 @@ func convertToGraphQLUser(user *models.User) *User {
 	if user.Bio != "" {
 		bio = &user.Bio
 	}
-	
+
 	var avatar *string
 	if user.Avatar != "" {
 		avatar = &user.Avatar
 	}
-	
+
 	var lastLoginAt *time.Time
 	if user.LastLoginAt != nil {
 		lastLoginAt = user.LastLoginAt
 	}
 
 	return &User{
-		ID:         strconv.FormatUint(uint64(user.ID), 10),
-		Username:   user.Username,
-		Email:      user.Email,
-		Role:       role,
-		IsVerified: user.IsVerified,
-		IsActive:   user.IsActive,
-		Bio:        bio,
-		Avatar:     avatar,
+		ID:          strconv.FormatUint(uint64(user.ID), 10),
+		Username:    user.Username,
+		Email:       user.Email,
+		Role:        role,
+		IsVerified:  user.IsVerified,
+		IsActive:    user.IsActive,
+		Bio:         bio,
+		Avatar:      avatar,
 		LastLoginAt: lastLoginAt,
-		CreatedAt:  user.CreatedAt,
-		UpdatedAt:  user.UpdatedAt,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
 	}
 }
 
@@ -213,6 +195,27 @@ func requireAdmin(ctx context.Context, db *gorm.DB) (*models.User, error) {
 	return user, nil
 }
 
+// requireVerified 验证已登录且邮箱已验证
+func requireVerified(ctx context.Context, db *gorm.DB) (*models.User, error) {
+	user, err := getUserFromContext(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	if !user.IsVerified {
+		return nil, ErrEmailNotVerified
+	}
+	return user, nil
+}
+
+// requireVerifiedSafe 包装错误信息
+func requireVerifiedSafe(ctx context.Context, db *gorm.DB) (*models.User, error) {
+	user, err := requireVerified(ctx, db)
+	if err != nil {
+		return nil, HandleAuthError(err)
+	}
+	return user, nil
+}
+
 // generateSecureCode 生成 6 位安全验证码
 func generateSecureCode() (string, error) {
 	maxValue := big.NewInt(1000000)
@@ -233,44 +236,15 @@ func generateSecureRefreshToken() (string, error) {
 }
 
 // sendVerificationCode 发送邮件验证码
+// sendVerificationCode 代理到 AuthService 邮件发送逻辑
 func sendVerificationCode(to, code string) error {
 	logger := middleware.GetLogger()
-
-	// 检查是否为开发环境（可以通过环境变量控制）
-	// 开发环境下跳过实际邮件发送，只记录日志
-	if os.Getenv("GO_ENV") != "production" {
-		logger.Infow("[开发模式] 验证码", "email", to, "code", code)
-		return nil
-	}
-
-	// 生产环境的邮件发送代码 - 从环境变量读取配置
-	from := os.Getenv("SMTP_USERNAME")
-	password := os.Getenv("SMTP_PASSWORD")
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := os.Getenv("SMTP_PORT")
-
-	// 检查SMTP配置
-	if from == "" || password == "" || smtpHost == "" {
-		logger.Errorw("SMTP配置缺失", "email", to)
-		return fmt.Errorf("SMTP配置缺失")
-	}
-
-	if smtpPort == "" {
-		smtpPort = "587"
-	}
-
-	subject := "Subject: 邮箱验证码\n"
-	body := fmt.Sprintf("您的验证码是: %s\n有效期为 %d 分钟", code, VerificationCodeTTL/time.Minute)
-	msg := fmt.Sprintf("From: %s\nTo: %s\n%s\n\n%s", from, to, subject, body)
-
-	auth := smtp.PlainAuth("", from, password, smtpHost)
-	err := smtp.SendMail(fmt.Sprintf("%s:%s", smtpHost, smtpPort), auth, from, []string{to}, []byte(msg))
-	if err != nil {
-		logger.Errorw("发送邮件失败", "email", to, "error", err)
+	authSvc := services.NewAuthService(nil)
+	if err := authSvc.SendVerificationCode(to, "LOGIN"); err != nil {
+		logger.Errorw("发送验证码失败", "email", to, "error", err)
 		return err
 	}
-
-	logger.Infow("邮件发送成功", "email", to)
+	logger.Infow("验证码发送完成", "email", to)
 	return nil
 }
 
@@ -317,43 +291,37 @@ func sendPasswordResetEmail(to, token string) error {
 	return nil
 }
 
-// storeVerificationCode 存储验证码
-func storeVerificationCode(email, code string) {
-	verificationMutex.Lock()
-	defer verificationMutex.Unlock()
-	
-	verificationCodes[email] = &VerificationCode{
-		Code:      code,
-		ExpiresAt: time.Now().Add(VerificationCodeTTL),
+// storeVerificationCode 存储验证码（按类型）
+func storeVerificationCode(email, code, codeType string) {
+	ev := models.GetEmailVerificationService()
+	if ev == nil {
+		return
 	}
+	ev.InvalidateCode(email, codeType)
+	ev.Cache().Set(fmt.Sprintf("%s:%s", email, codeType), &models.VerificationCode{
+		Code:      code,
+		Email:     email,
+		Type:      codeType,
+		ExpiresAt: time.Now().Add(15 * time.Minute),
+	}, 15*time.Minute)
 }
 
 // verifyCode 验证验证码
-func verifyCode(email, code string) bool {
-	verificationMutex.RLock()
-	defer verificationMutex.RUnlock()
-	
-	stored, exists := verificationCodes[email]
-	if !exists {
+func verifyCode(email, code, codeType string) bool {
+	ev := models.GetEmailVerificationService()
+	if ev == nil {
 		return false
 	}
-	
-	// 检查是否过期
-	if time.Now().After(stored.ExpiresAt) {
-		// 删除过期的验证码
-		delete(verificationCodes, email)
-		return false
-	}
-	
-	return stored.Code == code
+	return ev.VerifyCode(email, code, codeType)
 }
 
-// deleteVerificationCode 删除验证码（验证成功后清除）
-func deleteVerificationCode(email string) {
-	verificationMutex.Lock()
-	defer verificationMutex.Unlock()
-	
-	delete(verificationCodes, email)
+// deleteVerificationCode 删除验证码
+func deleteVerificationCode(email, codeType string) {
+	ev := models.GetEmailVerificationService()
+	if ev == nil {
+		return
+	}
+	ev.InvalidateCode(email, codeType)
 }
 
 // parseID 解析字符串 ID 为 uint
@@ -409,20 +377,30 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 
 	// 处理标签和分类
 	tags := []string{}
-	if post.Tags != "" {
-		tags = strings.Split(post.Tags, ",")
-		// 去除空格
-		for i, tag := range tags {
-			tags[i] = strings.TrimSpace(tag)
+	// 优先使用关联列表
+	if len(post.TagsList) > 0 {
+		for _, t := range post.TagsList {
+			tags = append(tags, t.Name)
+		}
+	} else if post.Tags != "" {
+		// 回退到旧字符串字段
+		splitTags := strings.Split(post.Tags, ",")
+		for _, tag := range splitTags {
+			tags = append(tags, strings.TrimSpace(tag))
 		}
 	}
 
 	categories := []string{}
-	if post.Categories != "" {
-		categories = strings.Split(post.Categories, ",")
-		// 去除空格
-		for i, category := range categories {
-			categories[i] = strings.TrimSpace(category)
+	// 优先使用关联列表
+	if len(post.CategoriesList) > 0 {
+		for _, c := range post.CategoriesList {
+			categories = append(categories, c.Name)
+		}
+	} else if post.Categories != "" {
+		// 回退到旧字符串字段
+		splitCats := strings.Split(post.Categories, ",")
+		for _, cat := range splitCats {
+			categories = append(categories, strings.TrimSpace(cat))
 		}
 	}
 
@@ -442,6 +420,7 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 	}
 
 	// 转换统计信息，确保stats总是存在且包含ID
+	// 如果 Stats 为 nil，则留空，让 DataLoader 解析器去处理
 	var stats *BlogPostStats
 	if post.Stats != nil && post.Stats.ID != 0 {
 		stats = &BlogPostStats{
@@ -453,24 +432,20 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 			LastViewedAt: post.Stats.LastViewedAt,
 			UpdatedAt:    post.Stats.UpdatedAt,
 		}
-	} else {
-		// 如果stats为空或ID为0，提供默认统计信息
-		stats = &BlogPostStats{
-			ID:           strconv.FormatUint(uint64(post.ID), 10) + "_stats", // 使用post ID + 后缀作为临时ID
-			ViewCount:    0,
-			LikeCount:    0,
-			ShareCount:   0,
-			CommentCount: 0,
-			LastViewedAt: nil,
-			UpdatedAt:    post.UpdatedAt,
-		}
 	}
 
 	// 默认isLiked为false
 	isLiked := false
 
+	// 处理 Author
+	var author *User
+	if post.Author.ID != 0 {
+		author = convertToGraphQLUser(&post.Author)
+	}
+
 	return &BlogPost{
 		ID:            strconv.FormatUint(uint64(post.ID), 10),
+		AuthorID:      strconv.FormatUint(uint64(post.AuthorID), 10),
 		Title:         post.Title,
 		Slug:          post.Slug,
 		Excerpt:       excerpt,
@@ -484,7 +459,7 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 		LastEditedAt:  post.LastEditedAt,
 		CreatedAt:     post.CreatedAt,
 		UpdatedAt:     post.UpdatedAt,
-		Author:        convertToGraphQLUser(&post.Author),
+		Author:        author,
 		Stats:         stats,
 		IsLiked:       isLiked,
 	}
@@ -494,7 +469,7 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 func ensurePostStats(db *gorm.DB, postID uint) error {
 	var existingStats models.BlogPostStats
 	err := db.Where("blog_post_id = ?", postID).First(&existingStats).Error
-	
+
 	// 如果统计记录不存在，创建一个
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		stats := &models.BlogPostStats{
@@ -506,7 +481,7 @@ func ensurePostStats(db *gorm.DB, postID uint) error {
 		}
 		return db.Create(stats).Error
 	}
-	
+
 	return err // 返回其他错误，nil表示记录已存在
 }
 
@@ -624,7 +599,7 @@ func getUptime() string {
 func generateInviteCode() string {
 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const codeLength = 8
-	
+
 	code := make([]byte, codeLength)
 	for i := range code {
 		randomIndex, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
@@ -634,6 +609,6 @@ func generateInviteCode() string {
 		}
 		code[i] = charset[randomIndex.Int64()]
 	}
-	
+
 	return string(code)
 }

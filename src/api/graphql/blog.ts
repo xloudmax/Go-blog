@@ -1,12 +1,13 @@
-import { useLazyQuery, ApolloCache, NormalizedCacheObject } from '@apollo/client';
+import { useLazyQuery, ApolloCache, NormalizedCacheObject, gql, useQuery } from '@apollo/client';
 import type {
     CreatePostInput,
     UpdatePostInput,
     PostFilterInput,
     PostSortInput,
 } from '@/generated/graphql';
-import type { 
+import type {
     BlogPost as TypedBlogPost,
+    BlogPostVersion,
     SearchResults
 } from '@/types';
 
@@ -296,5 +297,63 @@ export const useBlogActions = () => {
             update: updateError,
             delete: deleteError,
         },
+    };
+};
+
+// ==================== 文章版本历史 ====================
+
+// 文章版本历史查询
+export const POST_VERSIONS_QUERY = gql`
+  query PostVersions($postId: ID!) {
+    postVersions(postId: $postId) {
+      id
+      versionNum
+      title
+      content
+      changeLog
+      createdAt
+      createdBy {
+        id
+        username
+        avatar
+        email
+      }
+    }
+  }
+`;
+
+// 文章版本历史 Hook
+export const usePostVersions = (postId: string, skip: boolean = false) => {
+    const { data, loading, error, refetch } = useQuery(POST_VERSIONS_QUERY, {
+        variables: { postId },
+        errorPolicy: 'all',
+        skip, // 允许延迟加载
+    });
+
+    return {
+        versions: data?.postVersions as BlogPostVersion[] || [],
+        loading,
+        error,
+        refetch,
+    };
+};
+
+// 懒加载版本历史 Hook（按需加载）
+export const useLazyPostVersions = () => {
+    const [getPostVersions, { data, loading, error }] = useLazyQuery(POST_VERSIONS_QUERY, {
+        errorPolicy: 'all',
+    });
+
+    const fetchVersions = (postId: string) => {
+        return getPostVersions({
+            variables: { postId },
+        });
+    };
+
+    return {
+        fetchVersions,
+        versions: data?.postVersions as BlogPostVersion[] || [],
+        loading,
+        error,
     };
 };

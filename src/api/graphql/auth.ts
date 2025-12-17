@@ -93,6 +93,26 @@ export const LOGOUT_MUTATION = gql`
 `;
 
 // 刷新Token
+export const REFRESH_TOKEN_MUTATION = gql`
+  mutation RefreshToken {
+    refreshToken {
+      token
+      refreshToken
+      expiresAt
+      user {
+        id
+        username
+        email
+        role
+        isVerified
+        isActive
+        avatar
+        bio
+      }
+    }
+  }
+`;
+
 // 发送验证码
 export const SEND_VERIFICATION_CODE_MUTATION = gql`
   mutation SendVerificationCode($email: String!, $type: VerificationType!) {
@@ -250,6 +270,23 @@ export const useAuth = () => {
     }
   });
 
+  // 刷新Token Hook
+  const [refreshTokenMutation, { loading: refreshLoading, error: refreshError }] = useMutation(REFRESH_TOKEN_MUTATION, {
+    onCompleted: (data) => {
+      if (data.refreshToken.token) {
+        localStorage.setItem('token', data.refreshToken.token);
+        localStorage.setItem('refreshToken', data.refreshToken.refreshToken);
+      }
+    },
+    onError: (error) => {
+      // Token 刷新失败，清除本地存储并重定向到登录页
+      console.error('Token refresh failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      window.location.href = '/login';
+    }
+  });
+
   // 发送验证码 Hook
   const [sendVerificationCodeMutation, { loading: sendCodeLoading }] = useMutation(SEND_VERIFICATION_CODE_MUTATION);
 
@@ -328,6 +365,16 @@ export const useAuth = () => {
     }
   };
 
+  const refreshToken = async () => {
+    try {
+      const result = await refreshTokenMutation();
+      return result.data?.refreshToken;
+    } catch (error) {
+      showErrorNotification('Token刷新失败', (error as Error).message);
+      throw error;
+    }
+  };
+
   const sendVerificationCode = async (email: string, type: VerificationType) => {
     const result = await sendVerificationCodeMutation({
       variables: { email, type }
@@ -385,6 +432,7 @@ export const useAuth = () => {
     emailLogin,
     verifyEmailAndLogin,
     logout,
+    refreshToken,
     sendVerificationCode,
     verifyEmail,
     requestPasswordReset,
@@ -398,6 +446,7 @@ export const useAuth = () => {
       register: registerLoading,
       emailLogin: emailLoginLoading,
       verify: verifyLoading,
+      refresh: refreshLoading,
       sendCode: sendCodeLoading,
       verifyEmail: verifyEmailLoading,
       resetRequest: resetRequestLoading,
@@ -412,6 +461,7 @@ export const useAuth = () => {
       register: registerError,
       emailLogin: emailLoginError,
       verify: verifyError,
+      refresh: refreshError,
     }
   };
 };

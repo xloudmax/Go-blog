@@ -1,5 +1,5 @@
 // 统一错误处理服务
-import { notification } from 'antd';
+import type { NotificationInstance } from 'antd/es/notification/interface';
 import type { GraphQLError } from 'graphql';
 
 // 错误类型定义
@@ -15,6 +15,7 @@ interface ErrorHandlerConfig {
   showNotifications: boolean;
   showConsoleErrors: boolean;
   defaultErrorMessage: string;
+  notificationApi?: NotificationInstance;
 }
 
 // 默认配置
@@ -123,6 +124,14 @@ const showNotification = (error: AppError) => {
     return;
   }
 
+  // 使用来自 App 上下文的 notification 实例，避免静态调用带来的主题警告
+  if (!config.notificationApi) {
+    if (config.showConsoleErrors && process.env.NODE_ENV === 'development') {
+      console.warn('[App Warning] notificationApi is not set in errorHandler config');
+    }
+    return;
+  }
+
   switch (error.type) {
     case 'auth':
       // 认证错误特殊处理，自动跳转到登录页
@@ -131,21 +140,21 @@ const showNotification = (error: AppError) => {
       window.location.href = '/login';
       break;
     case 'validation':
-      notification.warning({
+      config.notificationApi.warning({
         message: '提示',
         description: error.message,
         duration: 3,
       });
       break;
     case 'server':
-      notification.error({
+      config.notificationApi.error({
         message: '服务器错误',
         description: error.message,
         duration: 4,
       });
       break;
     default:
-      notification.error({
+      config.notificationApi.error({
         message: '操作失败',
         description: error.message,
         duration: 3,

@@ -12,6 +12,9 @@ export LOG_LEVEL="info"
 # 数据库配置
 export DATABASE_URL="blog_platform.db"
 
+# Go 编译配置：开启 SQLite FTS5 支持，确保全文索引可用
+export GOFLAGS="-tags=sqlite_fts5"
+
 # JWT 安全密钥 (已生成强随机密钥)
 export JWT_SECRET="X5cIMqG0p7tqKlSPvx408x660KtbtXsdzwCYdjJWn09bJwY2Fpwya91sadot108A"
 
@@ -60,3 +63,4 @@ echo "- 使用此邀请码可以注册管理员账号"
 echo ""
 echo "🚀 现在可以启动后端服务:"
 echo "   cd backend && go run main.go"
+echo "   (GOFLAGS 已自动开启 sqlite_fts5，以启用全文索引)"

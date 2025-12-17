@@ -58,21 +58,7 @@ export default function PostDetailPage() {
     // useLike hook 会自动处理这个逻辑
   }, [post]);
 
-  // 动态设置页面标题
-  useEffect(() => {
-    if (post?.title) {
-      document.title = `${post.title} - 博客平台`;
-    } else if (loading) {
-      document.title = '加载中... - 博客平台';
-    } else {
-      document.title = '博客平台';
-    }
 
-    // 清理函数：离开页面时恢复默认标题
-    return () => {
-      document.title = '博客平台';
-    };
-  }, [post?.title, loading]);
 
   // 处理分享
   const handleShare = () => {
@@ -150,6 +136,10 @@ export default function PostDetailPage() {
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '3rem 0' }}>
         {/* 标准页面标题和导航 */}
         <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* React 19 Metadata Hoisting */}
+          <title>{post?.title ? `${post.title} - 博客平台` : '加载中... - 博客平台'}</title>
+          {post?.excerpt && <meta name="description" content={post.excerpt} />}
+          
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate('/home')}

@@ -1,6 +1,7 @@
 // src/components/MarkdownViewer.tsx
 // Markdown 渲染组件，使用 react-markdown 解析内容
 import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeRaw from 'rehype-raw'
@@ -13,6 +14,7 @@ import 'github-markdown-css'
 import 'katex/dist/katex.min.css'
 import { Card } from 'antd'
 import './MarkdownViewer.css' // 引入自定义样式
+import MermaidChart from './MermaidChart'
 
 interface MarkdownViewerProps {
     /** Markdown 文本内容 */
@@ -32,7 +34,22 @@ const customSchema = {
         h5: [...(defaultSchema.attributes?.h5 || []), 'id'],
         h6: [...(defaultSchema.attributes?.h6 || []), 'id'],
     }
-};
+}
+
+const components: Components = {
+    code(props: any) {
+        const { className, children, inline, ...rest } = props
+        const language = className?.replace('language-', '')
+        if (!inline && language === 'mermaid') {
+            return <MermaidChart code={String(children).trim()} />
+        }
+        return (
+            <code className={className} {...rest}>
+                {children}
+            </code>
+        )
+    },
+}
 
 export default function MarkdownViewer({ content }: MarkdownViewerProps) {
     return (
@@ -43,11 +60,13 @@ export default function MarkdownViewer({ content }: MarkdownViewerProps) {
                     rehypePlugins={[
                         rehypeRaw,
                         rehypeSlug,
-                        [rehypeAutolinkHeadings, { behavior: 'wrap' }],
+                        // 使用 append 避免嵌套 <a>，防止 hydration 警告
+                        [rehypeAutolinkHeadings, { behavior: 'append' }],
                         [rehypeSanitize, customSchema],  // 使用自定义 schema
                         rehypeHighlight,
                         rehypeKatex
                     ]}
+                    components={components}
                 >
                     {content}
                 </ReactMarkdown>

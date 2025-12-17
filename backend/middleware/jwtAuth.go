@@ -11,12 +11,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 )
 
 // 定义 JWT 密钥获取函数
 func getJWTSecret() []byte {
 	cfg := config.GetConfig()
 	return []byte(cfg.JWTSecret)
+}
+
+// min 返回两个整数中的最小值
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // JWTAuthMiddleware 验证 JWT 并提取用户信息，检查 token 是否过期、签名是否正确
@@ -36,7 +45,16 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		// 提取实际的 token 字符串
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// 解析 token，回调函数用于验证签名方法及返回验证密钥
+		// 1. 检查token是否在黑名单中
+		blacklist := models.GetTokenBlacklist()
+		if blacklist.IsBlacklisted(tokenString) {
+			logger.Warnw("Token is blacklisted", "token_prefix", tokenString[:min(10, len(tokenString))])
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has been revoked"})
+			c.Abort()
+			return
+		}
+
+		// 2. 解析 token，回调函数用于验证签名方法及返回验证密钥
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			// 确保使用 HMAC 签名方法
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -95,6 +113,36 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			}
 		}
 
+		// 3. 检查用户的token是否被全局撤销（如密码重置后）
+		if iat, ok := claims["iat"].(float64); ok {
+			issuedAt := time.Unix(int64(iat), 0)
+			if blacklist.IsUserRevoked(uint(userIDFloat), issuedAt) {
+				logger.Warnw("User tokens globally revoked", "user_id", uint(userIDFloat), "issued_at", issuedAt)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has been revoked due to security reasons"})
+				c.Abort()
+				return
+			}
+		}
+
+		// 如果需要邮箱验证，则校验用户是否已验证
+		if !config.GetConfig().ShouldSkipEmailVerification() {
+			if db, ok := getDBFromContext(c); ok {
+				var user models.User
+				if err := db.First(&user, uint(userIDFloat)).Error; err != nil {
+					logger.Warnw("User not found during token validation", "error", err)
+					c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+					c.Abort()
+					return
+				}
+				if !user.IsVerified {
+					logger.Warnw("Unverified user blocked", "user_id", user.ID)
+					c.JSON(http.StatusUnauthorized, gin.H{"error": "Email not verified"})
+					c.Abort()
+					return
+				}
+			}
+		}
+
 		// 存储用户信息到上下文，供后续处理中使用
 		userID := uint(userIDFloat)
 		c.Set("user_id", userID)
@@ -143,6 +191,17 @@ func OptionalJWTAuthMiddleware() gin.HandlerFunc {
 			if userIDFloat, userIDOk := claims["user_id"].(float64); userIDOk {
 				userID := uint(userIDFloat)
 				c.Set("user_id", userID)
+				if db, ok := getDBFromContext(c); ok {
+					var user models.User
+					if err := db.First(&user, userID).Error; err == nil {
+						c.Set("is_verified", user.IsVerified)
+						if !config.GetConfig().ShouldSkipEmailVerification() && !user.IsVerified {
+							logger.Warnw("Optional token from unverified user", "user_id", user.ID)
+							c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Email not verified"})
+							return
+						}
+					}
+				}
 			}
 			if username, usernameOk := claims["username"]; usernameOk {
 				c.Set("username", username)
@@ -156,6 +215,16 @@ func OptionalJWTAuthMiddleware() gin.HandlerFunc {
 		// 继续处理请求
 		c.Next()
 	}
+}
+
+// getDBFromContext 提取数据库实例
+func getDBFromContext(c *gin.Context) (*gorm.DB, bool) {
+	dbRaw, exists := c.Get("db")
+	if !exists {
+		return nil, false
+	}
+	db, ok := dbRaw.(*gorm.DB)
+	return db, ok
 }
 
 // GetUserFromContext 从Gin上下文中获取当前用户信息

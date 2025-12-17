@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -184,4 +185,14 @@ func GetDataLoaderFromContext(ctx context.Context) *DataLoader {
 		return dl
 	}
 	return nil
+}
+
+// DataLoaderMiddleware Gin中间件，为每个请求注入新的DataLoader
+func DataLoaderMiddleware(db *gorm.DB) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		loader := NewDataLoader(db)
+		ctx := context.WithValue(c.Request.Context(), "dataloader", loader)
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
 }

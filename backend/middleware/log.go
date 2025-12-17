@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"repair-platform/config"
+
 	"github.com/gin-gonic/gin"
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
@@ -14,13 +16,40 @@ import (
 
 var globalLogger *zap.SugaredLogger
 
+// resolveLogLevel 从配置解析日志级别
+func resolveLogLevel(cfg *config.Config) zapcore.Level {
+	level := zapcore.InfoLevel
+	if cfg == nil {
+		return level
+	}
+
+	if levelStr, ok := cfg.GetLogConfig()["level"].(string); ok {
+		if parsed, err := zapcore.ParseLevel(levelStr); err == nil {
+			level = parsed
+		}
+	}
+	return level
+}
+
+// resolveLogFormat 从配置解析日志格式
+func resolveLogFormat(cfg *config.Config) string {
+	if cfg == nil {
+		return "json"
+	}
+	if format, ok := cfg.GetLogConfig()["format"].(string); ok {
+		return format
+	}
+	return "json"
+}
+
 // InitLogger 初始化日志记录器，并转换为 SugaredLogger
-func InitLogger() {
-	logLevel := zapcore.InfoLevel // 硬编码日志级别
+func InitLogger(cfg *config.Config) {
+	logLevel := resolveLogLevel(cfg)
+	format := resolveLogFormat(cfg)
 
 	// 为终端和文件创建不同的编码器
 	consoleEncoder := getConsoleEncoder() // 美化的控制台编码器
-	fileEncoder := getFileEncoder()       // JSON 文件编码器
+	fileEncoder := getFileEncoder(format == "console")
 
 	// 获取写入器
 	logDir := "logs"
@@ -37,8 +66,12 @@ func InitLogger() {
 		zap.S().Warn("日志目录创建失败", zap.Error(err))
 	}
 
-	// 创建两个 core：一个用于控制台，一个用于文件
-	consoleCore := zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), logLevel)
+	consoleLevel := logLevel
+	if cfg != nil && cfg.IsProduction() {
+		consoleLevel = zapcore.WarnLevel // 生产环境降低控制台日志等级
+	}
+
+	consoleCore := zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), consoleLevel)
 	fileCore := zapcore.NewCore(fileEncoder, zapcore.AddSync(logFile), logLevel)
 
 	// 合并两个 core
@@ -55,19 +88,19 @@ func InitTestLogger() {
 	config.Level = zap.NewAtomicLevelAt(zapcore.ErrorLevel) // 只输出错误日志
 	config.DisableCaller = true
 	config.DisableStacktrace = true
-	
+
 	logger, err := config.Build()
 	if err != nil {
 		panic(fmt.Sprintf("初始化测试日志记录器失败: %v", err))
 	}
-	
+
 	globalLogger = logger.Sugar()
 }
 
 // GetLogger 获取全局的 SugaredLogger 实例
 func GetLogger() *zap.SugaredLogger {
 	if globalLogger == nil {
-		InitLogger()
+		InitLogger(config.GetConfig())
 	}
 	return globalLogger
 }
@@ -168,8 +201,12 @@ func getConsoleEncoder() zapcore.Encoder {
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 
-// getFileEncoder 返回 JSON 格式的文件日志编码器
-func getFileEncoder() zapcore.Encoder {
+// getFileEncoder 返回 JSON 或控制台格式的文件日志编码器
+func getFileEncoder(preferConsole bool) zapcore.Encoder {
+	if preferConsole {
+		return getConsoleEncoder()
+	}
+
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.LowercaseLevelEncoder

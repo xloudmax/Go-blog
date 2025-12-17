@@ -55,6 +55,7 @@ vi.mock('react-router-dom', async () => {
 describe('ArticleCard', () => {
   const mockPost = {
     id: '1',
+    authorId: 'user1',
     title: 'Test Article',
     slug: 'test-article',
     content: 'Test content',

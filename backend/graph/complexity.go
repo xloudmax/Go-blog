@@ -17,7 +17,7 @@ func (e QueryComplexityExtension) ExtensionName() string {
 }
 
 // Validate 验证查询复杂度
-func (e QueryComplexityExtension) Validate(schema graphql.ExecutableSchema) error {
+func (e QueryComplexityExtension) Validate(_ graphql.ExecutableSchema) error {
 	return nil
 }
 

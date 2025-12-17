@@ -53,8 +53,8 @@ mutation Logout {
   }
 }
 
-mutation RefreshToken {
-  refreshToken {
+mutation RefreshToken($refreshToken: String!) {
+  refreshToken(refreshToken: $refreshToken) {
     ...AuthPayloadInfo
   }
 }

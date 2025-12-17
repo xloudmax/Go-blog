@@ -9,25 +9,27 @@ import (
 
 // BlogPost 表示博客文章的模型
 type BlogPost struct {
-	ID            uint              `gorm:"primaryKey" json:"id"`                                           // 博客文章的唯一标识
-	Title         string            `gorm:"not null;index" json:"title"`                                    // 博客文章标题
-	Slug          string            `gorm:"unique;not null;index" json:"slug"`                              // URL友好的标识符
-	Excerpt       string            `gorm:"type:text" json:"excerpt"`                                       // 摘要
-	Content       string            `gorm:"type:longtext;not null" json:"content"`                          // Markdown 内容
-	Tags          string            `gorm:"type:text" json:"tags"`                                          // 文章标签，逗号分隔
-	Categories    string            `gorm:"type:text" json:"categories"`                                    // 文章分类，逗号分隔
-	CoverImageURL string            `gorm:"type:text" json:"cover_image_url"`                               // 封面图片的 URL
-	AccessLevel   string            `gorm:"type:varchar(20);not null;default:'PUBLIC'" json:"access_level"` // 访问权限（PUBLIC, PRIVATE, RESTRICTED）
-	Status        string            `gorm:"type:varchar(20);not null;default:'DRAFT'" json:"status"`        // 状态（DRAFT, PUBLISHED, ARCHIVED）
-	PublishedAt   *time.Time        `json:"published_at,omitempty"`                                         // 发布时间
-	LastEditedAt  *time.Time        `json:"last_edited_at,omitempty"`                                       // 最后编辑时间
-	AuthorID      uint              `gorm:"not null" json:"author_id"`                                      // 作者 ID，外键关联到用户表
-	Author        User              `gorm:"foreignKey:AuthorID" json:"author"`                              // 关联用户表，作者信息
-	Versions      []BlogPostVersion `gorm:"foreignKey:BlogPostID" json:"versions,omitempty"`                // 版本历史
-	Stats         *BlogPostStats    `gorm:"foreignKey:BlogPostID" json:"stats,omitempty"`                   // 统计信息
-	CreatedAt     time.Time         `gorm:"autoCreateTime" json:"created_at"`                               // 创建时间
-	UpdatedAt     time.Time         `gorm:"autoUpdateTime" json:"updated_at"`                               // 更新时间
-	DeletedAt     gorm.DeletedAt    `gorm:"index" json:"-"`                                                 // 软删除
+	ID             uint              `gorm:"primaryKey" json:"id"`                                             // 博客文章的唯一标识
+	Title          string            `gorm:"not null;index" json:"title"`                                      // 博客文章标题
+	Slug           string            `gorm:"unique;not null;index" json:"slug"`                                // URL友好的标识符
+	Excerpt        string            `gorm:"type:text" json:"excerpt"`                                         // 摘要
+	Content        string            `gorm:"type:longtext;not null" json:"content"`                            // Markdown 内容
+	Tags           string            `gorm:"type:text" json:"tags"`                                            // 文章标签，逗号分隔
+	Categories     string            `gorm:"type:text" json:"categories"`                                      // 文章分类，逗号分隔
+	CoverImageURL  string            `gorm:"type:text" json:"cover_image_url"`                                 // 封面图片的 URL
+	AccessLevel    string            `gorm:"type:varchar(20);not null;default:'PUBLIC'" json:"access_level"`   // 访问权限（PUBLIC, PRIVATE, RESTRICTED）
+	Status         string            `gorm:"type:varchar(20);not null;default:'DRAFT'" json:"status"`          // 状态（DRAFT, PUBLISHED, ARCHIVED）
+	PublishedAt    *time.Time        `json:"published_at,omitempty"`                                           // 发布时间
+	LastEditedAt   *time.Time        `json:"last_edited_at,omitempty"`                                         // 最后编辑时间
+	AuthorID       uint              `gorm:"not null" json:"author_id"`                                        // 作者 ID，外键关联到用户表
+	Author         User              `gorm:"foreignKey:AuthorID" json:"author"`                                // 关联用户表，作者信息
+	Versions       []BlogPostVersion `gorm:"foreignKey:BlogPostID" json:"versions,omitempty"`                  // 版本历史
+	Stats          *BlogPostStats    `gorm:"foreignKey:BlogPostID" json:"stats,omitempty"`                     // 统计信息
+	TagsList       []Tag             `gorm:"many2many:blog_post_tags;" json:"tags_list,omitempty"`             // 标签关联
+	CategoriesList []Category        `gorm:"many2many:blog_post_categories;" json:"categories_list,omitempty"` // 分类关联
+	CreatedAt      time.Time         `gorm:"autoCreateTime" json:"created_at"`                                 // 创建时间
+	UpdatedAt      time.Time         `gorm:"autoUpdateTime" json:"updated_at"`                                 // 更新时间
+	DeletedAt      gorm.DeletedAt    `gorm:"index" json:"-"`                                                   // 软删除
 }
 
 // GetTagsArray 获取标签数组

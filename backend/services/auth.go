@@ -6,6 +6,7 @@ import (
 	"net/smtp"
 	"os"
 	"regexp"
+	"repair-platform/config"
 	"repair-platform/models"
 	"strings"
 	"time"
@@ -43,7 +44,6 @@ func (s *AuthService) Register(input *models.RegisterInput) (*models.User, strin
 	return user, token, nil
 }
 
-
 // SendEmailLoginCode 发送邮箱登录验证码
 func (s *AuthService) SendEmailLoginCode(email string) error {
 	return s.EmailLogin(email)
@@ -53,6 +53,7 @@ func (s *AuthService) RegisterUser(input *models.RegisterInput) (*models.User, s
 	if err := s.validateRegisterInput(input); err != nil {
 		return nil, "", err
 	}
+	cfg := config.GetConfig()
 
 	// 检查用户名和邮箱是否已存在
 	if err := s.checkUserExists(input.Username, input.Email); err != nil {
@@ -124,7 +125,8 @@ func (s *AuthService) RegisterUser(input *models.RegisterInput) (*models.User, s
 
 	// 生成验证码（开发环境跳过邮件发送）
 	var verificationCode string
-	if !s.isTestEnvironment() {
+	shouldVerify := !cfg.ShouldSkipEmailVerification() && !s.isTestEnvironment()
+	if shouldVerify {
 		var err error
 		verificationCode, err = s.evs.GenerateVerificationCode(user.Email, "REGISTER")
 		if err != nil {
@@ -138,10 +140,10 @@ func (s *AuthService) RegisterUser(input *models.RegisterInput) (*models.User, s
 			fmt.Printf("发送验证邮件失败: %v\n", err)
 		}
 	} else {
-		// 测试环境直接验证
+		// 配置允许跳过验证时直接标记为已验证
+		now := time.Now()
 		user.IsVerified = true
-		user.EmailVerifiedAt = &time.Time{}
-		*user.EmailVerifiedAt = time.Now()
+		user.EmailVerifiedAt = &now
 		if err := tx.Save(user).Error; err != nil {
 			tx.Rollback()
 			return nil, "", models.ErrInternalServerError
@@ -180,8 +182,8 @@ func (s *AuthService) LoginUser(input *models.LoginInput) (*models.User, string,
 		return nil, "", "", models.ErrInvalidCredentials
 	}
 
-	// 检查邮箱验证状态（开发环境跳过）
-	if !s.isTestEnvironment() && !user.IsVerified {
+	// 检查邮箱验证状态（按配置决定是否强制）
+	if !config.GetConfig().ShouldSkipEmailVerification() && !user.IsVerified {
 		return nil, "", "", models.ErrEmailNotVerified
 	}
 
@@ -195,10 +197,23 @@ func (s *AuthService) LoginUser(input *models.LoginInput) (*models.User, string,
 		return nil, "", "", models.ErrInternalServerError
 	}
 
-	// 生成刷新令牌（使用简单格式，避免循环依赖）
-	refreshToken := fmt.Sprintf("refresh_%d_%d", user.ID, time.Now().Unix())
+	// 生成真实的加密 Refresh Token
+	refreshTokenConfig := models.RefreshTokenConfig{
+		TokenLength:    32,
+		ExpiryDuration: 30 * 24 * time.Hour, // 30天
+		EnableRotation: true,
+	}
+	if input.Remember {
+		// 记住我时延长到90天
+		refreshTokenConfig.ExpiryDuration = 90 * 24 * time.Hour
+	}
 
-	return &user, token, refreshToken, nil
+	rawRefreshToken, _, err := models.GenerateRefreshToken(user.ID, refreshTokenConfig, s.db)
+	if err != nil {
+		return nil, "", "", models.ErrInternalServerError
+	}
+
+	return &user, token, rawRefreshToken, nil
 }
 
 // EmailLogin 邮箱登录（发送验证码）
@@ -269,10 +284,13 @@ func (s *AuthService) VerifyEmailAndLogin(input *models.VerifyEmailInput) (*mode
 		return nil, "", "", models.ErrInternalServerError
 	}
 
-	// 生成刷新令牌（使用简单格式）
-	refreshToken := fmt.Sprintf("refresh_%d_%d", user.ID, time.Now().Unix())
+	// 生成真实的加密 Refresh Token
+	rawRefreshToken, _, err := models.GenerateRefreshToken(user.ID, models.DefaultRefreshTokenConfig, s.db)
+	if err != nil {
+		return nil, "", "", models.ErrInternalServerError
+	}
 
-	return &user, token, refreshToken, nil
+	return &user, token, rawRefreshToken, nil
 }
 
 // SendVerificationCode 发送验证码

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -9,7 +10,9 @@ import (
 	"repair-platform/config"
 	"repair-platform/database"
 	"repair-platform/middleware"
+	"repair-platform/models"
 	"repair-platform/routes"
+	"syscall"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -32,8 +35,12 @@ func main() {
 	initLogger(cfg)
 	logger := middleware.GetLogger()
 
-	// 确保日志同步
+	// 确保日志同步、缓存清理
 	defer func() {
+		models.GetCache().Stop()
+		if models.EmailVerificationSvc != nil {
+			models.EmailVerificationSvc.Stop()
+		}
 		if err := logger.Sync(); err != nil {
 			logger.Errorw("日志同步失败", "error", err)
 		}
@@ -44,8 +51,9 @@ func main() {
 	// 设置 Gin 运行模式
 	gin.SetMode(cfg.GetGinMode())
 
-	// 初始化 Gin 引擎
-	r := gin.Default()
+	// 初始化 Gin 引擎，避免默认日志重复输出
+	r := gin.New()
+	r.Use(gin.Recovery())
 
 	// 注册日志中间件
 	r.Use(middleware.LoggingMiddleware())
@@ -59,22 +67,26 @@ func main() {
 	if err != nil {
 		logger.Fatalw("数据库连接失败", "error", err)
 	}
-	defer database.CloseDB(db)
 	logger.Infow("数据库连接已初始化")
 
 	// 配置路由
 	logger.Infow("配置路由和中间件")
 	routes.SetupRoutes(r, db, cfg)
 
-	// 等待关闭信号
-	waitForShutdown(db)
+	server := &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: r,
+	}
 
 	// 启动服务器
-	startServer(r, cfg)
+	go startServer(server, cfg)
+
+	// 等待关闭信号并优雅退出
+	waitForShutdown(server, db)
 }
 
 func initLogger(cfg *config.Config) {
-	middleware.InitLogger()
+	middleware.InitLogger(cfg)
 }
 
 func setupCORS(r *gin.Engine, cfg *config.Config) {
@@ -95,26 +107,33 @@ func setupCORS(r *gin.Engine, cfg *config.Config) {
 	r.Use(cors.New(corsConfig))
 }
 
-func startServer(r *gin.Engine, cfg *config.Config) {
+func startServer(server *http.Server, cfg *config.Config) {
 	logger := middleware.GetLogger()
 
 	logger.Infow("服务器即将启动", "port", cfg.Port, "environment", cfg.Environment)
 
-	if err := r.Run(":" + cfg.Port); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Fatalw("服务器启动失败", "error", err)
 	}
 
 	logger.Infow("服务器已关闭")
 }
 
-func waitForShutdown(db *gorm.DB) {
+func waitForShutdown(server *http.Server, db *gorm.DB) {
+	logger := middleware.GetLogger()
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	go func() {
-		<-c
-		middleware.GetLogger().Infow("接收到关闭信号，正在清理资源")
-		database.CloseDB(db)
-		os.Exit(0)
-	}()
+	<-c
+	logger.Infow("接收到关闭信号，正在清理资源")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Errorw("服务器优雅关闭失败", "error", err)
+	}
+
+	database.CloseDB(db)
+	logger.Infow("资源清理完成，应用退出")
 }

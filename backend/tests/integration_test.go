@@ -8,6 +8,9 @@ import (
 )
 
 func TestBasicIntegration(t *testing.T) {
+	const strongPassword = "Str0ngPass123"
+	const strongAdminPassword = "Adm1nPass123"
+
 	// 设置测试环境
 	helper := testing_helper.SetupTestEnvironment(t)
 	defer helper.TeardownTestEnvironment()
@@ -37,7 +40,7 @@ func TestBasicIntegration(t *testing.T) {
 			"input": map[string]interface{}{
 				"username": "testuser",
 				"email":    "test@example.com",
-				"password": "password123",
+				"password": strongPassword,
 			},
 		}
 
@@ -79,15 +82,15 @@ func TestBasicIntegration(t *testing.T) {
 
 	t.Run("User Login", func(t *testing.T) {
 		// 首先注册一个用户
-		user, err := helper.CreateTestUser("logintest", "login@example.com", "password123", false)
+		user, err := helper.CreateTestUser("logintest", "login@example.com", strongPassword, false)
 		if err != nil {
 			t.Fatalf("Failed to create test user: %v", err)
 		}
 
 		variables := map[string]interface{}{
 			"input": map[string]interface{}{
-				"identifier": user.Email,
-				"password":   "password123",
+			"identifier": user.Email,
+			"password":   strongPassword,
 			},
 		}
 
@@ -101,7 +104,7 @@ func TestBasicIntegration(t *testing.T) {
 
 	t.Run("Authenticated Query", func(t *testing.T) {
 		// 创建测试用户并生成token
-		user, err := helper.CreateTestUser("authtest", "auth@example.com", "password123", false)
+		user, err := helper.CreateTestUser("authtest", "auth@example.com", strongPassword, false)
 		if err != nil {
 			t.Fatalf("Failed to create test user: %v", err)
 		}
@@ -137,7 +140,7 @@ func TestBasicIntegration(t *testing.T) {
 
 	t.Run("Admin Query", func(t *testing.T) {
 		// 创建管理员用户
-		admin, err := helper.CreateTestUser("admin", "admin@example.com", "admin123", true)
+		admin, err := helper.CreateTestUser("admin", "admin@example.com", strongAdminPassword, true)
 		if err != nil {
 			t.Fatalf("Failed to create admin user: %v", err)
 		}

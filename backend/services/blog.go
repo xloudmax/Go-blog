@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"repair-platform/middleware"
 	"repair-platform/models"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,12 +13,16 @@ import (
 
 // BlogService 博客服务
 type BlogService struct {
-	db *gorm.DB
+	db          *gorm.DB
+	searchCache *SearchCacheService
 }
 
 // NewBlogService 创建博客服务实例
 func NewBlogService(db *gorm.DB) *BlogService {
-	return &BlogService{db: db}
+	return &BlogService{
+		db:          db,
+		searchCache: GetGlobalSearchCache(),
+	}
 }
 
 // ensurePostStatsExist 确保文章统计记录存在
@@ -65,10 +70,26 @@ func (s *BlogService) CreatePost(input *models.CreatePostInput, authorID uint) (
 
 	// 设置标签和分类
 	if len(input.Tags) > 0 {
-		post.SetTagsFromArray(input.Tags)
+		var tags []models.Tag
+		for _, tagName := range input.Tags {
+			var tag models.Tag
+			if err := s.db.FirstOrCreate(&tag, models.Tag{Name: tagName}).Error; err == nil {
+				tags = append(tags, tag)
+			}
+		}
+		post.TagsList = tags
+		post.Tags = s.joinTags(tags) // 保持兼容性
 	}
 	if len(input.Categories) > 0 {
-		post.SetCategoriesFromArray(input.Categories)
+		var categories []models.Category
+		for _, catName := range input.Categories {
+			var cat models.Category
+			if err := s.db.FirstOrCreate(&cat, models.Category{Name: catName}).Error; err == nil {
+				categories = append(categories, cat)
+			}
+		}
+		post.CategoriesList = categories
+		post.Categories = s.joinCategories(categories) // 保持兼容性
 	}
 
 	// 设置封面图片
@@ -123,16 +144,16 @@ func (s *BlogService) CreatePostFromInput(input *models.CreateBlogPostInput, aut
 		Content:     input.Content,
 		AccessLevel: input.AccessLevel,
 	}
-	
+
 	// 处理标签和分类
 	if len(input.Tags) > 0 {
 		createInput.Tags = input.Tags
 	}
-	
+
 	if len(input.Categories) > 0 {
 		createInput.Categories = input.Categories
 	}
-	
+
 	// 设置封面图片
 	if input.CoverImageURL != "" {
 		coverImageURL := input.CoverImageURL
@@ -193,10 +214,32 @@ func (s *BlogService) UpdatePost(postID uint, input *models.UpdatePostInput, use
 
 	// 更新标签和分类
 	if len(input.Tags) > 0 {
-		post.SetTagsFromArray(input.Tags)
+		var tags []models.Tag
+		for _, tagName := range input.Tags {
+			var tag models.Tag
+			if err := s.db.FirstOrCreate(&tag, models.Tag{Name: tagName}).Error; err == nil {
+				tags = append(tags, tag)
+			}
+		}
+		// 使用 Association 更新关联
+		if err := s.db.Model(&post).Association("TagsList").Replace(tags); err != nil {
+			return nil, err
+		}
+		post.Tags = s.joinTags(tags) // 保持兼容性
 	}
 	if len(input.Categories) > 0 {
-		post.SetCategoriesFromArray(input.Categories)
+		var categories []models.Category
+		for _, catName := range input.Categories {
+			var cat models.Category
+			if err := s.db.FirstOrCreate(&cat, models.Category{Name: catName}).Error; err == nil {
+				categories = append(categories, cat)
+			}
+		}
+		// 使用 Association 更新关联
+		if err := s.db.Model(&post).Association("CategoriesList").Replace(categories); err != nil {
+			return nil, err
+		}
+		post.Categories = s.joinCategories(categories) // 保持兼容性
 	}
 
 	// 保存更新
@@ -568,12 +611,24 @@ func (s *BlogService) GetPosts(limit, offset int, filter *PostFilter, sort *Post
 
 // SearchPosts 搜索文章
 func (s *BlogService) SearchPosts(searchQuery string, limit, offset int, userID *uint, userRole string) ([]*models.BlogPost, int64, error) {
+	// 1. 尝试从缓存获取
+	if cached, found := s.searchCache.Get(searchQuery, limit, offset, userID, userRole); found {
+		return cached.Posts, cached.Total, nil
+	}
+
+	startTime := time.Now()
+
 	query := s.db.Preload("Author").Preload("Stats")
 
 	// 搜索条件（标题、内容、标签、分类）
-	searchPattern := "%" + searchQuery + "%"
-	query = query.Where("title LIKE ? OR content LIKE ? OR tags LIKE ? OR categories LIKE ?",
-		searchPattern, searchPattern, searchPattern, searchPattern)
+	// FTS5 全文搜索
+	// 简单处理：将搜索词转换为 FTS 语法 (e.g. "foo bar" -> "foo" AND "bar" 或者直接短语匹配)
+	// 这里使用简单的短语匹配，两边加双引号
+	cleanQuery := strings.ReplaceAll(searchQuery, "\"", "")
+	if cleanQuery != "" {
+		matchQuery := fmt.Sprintf("\"%s\"", cleanQuery)
+		query = query.Where("id IN (SELECT rowid FROM blog_post_fts WHERE blog_post_fts MATCH ?)", matchQuery)
+	}
 
 	// 权限控制
 	if userRole != "ADMIN" {
@@ -593,6 +648,16 @@ func (s *BlogService) SearchPosts(searchQuery string, limit, offset int, userID 
 	if err := query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&posts).Error; err != nil {
 		return nil, 0, models.ErrInternalServerError
 	}
+
+	// 2. 存入缓存
+	// 构造 SearchResult 用于缓存
+	searchResult := &SearchResult{
+		Posts: posts,
+		Total: total,
+		Took:  time.Since(startTime),
+	}
+	// 缓存10分钟
+	s.searchCache.Set(searchQuery, limit, offset, userID, userRole, searchResult, 10*time.Minute)
 
 	return posts, total, nil
 }

@@ -41,6 +41,18 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
+	// 获取底层 sql.DB 对象以设置连接池参数
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get sql.DB: %w", err)
+	}
+
+	// SQLite 推荐配置：限制为单以避免"database is locked"错误
+	// 在高并发写入场景下特别重要
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
 	// 运行数据库迁移和索引创建
 	if err := RunMigrations(db); err != nil {
 		logger := middleware.GetLogger()
@@ -90,12 +102,19 @@ func InitTestDB() (*gorm.DB, error) {
 func autoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&models.User{},
-		&models.PasswordResetToken{},
 		&models.BlogPost{},
-		&models.BlogPostVersion{},
 		&models.BlogPostStats{},
+		&models.BlogPostVersion{},
 		&models.BlogPostLike{},
+		&models.BlogPostComment{},
+		&models.BlogPostCommentLike{},
 		&models.InviteCode{},
+		&models.PasswordResetToken{},
+		&models.RefreshToken{},
+		&models.SearchQuery{},
+		&models.Notification{},
+		&models.Tag{},
+		&models.Category{},
 	)
 }
 

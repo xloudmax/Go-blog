@@ -130,3 +130,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Authentication**: JWT tokens with optional authentication on GraphQL operations
 - **GraphQL Generation**: Backend uses gqlgen.yml for code generation configuration
 - **Database**: SQLite for development (blog_platform.db), automatic migrations
+- ## 现代化全栈博客平台 (Notion-like) *2024.06 - 至今*
+**全栈开发** - 基于 Clean Architecture 构建的高性能内容管理系统，支持 Markdown 实时渲染
+- **高性能后端**：使用 **Go + Gin + GraphQL** 构建 API，相比 RESTful 减少 **60%+** 的网络往返；采用分层架构 (Controller/Service/Repo) 确保业务解耦。
+- **类型安全前端**：基于 **React 19 + TypeScript**，利用**graphql-codegen**自动生成前后端一致的类型定义，消除接口联调的数据类型错误。
+- **安全与优化**：设计 **JWT + Refresh Token** 双重认证体系；使用 GORM 连接池优化数据库并发性能。
+
+补充

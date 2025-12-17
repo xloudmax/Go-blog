@@ -49,6 +49,7 @@ describe('ArticleListContainer', () => {
   const mockPosts = [
     {
       id: '1',
+      authorId: 'user1',
       title: 'Test Article 1',
       slug: 'test-article-1',
       content: 'Test content 1',
@@ -92,6 +93,7 @@ describe('ArticleListContainer', () => {
     },
     {
       id: '2',
+      authorId: 'user1',
       title: 'Test Article 2',
       slug: 'test-article-2',
       content: 'Test content 2',

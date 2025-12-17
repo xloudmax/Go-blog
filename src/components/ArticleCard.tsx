@@ -10,6 +10,9 @@ import {
 import type { BlogPost } from '@/types';
 import { useAppUser } from '@/hooks';
 
+import { useApolloClient } from '@apollo/client';
+import { POST_QUERY } from '@/api/graphql';
+
 const { Title, Paragraph } = Typography;
 
 interface ArticleCardProps {
@@ -20,6 +23,18 @@ interface ArticleCardProps {
 
 const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction }) => {
   const { user, isAuthenticated } = useAppUser();
+  const client = useApolloClient();
+
+  // 预加载文章详情
+  const prefetchPost = () => {
+    client.query({
+      query: POST_QUERY,
+      variables: { slug: post.slug },
+      fetchPolicy: 'cache-first', // 如果缓存中有，就不再请求
+    }).catch(() => {
+      // 忽略预加载错误
+    });
+  };
 
   // 格式化日期时间
   const formatDate = (dateString: string) => {
@@ -79,12 +94,16 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction })
     <Card
       className="article-card modern-card-hover h-full flex flex-col"
       cover={
-        post.coverImageUrl ? (
-          <div className="relative h-48 overflow-hidden flex-shrink-0">
+       post.coverImageUrl ? (
+          <div 
+            className="relative h-48 overflow-hidden flex-shrink-0"
+            onMouseEnter={prefetchPost}
+          >
             <img
               alt={post.title}
               src={post.coverImageUrl}
               className="w-full h-full object-cover image-hover-scale"
+              loading="lazy"
             />
           </div>
         ) : null
@@ -96,6 +115,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate, onAction })
         <Title 
           level={4} 
           className="article-card-title mb-3 cursor-pointer hover:text-blue-600 transition-colors"
+          onMouseEnter={prefetchPost}
           onClick={() => onNavigate(post.slug)}
         >
           {post.title}

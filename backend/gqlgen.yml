@@ -14,3 +14,11 @@ resolver:
   layout: follow-schema         # 默认即可：把 resolver 代码也放在 graph/
   dir: graph                    # resolver.go 就在 graph/ 目录下
   package: graph                # resolver.go 声明的 package
+
+models:
+  BlogPost:
+    fields:
+      author:
+        resolver: true
+      stats:
+        resolver: true

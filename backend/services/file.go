@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"repair-platform/config"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 type FileService struct {
 	uploadDir string
 	maxSize   int64 // 最大文件大小（字节）
+	allowExts map[string]bool
 }
 
 // ImageUploadResponse 图片上传响应
@@ -28,19 +30,32 @@ type ImageUploadResponse struct {
 
 // NewFileService 创建文件服务实例
 func NewFileService() *FileService {
-	uploadDir := os.Getenv("UPLOAD_DIR")
+	cfg := config.GetConfig()
+	uploadDir := cfg.BasePath
 	if uploadDir == "" {
 		uploadDir = "./uploads"
 	}
 
-	// 确保上传目录存在
 	if err := os.MkdirAll(filepath.Join(uploadDir, "images"), 0755); err != nil {
 		fmt.Printf("创建上传目录失败: %v\n", err)
 	}
 
+	allowExts := make(map[string]bool)
+	for _, ext := range cfg.AllowedFileTypes {
+		if ext != "" {
+			allowExts[strings.ToLower(strings.TrimSpace(ext))] = true
+		}
+	}
+
+	maxSize := cfg.MaxFileSize
+	if maxSize <= 0 {
+		maxSize = 10 * 1024 * 1024
+	}
+
 	return &FileService{
 		uploadDir: uploadDir,
-		maxSize:   10 * 1024 * 1024, // 10MB
+		maxSize:   maxSize,
+		allowExts: allowExts,
 	}
 }
 
@@ -52,7 +67,7 @@ func (s *FileService) UploadImage(file graphql.Upload, userID uint) (*ImageUploa
 
 	// 验证文件类型
 	if !s.isValidImageType(file.Filename) {
-		return nil, fmt.Errorf("不支持的文件类型，仅支持 JPG, PNG, GIF, WEBP")
+		return nil, fmt.Errorf("不支持的文件类型，仅支持: %s", strings.Join(s.allowedList(), ", "))
 	}
 
 	// 清理文件名，防止路径遍历攻击
@@ -160,15 +175,18 @@ func (s *FileService) DeleteImage(filename string, userID uint, userRole string)
 // isValidImageType 验证是否为有效的图片类型
 func (s *FileService) isValidImageType(filename string) bool {
 	ext := strings.ToLower(filepath.Ext(filename))
-	validExtensions := []string{".jpg", ".jpeg", ".png", ".gif", ".webp"}
-
-	for _, validExt := range validExtensions {
-		if ext == validExt {
-			return true
-		}
+	if len(s.allowExts) == 0 {
+		return false
 	}
+	return s.allowExts[ext]
+}
 
-	return false
+func (s *FileService) allowedList() []string {
+	list := make([]string, 0, len(s.allowExts))
+	for ext := range s.allowExts {
+		list = append(list, ext)
+	}
+	return list
 }
 
 // GetImagePath 获取图片的物理路径

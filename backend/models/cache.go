@@ -172,6 +172,18 @@ type EmailVerificationService struct {
 	cache *MemoryCache
 }
 
+// Stop 停止邮箱验证码缓存的清理器
+func (evs *EmailVerificationService) Stop() {
+	if evs != nil && evs.cache != nil {
+		evs.cache.Stop()
+	}
+}
+
+// Cache 暴露内部缓存（用于兼容旧路径）
+func (evs *EmailVerificationService) Cache() *MemoryCache {
+	return evs.cache
+}
+
 // NewEmailVerificationService 创建邮箱验证服务
 func NewEmailVerificationService() *EmailVerificationService {
 	return &EmailVerificationService{
