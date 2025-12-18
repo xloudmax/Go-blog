@@ -22,7 +22,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   allTags
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>(activeFilters.tags || []);
+  const [selectedTags, setSelectedTags] = useState<string[]>(activeFilters?.tags || []);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);

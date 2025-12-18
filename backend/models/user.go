@@ -98,6 +98,7 @@ type CreatePostInput struct {
 	Categories    []string `json:"categories,omitempty"`
 	CoverImageURL *string  `json:"cover_image_url,omitempty"`
 	AccessLevel   string   `json:"access_level,omitempty"`
+	Status        string   `json:"status,omitempty"`
 }
 
 // UpdatePostInput 更新文章输入
@@ -108,6 +109,7 @@ type UpdatePostInput struct {
 	Categories    []string `json:"categories,omitempty"`
 	CoverImageURL *string  `json:"cover_image_url,omitempty"`
 	AccessLevel   *string  `json:"access_level,omitempty"`
+	Status        *string  `json:"status,omitempty"`
 }
 
 // SetPassword 为用户设置加密后的密码

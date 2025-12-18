@@ -58,13 +58,27 @@ func (s *BlogService) CreatePost(input *models.CreatePostInput, authorID uint) (
 		return err == nil // 如果找到记录，返回true表示已存在
 	})
 
+	// 确定状态
+	status := "DRAFT"
+	if input.Status != "" {
+		status = input.Status
+	}
+
+	// 确定发布时间
+	var publishedAt *time.Time
+	if status == "PUBLISHED" {
+		now := time.Now()
+		publishedAt = &now
+	}
+
 	// 创建文章
 	post := &models.BlogPost{
 		Title:       input.Title,
 		Slug:        slug,
 		Content:     input.Content,
 		AccessLevel: input.AccessLevel,
-		Status:      "DRAFT", // 默认为草稿状态
+		Status:      status,
+		PublishedAt: publishedAt,
 		AuthorID:    authorID,
 	}
 
@@ -143,6 +157,7 @@ func (s *BlogService) CreatePostFromInput(input *models.CreateBlogPostInput, aut
 		Title:       input.Title,
 		Content:     input.Content,
 		AccessLevel: input.AccessLevel,
+		Status:      input.Status,
 	}
 
 	// 处理标签和分类
@@ -212,6 +227,15 @@ func (s *BlogService) UpdatePost(postID uint, input *models.UpdatePostInput, use
 		post.AccessLevel = *input.AccessLevel
 	}
 
+	if input.Status != nil {
+		post.Status = *input.Status
+		// 如果状态变为已发布且发布时间为空，则设置发布时间
+		if post.Status == "PUBLISHED" && post.PublishedAt == nil {
+			now := time.Now()
+			post.PublishedAt = &now
+		}
+	}
+
 	// 更新标签和分类
 	if len(input.Tags) > 0 {
 		var tags []models.Tag
@@ -244,6 +268,7 @@ func (s *BlogService) UpdatePost(postID uint, input *models.UpdatePostInput, use
 
 	// 保存更新
 	if err := s.db.Save(&post).Error; err != nil {
+		middleware.GetLogger().Errorw("UpdatePost database save failed", "error", err)
 		return nil, models.ErrInternalServerError
 	}
 
@@ -265,6 +290,7 @@ func (s *BlogService) UpdatePostFromInput(postID uint, input *models.UpdateBlogP
 		Tags:          input.Tags,
 		Categories:    input.Categories,
 		CoverImageURL: input.CoverImageURL,
+		Status:        input.Status,
 	}
 
 	return s.UpdatePost(postID, updateInput, userID, userRole)

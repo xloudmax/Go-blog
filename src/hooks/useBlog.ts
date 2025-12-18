@@ -25,7 +25,7 @@ export const useBlogList = (initialLimit = 10) => {
   });
   const [sort, setSort] = useState<PostSortInput>({
     field: 'created_at',
-    direction: 'DESC'
+    order: 'DESC'
   });
 
   const { data, loading, error, refetch } = usePostsQuery({
@@ -44,6 +44,35 @@ export const useBlogList = (initialLimit = 10) => {
     setOffset((page - 1) * limit);
   }, [limit]);
 
+  // 加载更多
+  const loadMore = useCallback(() => {
+    setLimit((prev) => prev + 10);
+  }, []);
+
+  // 搜索过滤
+  const filterBySearch = useCallback((search: string) => {
+    setFilter((prev) => ({ ...prev, search }));
+    setOffset(0);
+  }, []);
+
+  // 标签过滤
+  const filterByTags = useCallback((tags: string[]) => {
+    setFilter((prev) => ({ ...prev, tags }));
+    setOffset(0);
+  }, []);
+
+  // 状态过滤
+  const filterByStatus = useCallback((status: PostStatus) => {
+    setFilter((prev) => ({ ...prev, status }));
+    setOffset(0);
+  }, []);
+
+  // 清除过滤
+  const clearFilters = useCallback(() => {
+    setFilter({ status: 'PUBLISHED' as PostStatus });
+    setOffset(0);
+  }, []);
+
   return {
     posts: posts as BlogPost[],
     loading,
@@ -51,13 +80,21 @@ export const useBlogList = (initialLimit = 10) => {
     refetch,
     limit,
     offset,
+    filter,
+    sort,
     setLimit,
     setOffset,
     setFilter,
     setSort,
-    goToPage
+    goToPage,
+    loadMore,
+    filterBySearch,
+    filterByTags,
+    filterByStatus,
+    clearFilters
   };
 };
+
 
 // 博客搜索hook
 export const useBlogSearch = () => {

@@ -53,33 +53,35 @@ export default function AppLayout() {
                     padding: '2rem 1.5rem 0'  // 上 左右 下
                 }}>
                     <Suspense fallback={<PageLoading />}>
-                        <Routes>
-                            <Route path="/home" element={<HomePage />} />
-                            <Route path="/search" element={<SearchPage />} />
-                            <Route path="/tags" element={<TagsPage />} />
-                            <Route path="/notifications" element={<NotificationPage />} />
-                            <Route path="/profile" element={<ProfilePage />} />
-                            <Route path="/post/:slug" element={<PostDetailPage />} />
-                            <Route path="/login" element={<LoginPage />} />
-                            <Route path="/register" element={<RegisterPage />} />
-                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                            <Route path="/editor/posts" element={<EditorPage />} />
-                            <Route path="/editor/posts/:file" element={<EditorPage />} />
-                            <Route path="/admin/*" element={<AdminPage />} />
-                            <Route
-                                path="*"
-                                element={
-                                    <div className="flex items-center justify-center min-h-screen">
-                                        <div className="text-center">
-                                            <p className="text-lg mb-4">页面未找到</p>
-                                            <Link to="/home" className="text-blue-600 hover:text-blue-800">
-                                                返回文章列表
-                                            </Link>
+                        <div className="page-enter-active min-h-full">
+                            <Routes>
+                                <Route path="/home" element={<HomePage />} />
+                                <Route path="/search" element={<SearchPage />} />
+                                <Route path="/tags" element={<TagsPage />} />
+                                <Route path="/notifications" element={<NotificationPage />} />
+                                <Route path="/profile" element={<ProfilePage />} />
+                                <Route path="/post/:slug" element={<PostDetailPage />} />
+                                <Route path="/login" element={<LoginPage />} />
+                                <Route path="/register" element={<RegisterPage />} />
+                                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                                <Route path="/editor/posts" element={<EditorPage />} />
+                                <Route path="/editor/posts/:file" element={<EditorPage />} />
+                                <Route path="/admin/*" element={<AdminPage />} />
+                                <Route
+                                    path="*"
+                                    element={
+                                        <div className="flex items-center justify-center min-h-screen">
+                                            <div className="text-center">
+                                                <p className="text-lg mb-4">页面未找到</p>
+                                                <Link to="/home" className="text-blue-600 hover:text-blue-800">
+                                                    返回文章列表
+                                                </Link>
+                                            </div>
                                         </div>
-                                    </div>
-                                }
-                            />
-                        </Routes>
+                                    }
+                                />
+                            </Routes>
+                        </div>
                     </Suspense>
                 </Content>
                 <Footer className="text-center bg-gray-100 dark:bg-gray-800 py-4">
