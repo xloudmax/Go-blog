@@ -233,12 +233,12 @@ func (s *AuthService) EmailLogin(email string) error {
 
 	// 生成验证码（开发环境跳过邮件发送）
 	if !s.isTestEnvironment() {
-		_, err := s.evs.GenerateVerificationCode(email, "LOGIN")
+		code, err := s.evs.GenerateVerificationCode(email, "LOGIN")
 		if err != nil {
 			return models.ErrInternalServerError
 		}
 		// 发送验证邮件
-		if err := s.sendVerificationEmail(email, "", "LOGIN"); err != nil {
+		if err := s.sendVerificationEmail(email, code, "LOGIN"); err != nil {
 			// 记录错误但不阻止邮箱登录流程
 			fmt.Printf("发送验证邮件失败: %v\n", err)
 		}
@@ -311,12 +311,12 @@ func (s *AuthService) SendVerificationCode(email, codeType string) error {
 
 	// 生成验证码
 	if !s.isTestEnvironment() {
-		_, err := s.evs.GenerateVerificationCode(email, codeType)
+		code, err := s.evs.GenerateVerificationCode(email, codeType)
 		if err != nil {
 			return models.ErrInternalServerError
 		}
 		// 发送验证邮件
-		if err := s.sendVerificationEmail(email, "", codeType); err != nil {
+		if err := s.sendVerificationEmail(email, code, codeType); err != nil {
 			// 记录错误但不阻止流程
 			fmt.Printf("发送验证邮件失败: %v\n", err)
 		}

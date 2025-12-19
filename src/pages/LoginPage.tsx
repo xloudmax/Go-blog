@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
-    Card, 
     Button, 
     Input, 
     Checkbox, 
@@ -14,8 +13,9 @@ import {
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useAuth, useAppUser, useAppUI } from "../hooks";
 import { useTheme } from "../components/ThemeProvider";
+import { AuthLayout } from "../layouts/AuthLayout";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // 登录表单验证
 const validateLoginForm = (identifier: string, password: string) => {
@@ -215,306 +215,235 @@ export default function LoginPage() {
         }
     };
 
-    // 根据主题动态生成背景样式
-    const getBackgroundStyle = () => {
-        if (isDarkMode) {
-            return {
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23374151' fill-opacity='0.3'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), linear-gradient(135deg, #1f2937 0%, #111827 100%)`,
-            };
-        } else {
-            return {
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e0e7ff' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
-            };
-        }
+    const commonInputStyle = {
+        background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
+        borderColor: 'transparent',
+        color: isDarkMode ? 'white' : '#1f2937',
+        backdropFilter: 'blur(10px)',
+        boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
     };
 
     return (
-        <div
-            className={`min-h-screen flex items-center justify-center px-4 relative transition-all duration-300 ${
-                isDarkMode ? 'bg-gray-900' : 'bg-white'
-            }`}
-            style={getBackgroundStyle()}
+        <AuthLayout
+            title="欢迎回来"
+            subtitle="请登录您的账户"
         >
-            {/* 背景模糊层 - 仅在未登录时显示 */}
-            {!isAuthenticated && (
-                <div
-                    className={`absolute inset-0 ${
-                        isDarkMode ? 'bg-black/20' : 'bg-white/10'
-                    } transition-all duration-300`}
-                    style={{
-                        backdropFilter: 'blur(5px)',
-                        WebkitBackdropFilter: 'blur(5px)',
-                    }}
+            {/* 登录模式切换 */}
+            {!showVerification && (
+                <Tabs
+                    activeKey={loginMode}
+                    onChange={(key) => setLoginMode(key as 'password' | 'email')}
+                    centered
+                    className="mb-8"
+                    items={[
+                        {
+                            key: 'password',
+                            label: '密码登录',
+                        },
+                        {
+                            key: 'email',
+                            label: '邮箱登录',
+                        }
+                    ]}
                 />
             )}
 
-            <div className="w-full max-w-md relative z-10">
-                <Card
-                    className={`shadow-2xl border-0 transition-all duration-300 ${
-                        isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}
-                    style={{
-                        background: isDarkMode 
-                            ? 'rgba(31, 41, 55, 0.95)' 
-                            : 'rgba(255, 255, 255, 0.95)',
-                        backdropFilter: 'blur(10px)',
-                        WebkitBackdropFilter: 'blur(10px)',
-                        borderRadius: '16px',
-                        maxWidth: '400px', // 限制最大宽度
-                        margin: '0 auto', // 居中对齐
-                    }}
-                >
-                    <div className="text-center mb-6">
-                        <Title 
-                            level={2} 
-                            className={`mb-0 ${
-                                isDarkMode ? 'text-white' : 'text-gray-800'
-                            }`}
-                        >
-                            欢迎回来
-                        </Title>
-                        <Text 
-                            type="secondary" 
-                            className={`${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                            }`}
-                        >
-                            请登录您的账户
-                        </Text>
-                    </div>
+            {error && (
+                <Alert
+                    message={error}
+                    type="error"
+                    showIcon
+                    className="mb-6 rounded-lg"
+                    closable
+                    onClose={() => setError(null)}
+                />
+            )}
 
-                    {/* 登录模式切换 */}
-                    {!showVerification && (
-                        <Tabs
-                            activeKey={loginMode}
-                            onChange={(key) => setLoginMode(key as 'password' | 'email')}
-                            centered
-                            className="mb-6"
-                            items={[
-                                {
-                                    key: 'password',
-                                    label: '密码登录',
-                                },
-                                {
-                                    key: 'email',
-                                    label: '邮箱登录',
-                                }
-                            ]}
+            {!showVerification ? (
+                // 登录表单
+                <Form onFinish={loginMode === 'password' ? handlePasswordLogin : handleEmailLogin} layout="vertical" size="large">
+                    <Form.Item
+                        label={loginMode === 'password' ? '用户名或邮箱' : '邮箱地址'}
+                        required
+                        className="mb-4"
+                    >
+                        <Input
+                            prefix={loginMode === 'email' 
+                                ? <MailOutlined className="text-gray-400" /> 
+                                : <UserOutlined className="text-gray-400" />
+                            }
+                            type={loginMode === 'email' ? 'email' : 'text'}
+                            placeholder={loginMode === 'password' ? '用户名或邮箱' : '邮箱地址'}
+                            value={identifier}
+                            onChange={(e) => setIdentifier(e.target.value)}
+                            className="rounded-xl bg-transparent"
+                            style={commonInputStyle}
                         />
-                    )}
+                    </Form.Item>
 
-                    {error && (
-                        <Alert
-                            message={error}
-                            type="error"
-                            showIcon
-                            className="mb-4"
-                            closable
-                            onClose={() => setError(null)}
-                        />
-                    )}
-
-                    {!showVerification ? (
-                        // 登录表单
-                        <Form onFinish={loginMode === 'password' ? handlePasswordLogin : handleEmailLogin} layout="vertical">
+                    {loginMode === 'password' && (
+                        <>
                             <Form.Item
-                                label={loginMode === 'password' ? '用户名或邮箱' : '邮箱地址'}
+                                label="密码"
                                 required
+                                className="mb-4"
                             >
-                                <Input
-                                    prefix={loginMode === 'email' ? <MailOutlined /> : <UserOutlined />}
-                                    type={loginMode === 'email' ? 'email' : 'text'}
-                                    placeholder={loginMode === 'password' ? '请输入用户名或邮箱' : '请输入邮箱地址'}
-                                    value={identifier}
-                                    onChange={(e) => setIdentifier(e.target.value)}
-                                    size="large"
-                                    className="rounded-lg"
+                                <Input.Password
+                                    prefix={<LockOutlined className="text-gray-400" />}
+                                    placeholder="密码"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="rounded-xl"
+                                    style={commonInputStyle}
                                 />
                             </Form.Item>
 
-                            {loginMode === 'password' && (
-                                <>
-                                    <Form.Item
-                                        label="密码"
-                                        required
-                                    >
-                                        <Input.Password
-                                            prefix={<LockOutlined />}
-                                            placeholder="请输入密码"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            size="large"
-                                            className="rounded-lg"
-                                        />
-                                    </Form.Item>
-
-                                    <Form.Item>
-                                        <Checkbox
-                                            checked={remember}
-                                            onChange={(e) => setRemember(e.target.checked)}
-                                        >
-                                            记住我
-                                        </Checkbox>
-                                    </Form.Item>
-                                </>
-                            )}
-
                             <Form.Item>
-                                <Button
-                                    type="primary"
-                                    htmlType="submit"
-                                    loading={loading.login || loading.emailLogin}
-                                    size="large"
-                                    block
-                                    className="rounded-lg h-12 font-medium"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                        border: 'none',
-                                    }}
+                                <Checkbox
+                                    checked={remember}
+                                    onChange={(e) => setRemember(e.target.checked)}
+                                    className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}
                                 >
-                                    {loading.login || loading.emailLogin
-                                        ? (loginMode === 'password' ? '登录中...' : '发送中...')
-                                        : (loginMode === 'password' ? '登录' : '发送验证码')}
-                                </Button>
+                                    记住我
+                                </Checkbox>
                             </Form.Item>
-
-                            {/* 忘记密码链接 */}
-                            {loginMode === 'password' && (
-                                <div className="text-center mb-4">
-                                    <Link 
-                                        to="/forgot-password" 
-                                        className={`transition-colors ${
-                                            isDarkMode 
-                                                ? 'text-blue-400 hover:text-blue-300' 
-                                                : 'text-blue-600 hover:text-blue-800'
-                                        }`}
-                                    >
-                                        忘记密码？
-                                    </Link>
-                                </div>
-                            )}
-                        </Form>
-                    ) : (
-                        // 验证码表单
-                        <>
-                            <Alert
-                                message={
-                                    <div>
-                                        <div>验证码已发送至 <strong>{identifier}</strong></div>
-                                        <div className="text-sm mt-1 opacity-75">
-                                            请检查邮箱（包括垃圾邮件文件夹），验证码有效期为5分钟
-                                        </div>
-                                    </div>
-                                }
-                                type="info"
-                                showIcon
-                                className="mb-4"
-                            />
-
-                            <Form onFinish={handleVerificationLogin} layout="vertical">
-                                <Form.Item
-                                    label="验证码"
-                                    required
-                                >
-                                    <Input
-                                        placeholder="请输入6位验证码"
-                                        value={verificationCode}
-                                        onChange={(e) => {
-                                            // 只允许输入数字
-                                            const value = e.target.value.replace(/\D/g, '');
-                                            setVerificationCode(value);
-                                            // 清除错误信息
-                                            if (error && value.length > 0) {
-                                                setError(null);
-                                            }
-                                        }}
-                                        maxLength={6}
-                                        size="large"
-                                        className="rounded-lg text-center tracking-widest"
-                                        style={{ 
-                                            fontSize: '18px',
-                                            letterSpacing: '0.5em'
-                                        }}
-                                        autoComplete="one-time-code"
-                                    />
-                                </Form.Item>
-
-                                <Form.Item>
-                                    <Button
-                                        type="primary"
-                                        htmlType="submit"
-                                        loading={loading.verify}
-                                        size="large"
-                                        block
-                                        className="rounded-lg h-12 font-medium"
-                                        style={{
-                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                            border: 'none',
-                                        }}
-                                    >
-                                        {loading.verify ? '验证中...' : '验证并登录'}
-                                    </Button>
-                                </Form.Item>
-
-                                <div className="flex flex-wrap justify-between gap-2">
-                                    <Button
-                                        type="text"
-                                        onClick={() => {
-                                            setShowVerification(false);
-                                            setVerificationCode('');
-                                            setError(null);
-                                            setCountdown(0);
-                                        }}
-                                        className={`${
-                                            isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                                        }`}
-                                    >
-                                        返回
-                                    </Button>
-                                    <Button
-                                        type="text"
-                                        loading={loading.sendCode}
-                                        disabled={countdown > 0}
-                                        onClick={handleResendCode}
-                                        className={`${
-                                            countdown > 0 
-                                                ? 'text-gray-400 cursor-not-allowed' 
-                                                : isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                                        }`}
-                                    >
-                                        {loading.sendCode 
-                                            ? '发送中...' 
-                                            : countdown > 0 
-                                                ? `重新发送(${countdown}s)` 
-                                                : '重新发送'
-                                        }
-                                    </Button>
-                                </div>
-                            </Form>
                         </>
                     )}
 
-                    {/* 注册链接 */}
-                    <Divider>或</Divider>
-                    <div className="text-center">
-                        <Text className={`${
-                            isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                        }`}>
-                            没有账号？
-                        </Text>
-                        <Link 
-                            to="/register" 
-                            className={`ml-1 transition-colors font-medium ${
-                                isDarkMode 
-                                    ? 'text-blue-400 hover:text-blue-300' 
-                                    : 'text-blue-600 hover:text-blue-800'
-                            }`}
+                    <Form.Item>
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading.login || loading.emailLogin}
+                            block
+                            className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
+                            style={{
+                                background: 'linear-gradient(to right, #6366f1, #8b5cf6)',
+                                border: 'none',
+                            }}
                         >
-                            立即注册
-                        </Link>
-                    </div>
-                </Card>
+                            {loading.login || loading.emailLogin
+                                ? (loginMode === 'password' ? '登录中...' : '发送中...')
+                                : (loginMode === 'password' ? '登录' : '发送验证码')}
+                        </Button>
+                    </Form.Item>
+
+                    {/* 忘记密码链接 */}
+                    {loginMode === 'password' && (
+                        <div className="text-center mb-4">
+                            <Link 
+                                to="/forgot-password" 
+                                className={`transition-colors text-sm ${
+                                    isDarkMode 
+                                        ? 'text-indigo-400 hover:text-indigo-300' 
+                                        : 'text-indigo-600 hover:text-indigo-800'
+                                }`}
+                            >
+                                忘记密码？
+                            </Link>
+                        </div>
+                    )}
+                </Form>
+            ) : (
+                // 验证码表单
+                <>
+                    <Alert
+                        message="验证码已发送"
+                        description={
+                            <div className="space-y-1">
+                                <div>发送至 <strong>{identifier}</strong></div>
+                                <div className="opacity-75 text-xs">有效期5分钟</div>
+                            </div>
+                        }
+                        type="success"
+                        showIcon
+                        className="mb-8 rounded-lg border-green-200 bg-green-50"
+                    />
+
+                    <Form onFinish={handleVerificationLogin} layout="vertical">
+                        <Form.Item className="mb-8 text-center">
+                            <Input
+                                placeholder="000000"
+                                value={verificationCode}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    setVerificationCode(value);
+                                    if (error && value.length > 0) setError(null);
+                                }}
+                                maxLength={6}
+                                className="text-center text-3xl font-mono tracking-[0.5em] rounded-xl h-16"
+                                style={commonInputStyle}
+                                autoComplete="one-time-code"
+                            />
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={loading.verify}
+                                block
+                                className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
+                                style={{
+                                    background: 'linear-gradient(to right, #6366f1, #8b5cf6)',
+                                    border: 'none',
+                                }}
+                            >
+                                {loading.verify ? '验证中...' : '验证并登录'}
+                            </Button>
+                        </Form.Item>
+
+                        <div className="flex flex-wrap justify-between gap-2 px-2 mt-6">
+                            <Button
+                                type="text"
+                                onClick={() => {
+                                    setShowVerification(false);
+                                    setVerificationCode('');
+                                    setError(null);
+                                    setCountdown(0);
+                                }}
+                                className={isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-black'}
+                            >
+                                返回
+                            </Button>
+                            <Button
+                                type="text"
+                                loading={loading.sendCode}
+                                disabled={countdown > 0}
+                                onClick={handleResendCode}
+                                className={`${
+                                    countdown > 0 
+                                        ? 'text-gray-400 cursor-not-allowed' 
+                                        : 'text-indigo-500 hover:text-indigo-600'
+                                }`}
+                            >
+                                {loading.sendCode 
+                                    ? '发送中...' 
+                                    : countdown > 0 
+                                        ? `重新发送(${countdown}s)` 
+                                        : '重新发送'
+                                }
+                            </Button>
+                        </div>
+                    </Form>
+                </>
+            )}
+
+            <Divider style={{ borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+                <span className={isDarkMode ? "text-gray-400" : "text-gray-500"}>或</span>
+            </Divider>
+            
+            <div className="text-center">
+                <Text className={isDarkMode ? "text-gray-400" : "text-gray-500"}>
+                    没有账号？
+                </Text>
+                <Link 
+                    to="/register" 
+                    className="ml-2 font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
+                >
+                    立即注册
+                </Link>
             </div>
-        </div>
+        </AuthLayout>
     );
 }

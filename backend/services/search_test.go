@@ -8,14 +8,19 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 func setupFTSDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true,
+		},
+	})
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.BlogPost{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.BlogPost{}, &models.BlogPostStats{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	// create FTS virtual table

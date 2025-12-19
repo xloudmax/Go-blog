@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
-  Card,
   Button,
   Input,
   Alert,
@@ -17,13 +16,16 @@ import {
   SafetyOutlined,
 } from "@ant-design/icons";
 import { useAuth, useAppUser } from "../hooks";
+import { useTheme } from "../components/ThemeProvider";
+import { AuthLayout } from "../layouts/AuthLayout";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function RegisterPage() {
   // GraphQL hooks
   const { register, sendVerificationCode, verifyEmail, loading } = useAuth();
   const { isAuthenticated } = useAppUser();
+  const { isDarkMode } = useTheme();
   const navigate = useNavigate();
 
   // 页面状态
@@ -160,229 +162,222 @@ export default function RegisterPage() {
       if (error) setError(null);
     };
 
+
+
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 relative"
-      style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e0e7ff' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
-      }}
+    <AuthLayout
+      title={currentStep === "register" ? "加入我们" : "验证邮箱"}
+      subtitle={currentStep === "register" ? "开启您的创作之旅" : "安全验证"}
     >
-      {/* 背景模糊层 - 仅在未登录时显示 */}
-      {!isAuthenticated && (
-        <div
-          className="absolute inset-0 bg-white/10"
-          style={{
-            backdropFilter: "blur(5px)",
-            WebkitBackdropFilter: "blur(5px)",
-          }}
+      {/* 步骤指示器 */}
+      <Steps
+        current={currentStep === "register" ? 0 : 1}
+        className="mb-8"
+        size="small"
+        items={[
+          { title: "填写信息" },
+          { title: "验证邮箱" },
+          { title: "完成" },
+        ]}
+      />
+
+      {error && (
+        <Alert
+          message={error}
+          type="error"
+          showIcon
+          className="mb-6 rounded-lg"
+          closable
+          onClose={() => setError(null)}
         />
       )}
 
-      <div className="w-full max-w-md relative z-10">
-        <Card
-          className="shadow-2xl border-0"
-          style={{
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            borderRadius: "16px",
-            maxWidth: "400px", // 限制最大宽度
-            margin: "0 auto", // 居中对齐
-          }}
-        >
-          <div className="text-center mb-6">
-            <Title level={2} className="mb-0 text-gray-800">
-              {currentStep === "register" ? "创建账户" : "邮箱验证"}
-            </Title>
-            <Text type="secondary" className="text-gray-600">
-              {currentStep === "register" ? "" : "验证您的邮箱地址"}
-            </Text>
-          </div>
+      {currentStep === "register" ? (
+        <Form onFinish={handleRegister} layout="vertical" size="large">
+          <Form.Item name="username" rules={[{ required: true, message: '' }]} className="mb-4">
+            <Input
+              prefix={<UserOutlined className="text-gray-400" />}
+              placeholder="用户名"
+              value={formData.username}
+              onChange={handleInputChange("username")}
+              className="rounded-xl bg-transparent"
+              style={{
+                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
+                  borderColor: 'transparent',
+                  color: isDarkMode ? 'white' : '#1f2937',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
+              }}
+            />
+          </Form.Item>
 
-          {/* 步骤指示器 */}
-          <Steps
-            current={currentStep === "register" ? 0 : 1}
-            className="mb-6"
-            size="small"
-            items={[
-              {
-                title: "填写信息",
-              },
-              {
-                title: "验证邮箱",
-              },
-              {
-                title: "完成注册",
-              },
-            ]}
+          <Form.Item name="email" rules={[{ required: true, message: '' }]} className="mb-4">
+            <Input
+              prefix={<MailOutlined className="text-gray-400" />}
+              type="email"
+              placeholder="电子邮箱"
+              value={formData.email}
+              onChange={handleInputChange("email")}
+              className="rounded-xl"
+              style={{
+                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
+                  borderColor: 'transparent',
+                  color: isDarkMode ? 'white' : '#1f2937',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item name="password" rules={[{ required: true, message: '' }]} className="mb-4">
+            <Input.Password
+              prefix={<LockOutlined className="text-gray-400" />}
+              placeholder="设置密码"
+              value={formData.password}
+              onChange={handleInputChange("password")}
+              className="rounded-xl"
+              style={{
+                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
+                  borderColor: 'transparent',
+                  color: isDarkMode ? 'white' : '#1f2937',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item name="confirmPassword" rules={[{ required: true, message: '' }]} className="mb-4">
+            <Input.Password
+              prefix={<LockOutlined className="text-gray-400" />}
+              placeholder="确认密码"
+              value={formData.confirmPassword}
+              onChange={handleInputChange("confirmPassword")}
+              className="rounded-xl"
+              style={{
+                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
+                  borderColor: 'transparent',
+                  color: isDarkMode ? 'white' : '#1f2937',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item name="inviteCode" className="mb-6">
+            <Input
+              prefix={<SafetyOutlined className="text-gray-400" />}
+              placeholder="邀请码（可选）"
+              value={formData.inviteCode}
+              onChange={handleInputChange("inviteCode")}
+              className="rounded-xl"
+              style={{
+                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
+                  borderColor: 'transparent',
+                  color: isDarkMode ? 'white' : '#1f2937',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading.register}
+              block
+              className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
+              style={{
+                background: "linear-gradient(to right, #6366f1, #8b5cf6)", // Indigo to Violet
+                border: "none",
+              }}
+            >
+              {loading.register ? "注册中..." : "立即注册"}
+            </Button>
+          </Form.Item>
+        </Form>
+      ) : (
+        <>
+          <Alert
+            message="验证码已发送"
+            description={`请检查 ${formData.email} 的收件箱`}
+            type="success"
+            showIcon
+            className="mb-8 rounded-lg border-green-200 bg-green-50"
           />
 
-          {error && (
-            <Alert
-              message={error}
-              type="error"
-              showIcon
-              className="mb-4"
-              closable
-              onClose={() => setError(null)}
-            />
-          )}
-
-          {currentStep === "register" ? (
-            // 注册表单
-            <Form onFinish={handleRegister} layout="vertical">
-              <Form.Item label="用户名" required>
-                <Input
-                  prefix={<UserOutlined />}
-                  placeholder="请输入用户名（3-20个字符）"
-                  value={formData.username}
-                  onChange={handleInputChange("username")}
-                  size="large"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-
-              <Form.Item label="邮箱" required>
-                <Input
-                  prefix={<MailOutlined />}
-                  type="email"
-                  placeholder="请输入邮箱地址"
-                  value={formData.email}
-                  onChange={handleInputChange("email")}
-                  size="large"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-
-              <Form.Item label="密码" required>
-                <Input.Password
-                  prefix={<LockOutlined />}
-                  placeholder="请输入密码（至少6个字符）"
-                  value={formData.password}
-                  onChange={handleInputChange("password")}
-                  size="large"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-
-              <Form.Item label="确认密码" required>
-                <Input.Password
-                  prefix={<LockOutlined />}
-                  placeholder="请再次输入密码"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange("confirmPassword")}
-                  size="large"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-
-              <Form.Item label="邀请码（可选）">
-                <Input
-                  prefix={<SafetyOutlined />}
-                  placeholder="如有邀请码请输入"
-                  value={formData.inviteCode}
-                  onChange={handleInputChange("inviteCode")}
-                  size="large"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={loading.register}
-                  size="large"
-                  block
-                  className="rounded-lg h-12 font-medium"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    border: "none",
-                  }}
-                >
-                  {loading.register ? "注册中..." : "注册"}
-                </Button>
-              </Form.Item>
-            </Form>
-          ) : (
-            // 验证表单
-            <>
-              <Alert
-                message={`验证码已发送至 ${formData.email}，请检查邮箱`}
-                type="info"
-                showIcon
-                className="mb-4"
+          <Form onFinish={handleVerifyEmail} layout="vertical">
+            <Form.Item className="mb-8 text-center">
+              <Input
+                placeholder="000000"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                maxLength={6}
+                className="text-center text-3xl font-mono tracking-[0.5em] rounded-xl h-16"
+                style={{
+                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
+                  borderColor: 'transparent',
+                  color: isDarkMode ? 'white' : '#1f2937',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
+                }}
               />
+            </Form.Item>
 
-              <Form onFinish={handleVerifyEmail} layout="vertical">
-                <Form.Item label="验证码" required>
-                  <Input
-                    placeholder="请输入6位验证码"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                    maxLength={6}
-                    size="large"
-                    className="rounded-lg text-center"
-                  />
-                </Form.Item>
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading.verifyEmail}
+                block
+                className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
+                style={{
+                    background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+                    border: "none",
+                }}
+              >
+                完成验证
+              </Button>
+            </Form.Item>
+          </Form>
 
-                <Form.Item>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={loading.verifyEmail}
-                    size="large"
-                    block
-                    className="rounded-lg h-12 font-medium"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      border: "none",
-                    }}
-                  >
-                    {loading.verifyEmail ? "验证中..." : "验证并完成注册"}
-                  </Button>
-                </Form.Item>
-              </Form>
-
-              <div className="flex justify-between mt-4">
-                <Button
-                  type="text"
-                  onClick={() => {
-                    setCurrentStep("register");
-                    setVerificationCode("");
-                    setError(null);
-                  }}
-                  className="text-gray-600"
-                >
-                  返回修改
-                </Button>
-                <Button
-                  type="text"
-                  loading={loading.sendCode}
-                  onClick={handleResendCode}
-                  className="text-blue-600"
-                >
-                  {loading.sendCode ? "发送中..." : "重新发送"}
-                </Button>
-              </div>
-            </>
-          )}
-
-          {/* 登录链接 */}
-          <Divider>或</Divider>
-          <div className="text-center">
-            <Text className="text-gray-600">已有账号？</Text>
-            <Link
-              to="/login"
-              className="text-blue-600 hover:text-blue-800 ml-1 transition-colors font-medium"
+          <div className="flex justify-between mt-6 px-2">
+            <Button
+              type="text"
+              onClick={() => {
+                setCurrentStep("register");
+                setVerificationCode("");
+                setError(null);
+              }}
+              className={isDarkMode ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-black"}
             >
-              立即登录
-            </Link>
+              返回修改
+            </Button>
+            <Button
+              type="text"
+              loading={loading.sendCode}
+              onClick={handleResendCode}
+              className="text-indigo-500 hover:text-indigo-600"
+            >
+              重新发送
+            </Button>
           </div>
-        </Card>
+        </>
+      )}
+
+      <Divider style={{ borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+        <span className={isDarkMode ? "text-gray-400" : "text-gray-500"}>或</span>
+      </Divider>
+      
+      <div className="text-center">
+        <Text className={isDarkMode ? "text-gray-400" : "text-gray-500"}>已有账号？</Text>
+        <Link
+          to="/login"
+          className="ml-2 font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
+        >
+          直接登录
+        </Link>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

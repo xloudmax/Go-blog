@@ -373,8 +373,8 @@ export default function UserManagement() {
                             dataIndex: 'role',
                             key: 'role',
                             render: (role: UserRole) => (
-                                <Tag color={role === 'ADMIN' ? 'red' : 'default'} className="rounded-full">
-                                    {role === 'ADMIN' ? '管理员' : '用户'}
+                                <Tag color={role === 'ADMIN' || role === 'admin' ? 'red' : 'default'} className="rounded-full">
+                                    {role === 'ADMIN' || role === 'admin' ? '管理员' : '用户'}
                                 </Tag>
                             )
                         },

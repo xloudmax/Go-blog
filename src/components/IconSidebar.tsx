@@ -9,6 +9,7 @@ import {
   MoonOutlined,
   EditOutlined,
   BookOutlined,
+  LogoutOutlined,
   BellOutlined,
 } from '@ant-design/icons';
 import { useAppUser } from '@/hooks';
@@ -31,7 +32,7 @@ interface IconSidebarProps {
 const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, isAdmin, user } = useAppUser();
+  const { isAuthenticated, isAdmin, user, logout } = useAppUser();
 
   // 获取未读通知数量
   const { data: unreadData } = useUnreadNotificationCount();
@@ -223,6 +224,21 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
               <span style={{ fontSize: '24px' }}>
                 {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
               </span>
+            </div>
+          </Tooltip>
+        )}
+
+        {/* 退出登录 */}
+        {isAuthenticated && (
+          <Tooltip title="退出登录" placement="right">
+            <div
+              onClick={() => logout()}
+              className="w-11 h-11 flex items-center justify-center cursor-pointer transition-all duration-200 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+              style={{
+                fontSize: '24px',
+              }}
+            >
+              <LogoutOutlined />
             </div>
           </Tooltip>
         )}

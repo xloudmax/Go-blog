@@ -42,13 +42,15 @@ mkdir -p $DATA_DIR
 echo -e "${YELLOW}步骤 3/7: 构建后端应用...${NC}"
 cd $CURRENT_DIR/backend
 go mod download
-go build -o bin/server main.go
+go build -tags fts5 -o bin/server main.go
 # 编译管理员创建工具
 mkdir -p bin/tools
 go build -o bin/tools/create_admin cmd/create_admin/main.go
 
 # 步骤4: 复制后端文件
 echo -e "${YELLOW}步骤 4/7: 部署后端文件...${NC}"
+# 停止服务以允许覆盖二进制文件
+systemctl stop blog-backend || true
 cp -r bin $BACKEND_DIR/
 cp -r graph $BACKEND_DIR/
 
@@ -80,13 +82,15 @@ echo -e "${GREEN}检测到服务器IP: $SERVER_IP${NC}"
 sed -i "s/YOUR_SERVER_IP/$SERVER_IP/g" $BACKEND_DIR/.env
 # 更新 DATABASE_URL 为绝对路径，确保应用能找到
 sed -i "s|DATABASE_URL=.*|DATABASE_URL=$DB_PATH|g" $BACKEND_DIR/.env
+# 设置允许的文件类型，包含图片格式
+echo "ALLOWED_FILE_TYPES=.md,.txt,.json,.jpg,.jpeg,.png,.gif,.webp" >> $BACKEND_DIR/.env
 
 # 步骤5: 构建和部署前端
 echo -e "${YELLOW}步骤 5/7: 构建前端应用...${NC}"
 cd $CURRENT_DIR
 
 # 更新前端环境变量
-echo "VITE_API_BASE_URL=http://$SERVER_IP/" > .env.production.local
+echo "VITE_API_BASE_URL=https://xloudmax.cc/" > .env.production.local
 
 # 安装pnpm（如果未安装）
 if ! command -v pnpm &> /dev/null; then
@@ -110,6 +114,9 @@ chmod -R 775 $DATA_DIR
 # 确保数据库文件所在目录可写（SQLite 需要在目录中创建临时文件）
 chown -R $DEPLOY_USER:$DEPLOY_USER $DATA_DIR
 chmod -R 775 $DATA_DIR
+# 确保上传目录可写
+chown -R $DEPLOY_USER:$DEPLOY_USER $BACKEND_DIR/uploads
+chmod -R 775 $BACKEND_DIR/uploads
 
 chmod +x $BACKEND_DIR/bin/server
 chmod +x $BACKEND_DIR/bin/tools/create_admin

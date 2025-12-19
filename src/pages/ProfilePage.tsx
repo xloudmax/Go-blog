@@ -187,7 +187,7 @@ const ProfilePage: React.FC = () => {
               <div className="text-sm">
                 <span className="text-gray-500">用户角色：</span>
                 <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                  {user.role === 'ADMIN' ? '管理员' : '用户'}
+                  {user.role === 'ADMIN' || user.role === 'admin' ? '管理员' : '用户'}
                 </span>
               </div>
             </Col>

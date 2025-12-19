@@ -66,7 +66,7 @@ func createAdmin(db *gorm.DB) {
         user = models.User{
             Username:   username,
             Email:      email,
-            Role:       "admin",
+            Role:       "ADMIN",
             IsVerified: true,
             IsActive:   true,
             IsAdmin:    true,

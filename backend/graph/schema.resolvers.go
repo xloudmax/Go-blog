@@ -359,124 +359,55 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, input VerifyEmailInp
 
 // RequestPasswordReset is the resolver for the requestPasswordReset field.
 func (r *mutationResolver) RequestPasswordReset(ctx context.Context, input RequestPasswordResetInput) (*GeneralResponse, error) {
-	// 检查邮箱格式
-	if input.Email == "" {
-		return &GeneralResponse{
-			Success: false,
-			Message: strPtr("邮箱地址不能为空"),
-			Code:    strPtr("EMAIL_REQUIRED"),
-		}, nil
-	}
-
-	// 检查用户是否存在
-	var user models.User
-	if err := r.Resolver.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-		// 为了安全考虑，即使用户不存在也返回成功，避免邮箱枚举攻击
-		return &GeneralResponse{
-			Success: true,
-			Message: strPtr("如果该邮箱存在，您将收到密码重置邮件"),
-			Code:    strPtr("RESET_EMAIL_SENT"),
-		}, nil
-	}
-
-	// 删除该用户之前的所有重置令牌
-	r.Resolver.DB.Where("user_id = ?", user.ID).Delete(&models.PasswordResetToken{})
-
-	// 生成新的重置令牌
-	resetToken := &models.PasswordResetToken{
-		UserID:    user.ID,
-		ExpiresAt: time.Now().Add(1 * time.Hour), // 1小时有效期
-	}
-	if err := resetToken.GenerateToken(); err != nil {
-		return nil, fmt.Errorf("生成重置令牌失败: %w", err)
-	}
-
-	// 保存令牌到数据库
-	if err := r.Resolver.DB.Create(resetToken).Error; err != nil {
-		return nil, fmt.Errorf("保存重置令牌失败: %w", err)
-	}
-
-	// 发送密码重置邮件
-	if err := sendPasswordResetEmail(input.Email, resetToken.Token); err != nil {
-		middleware.GetLogger().Errorw("发送密码重置邮件失败", "error", err, "email", input.Email)
-		// 不向用户暴露具体错误
+	authService := services.NewAuthService(r.Resolver.DB)
+	if err := authService.RequestPasswordReset(input.Email); err != nil {
+		// 即使失败也返回一种模糊的信息（或者根据错误类型返回特定错误，但在 AuthService 中 RequestPasswordReset 即使找不到用户也返回 nil 或特定错误）
+		// AuthService 目前对于找不到用户返回 ErrUserNotFound，但为了安全通常不应暴露。
+		// 不过 AuthService.RequestPasswordReset 实现中，如果找不到用户返回 ErrUserNotFound。
+		// 我们在这里需要决定是否暴露。原代码是不暴露的。
+		// 查看 AuthService 实现:
+		// if errors.Is(err, gorm.ErrRecordNotFound) { return models.ErrUserNotFound }
+		// 所以如果返回 ErrUserNotFound，我们应该吞掉错误并返回成功消息。
+		
+		// 稍微改一下策略：AuthService的RequestPasswordReset如果返回ErrUserNotFound，我们应该视为"成功"（即不让前端知道失败）。
+		// 但 AuthService 现在的实现是直接返回 error。
+		
+		// 让我们简单点，先调用。
+		// 如果是 ErrUserNotFound，我们吞掉。
+		// 如果是其他错误，记录日志但返回通用错误。
+		
+		// 重新看 AuthService 实现:
+		// if errors.Is(err, gorm.ErrRecordNotFound) { return models.ErrUserNotFound }
+		
+		if err.Error() == models.ErrUserNotFound.Error() {
+			// 用户不存在，为了安全，假装发送成功
+		} else {
+			return nil, fmt.Errorf("请求密码重置失败: %w", err)
+		}
 	}
 
 	return &GeneralResponse{
 		Success: true,
-		Message: strPtr("密码重置邮件已发送，请检查您的邮箱"),
+		Message: strPtr("如果该邮箱存在，您将收到密码重置邮件"), // 保持一致的安全提示
 		Code:    strPtr("RESET_EMAIL_SENT"),
 	}, nil
 }
 
 // ConfirmPasswordReset is the resolver for the confirmPasswordReset field.
 func (r *mutationResolver) ConfirmPasswordReset(ctx context.Context, input ConfirmPasswordResetInput) (*GeneralResponse, error) {
-	// 检查输入参数
-	if input.Token == "" {
-		return &GeneralResponse{
-			Success: false,
-			Message: strPtr("重置令牌不能为空"),
-			Code:    strPtr("TOKEN_REQUIRED"),
-		}, nil
-	}
-
-	if input.NewPassword == "" || len(input.NewPassword) < 6 {
-		return &GeneralResponse{
-			Success: false,
-			Message: strPtr("新密码长度不能少于6位"),
-			Code:    strPtr("PASSWORD_TOO_SHORT"),
-		}, nil
-	}
-
-	// 查找并验证重置令牌
-	var resetToken models.PasswordResetToken
-	if err := r.Resolver.DB.Where("token = ?", input.Token).First(&resetToken).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	authService := services.NewAuthService(r.Resolver.DB)
+	if err := authService.ConfirmPasswordReset(input.Token, input.NewPassword); err != nil {
+		// 处理特定错误
+		errMsg := err.Error()
+		if errMsg == models.ErrInvalidToken.Error() {
 			return &GeneralResponse{
 				Success: false,
-				Message: strPtr("无效的重置令牌"),
+				Message: strPtr("无效或过期的重置令牌"),
 				Code:    strPtr("INVALID_TOKEN"),
 			}, nil
 		}
-		return nil, fmt.Errorf("查询重置令牌失败: %w", err)
+		return nil, fmt.Errorf("重置密码失败: %w", err)
 	}
-
-	// 检查令牌是否过期
-	if time.Now().After(resetToken.ExpiresAt) {
-		// 删除过期的令牌
-		r.Resolver.DB.Delete(&resetToken)
-		return &GeneralResponse{
-			Success: false,
-			Message: strPtr("重置令牌已过期，请重新申请"),
-			Code:    strPtr("TOKEN_EXPIRED"),
-		}, nil
-	}
-
-	// 查找用户
-	var user models.User
-	if err := r.Resolver.DB.First(&user, resetToken.UserID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return &GeneralResponse{
-				Success: false,
-				Message: strPtr("用户不存在"),
-				Code:    strPtr("USER_NOT_FOUND"),
-			}, nil
-		}
-		return nil, fmt.Errorf("查询用户失败: %w", err)
-	}
-
-	// 更新密码
-	if err := user.SetPassword(input.NewPassword); err != nil {
-		return nil, fmt.Errorf("密码加密失败: %w", err)
-	}
-
-	// 保存新密码
-	if err := r.Resolver.DB.Save(&user).Error; err != nil {
-		return nil, fmt.Errorf("更新密码失败: %w", err)
-	}
-
-	// 删除已使用的重置令牌
-	r.Resolver.DB.Delete(&resetToken)
 
 	return &GeneralResponse{
 		Success: true,
