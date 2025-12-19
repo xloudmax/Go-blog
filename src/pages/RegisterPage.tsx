@@ -28,6 +28,16 @@ export default function RegisterPage() {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
 
+  const commonInputStyle = {
+    background: isDarkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+    border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)'}`,
+    color: isDarkMode ? 'white' : '#1f2937',
+    backdropFilter: 'blur(10px)',
+    boxShadow: isDarkMode 
+        ? 'inset 0 1px 0 rgba(255,255,255,0.05)' 
+        : 'inset 0 1px 0 rgba(255,255,255,0.6)',
+  };
+
   // 页面状态
   const [currentStep, setCurrentStep] = useState<"register" | "verify">(
     "register"
@@ -201,13 +211,7 @@ export default function RegisterPage() {
               value={formData.username}
               onChange={handleInputChange("username")}
               className="rounded-xl bg-transparent"
-              style={{
-                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
-                  borderColor: 'transparent',
-                  color: isDarkMode ? 'white' : '#1f2937',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
-              }}
+              style={commonInputStyle}
             />
           </Form.Item>
 
@@ -219,13 +223,7 @@ export default function RegisterPage() {
               value={formData.email}
               onChange={handleInputChange("email")}
               className="rounded-xl"
-              style={{
-                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
-                  borderColor: 'transparent',
-                  color: isDarkMode ? 'white' : '#1f2937',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
-              }}
+              style={commonInputStyle}
             />
           </Form.Item>
 
@@ -236,13 +234,7 @@ export default function RegisterPage() {
               value={formData.password}
               onChange={handleInputChange("password")}
               className="rounded-xl"
-              style={{
-                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
-                  borderColor: 'transparent',
-                  color: isDarkMode ? 'white' : '#1f2937',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
-              }}
+              style={commonInputStyle}
             />
           </Form.Item>
 
@@ -253,13 +245,7 @@ export default function RegisterPage() {
               value={formData.confirmPassword}
               onChange={handleInputChange("confirmPassword")}
               className="rounded-xl"
-              style={{
-                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
-                  borderColor: 'transparent',
-                  color: isDarkMode ? 'white' : '#1f2937',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
-              }}
+              style={commonInputStyle}
             />
           </Form.Item>
 
@@ -270,13 +256,7 @@ export default function RegisterPage() {
               value={formData.inviteCode}
               onChange={handleInputChange("inviteCode")}
               className="rounded-xl"
-              style={{
-                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
-                  borderColor: 'transparent',
-                  color: isDarkMode ? 'white' : '#1f2937',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
-              }}
+              style={commonInputStyle}
             />
           </Form.Item>
 
@@ -288,8 +268,10 @@ export default function RegisterPage() {
               block
               className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
               style={{
-                background: "linear-gradient(to right, #6366f1, #8b5cf6)", // Indigo to Violet
-                border: "none",
+                background: "linear-gradient(to right, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8))",
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
               }}
             >
               {loading.register ? "注册中..." : "立即注册"}
@@ -314,13 +296,7 @@ export default function RegisterPage() {
                 onChange={(e) => setVerificationCode(e.target.value)}
                 maxLength={6}
                 className="text-center text-3xl font-mono tracking-[0.5em] rounded-xl h-16"
-                style={{
-                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)',
-                  borderColor: 'transparent',
-                  color: isDarkMode ? 'white' : '#1f2937',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: isDarkMode ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(255,255,255,0.6)',
-                }}
+                style={commonInputStyle}
               />
             </Form.Item>
 
@@ -332,8 +308,10 @@ export default function RegisterPage() {
                 block
                 className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
                 style={{
-                    background: "linear-gradient(to right, #6366f1, #8b5cf6)",
-                    border: "none",
+                    background: "linear-gradient(to right, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8))",
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
                 }}
               >
                 完成验证

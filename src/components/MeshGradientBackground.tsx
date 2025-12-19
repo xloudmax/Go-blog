@@ -1,4 +1,4 @@
-·import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTheme } from './ThemeProvider';
 
 interface Orb {
@@ -7,6 +7,8 @@ interface Orb {
     vx: number;
     vy: number;
     radius: number;
+    baseRadius: number; // Original radius to pulse around
+    growth: number; // Rate of radius change
     color: string;
 }
 
@@ -24,33 +26,38 @@ export const MeshGradientBackground: React.FC = () => {
         let animationFrameId: number;
         let orbs: Orb[] = [];
 
-        // Colors based on theme
+        // Premium Modern Colors
         const colors = isDarkMode
             ? [
-                'hsla(253, 50%, 20%, 0.8)', // Deep Purple
-                'hsla(225, 50%, 20%, 0.8)', // Midnight Blue
-                'hsla(339, 50%, 20%, 0.8)', // Dark Magenta
-                'hsla(280, 50%, 15%, 0.8)', // Deep Violet
-                'hsla(200, 50%, 15%, 0.8)', // Dark Cyan
+                'hsla(270, 80%, 40%, 0.7)', // Vibrant Purple
+                'hsla(320, 80%, 45%, 0.7)', // Neon Pink
+                'hsla(220, 90%, 45%, 0.7)', // Electric Blue
+                'hsla(250, 70%, 35%, 0.7)', // Deep Indigo
+                'hsla(180, 80%, 40%, 0.7)', // Cyan Glow
               ]
             : [
-                'hsla(28, 100%, 74%, 0.8)',  // Peach
-                'hsla(189, 100%, 56%, 0.8)', // Cyan
-                'hsla(355, 100%, 83%, 0.8)', // Pink
-                'hsla(340, 100%, 76%, 0.8)', // Rose
-                'hsla(22, 100%, 77%, 0.8)',  // Orange
+                'hsla(210, 50%, 98%, 0.4)', // Ghost Blue
+                'hsla(195, 50%, 99%, 0.4)', // Almost White
+                'hsla(220, 30%, 98%, 0.4)', // Whisper Blue
+                'hsla(180, 30%, 97%, 0.4)', // Hint of Cyan
+                'hsla(200, 40%, 98%, 0.4)', // Pure Mist
               ];
 
         const initOrbs = () => {
             orbs = [];
-            const numOrbs = 6;
+            // More orbs for a richer "mesh" feel
+            const numOrbs = 10; 
             for (let i = 0; i < numOrbs; i++) {
+                const radius = Math.random() * 250 + 200; // Larger orbs (200-450)
                 orbs.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
-                    vx: (Math.random() - 0.5) * 1.5, // Slow velocity
-                    vy: (Math.random() - 0.5) * 1.5,
-                    radius: Math.random() * 200 + 150, // Large radius (150-350)
+                    // Significantly faster movement
+                    vx: (Math.random() - 0.5) * 4, 
+                    vy: (Math.random() - 0.5) * 4,
+                    radius: radius,
+                    baseRadius: radius,
+                    growth: (Math.random() - 0.5) * 2, // Faster breathing
                     color: colors[i % colors.length],
                 });
             }
@@ -58,6 +65,7 @@ export const MeshGradientBackground: React.FC = () => {
 
         const resizeCanvas = () => {
             if (canvas) {
+                // Slightly larger than screen to hide edges when blurring
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
             }
@@ -67,7 +75,7 @@ export const MeshGradientBackground: React.FC = () => {
             if (!ctx || !canvas) return;
 
             // Clear canvas
-            ctx.fillStyle = isDarkMode ? '#0f172a' : '#ffffff';
+            ctx.fillStyle = isDarkMode ? '#050510' : '#ffffff'; // Darker black for deep contrast
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Update positions
@@ -75,24 +83,41 @@ export const MeshGradientBackground: React.FC = () => {
                 orb.x += orb.vx;
                 orb.y += orb.vy;
 
-                // Bounce off walls with buffer
-                if (orb.x < -orb.radius) orb.vx = Math.abs(orb.vx);
-                if (orb.x > canvas.width + orb.radius) orb.vx = -Math.abs(orb.vx);
-                if (orb.y < -orb.radius) orb.vy = Math.abs(orb.vy);
-                if (orb.y > canvas.height + orb.radius) orb.vy = -Math.abs(orb.vy);
+                // Bounce off walls with buffer (allows them to go slightly off screen)
+                const bounceBuffer = orb.radius / 2;
+                if (orb.x < -bounceBuffer) orb.vx = Math.abs(orb.vx);
+                if (orb.x > canvas.width + bounceBuffer) orb.vx = -Math.abs(orb.vx);
+                if (orb.y < -bounceBuffer) orb.vy = Math.abs(orb.vy);
+                if (orb.y > canvas.height + bounceBuffer) orb.vy = -Math.abs(orb.vy);
+
+                // Pulse radius
+                orb.radius += orb.growth;
+                if (orb.radius > orb.baseRadius + 60 || orb.radius < orb.baseRadius - 60) {
+                    orb.growth = -orb.growth;
+                }
 
                 // Draw
                 const gradient = ctx.createRadialGradient(
                     orb.x, orb.y, 0,
-                    orb.x, orb.y, orb.radius
+                    orb.x, orb.y, Math.max(0, orb.radius)
                 );
                 gradient.addColorStop(0, orb.color);
-                gradient.addColorStop(1, 'transparent');
+                gradient.addColorStop(1, 'transparent'); // Smooth fade
 
                 ctx.beginPath();
                 ctx.fillStyle = gradient;
-                ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+                // Composite operation to blend colors beautifully
+                ctx.globalCompositeOperation = isDarkMode ? 'screen' : 'multiply'; 
+                // 'screen' makes lights additive (glowing), 'multiply' mixes pigments (watercolor)
+                
+                // Fallback for light mode if multiply is too dark, use 'source-over' or 'overlay'
+                if (!isDarkMode) ctx.globalCompositeOperation = 'source-over';
+
+                ctx.arc(orb.x, orb.y, Math.max(0, orb.radius), 0, Math.PI * 2);
                 ctx.fill();
+                
+                // Reset composite
+                ctx.globalCompositeOperation = 'source-over';
             });
 
             animationFrameId = requestAnimationFrame(updateAndDraw);
@@ -117,9 +142,9 @@ export const MeshGradientBackground: React.FC = () => {
             className="fixed inset-0 w-full h-full pointer-events-none transition-opacity duration-1000"
             style={{
                 zIndex: 0,
-                // Heavy blur applied via CSS for performance
-                filter: 'blur(80px)',
-                opacity: 0.8,
+                // Extra blur for that creamy mesh look
+                filter: 'blur(100px)',
+                opacity: 0.9,
             }}
         />
     );

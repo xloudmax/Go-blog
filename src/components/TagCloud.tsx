@@ -1,7 +1,4 @@
 import React from 'react';
-import { Tag, Typography } from 'antd';
-
-const { Title } = Typography;
 
 export interface TagItem {
   name: string;
@@ -23,50 +20,39 @@ const TagCloud: React.FC<TagCloudProps> = ({ tags, onTagClick }) => {
     return null;
   }
 
-  // 计算标签大小和颜色
-  const maxCount = Math.max(...sortedTags.map((tag) => tag.count));
-  const minCount = Math.min(...sortedTags.map((tag) => tag.count));
-  const getWeight = (count: number) => {
-    if (maxCount === minCount) {
-      return 0; // 避免除以0导致 NaN
-    }
-    return (count - minCount) / (maxCount - minCount);
-  };
-
   return (
-    <div className="mb-8">
-      <Title level={4} className="mb-4 text-gray-800 dark:text-gray-200">热门标签</Title>
-      <div className="flex flex-wrap gap-2">
-        {sortedTags.map((tag) => {
-          // 根据出现次数计算标签大小
-          const weight = getWeight(tag.count);
-          const fontSize = 12 + weight * 12;
-          const opacity = 0.7 + weight * 0.3;
-          
-          // 根据标签名称生成颜色
-          const colors = [
-            'blue', 'purple', 'cyan', 'green', 'magenta', 'red', 'volcano', 'orange', 'gold', 'lime'
-          ];
-          const colorIndex = tag.name.charCodeAt(0) % colors.length;
-          const color = colors[colorIndex];
-          
-          return (
-            <Tag
-              key={tag.name}
-              color={color}
-              onClick={() => onTagClick(tag.name)}
-              className="cursor-pointer transition-all hover:scale-110"
-              style={{
-                fontSize: `${fontSize}px`,
-                opacity: opacity,
-                borderRadius: '16px',
-                padding: '4px 12px'
-              }}
-            >
-              {tag.name}
-            </Tag>
-          );
-        })}
+    <div className="w-full mb-8">
+      <div 
+        className="flex overflow-x-auto pb-4 space-x-3 no-scrollbar snap-x"
+        style={{ 
+          scrollbarWidth: 'none', 
+          msOverflowStyle: 'none',
+          maskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
+        }}
+      >
+        {sortedTags.map((tag) => (
+          <div key={tag.name} className="snap-start flex-shrink-0">
+             <div
+                onClick={() => onTagClick(tag.name)}
+                className="cursor-pointer px-5 py-2.5 rounded-2xl flex items-center space-x-2 transition-all duration-300 hover:scale-105 active:scale-95"
+                style={{
+                  background: 'var(--glass-bg)',
+                  backdropFilter: 'var(--glass-blur)',
+                  WebkitBackdropFilter: 'var(--glass-blur)',
+                  border: '1px solid var(--glass-border)',
+                  boxShadow: 'var(--glass-shadow)'
+                }}
+             >
+                <span className="font-semibold text-sm whitespace-nowrap" style={{ color: 'var(--color-text)' }}>
+                  #{tag.name}
+                </span>
+                <span className="bg-blue-500/10 text-blue-500 text-xs px-2 py-0.5 rounded-full font-bold">
+                  {tag.count}
+                </span>
+             </div>
+          </div>
+        ))}
       </div>
     </div>
   );

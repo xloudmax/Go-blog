@@ -156,8 +156,10 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
       className="fixed left-0 top-0 h-screen z-50"
       style={{
         width: '72px',
-        backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
-        borderRight: `1px solid ${isDarkMode ? '#2a2a2a' : '#e5e7eb'}`,
+        backgroundColor: isDarkMode ? 'rgba(26, 26, 26, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRight: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`,
         display: 'grid',
         gridTemplateRows: 'auto 1fr auto',
         padding: '1rem 0',

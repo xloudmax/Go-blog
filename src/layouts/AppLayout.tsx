@@ -9,6 +9,7 @@ import { useAppUser } from '../hooks/appStateHooks'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
 import IconSidebar from '@/components/IconSidebar'
 import PageLoading from '@/components/PageLoading'
+import { MeshGradientBackground } from '@/components/MeshGradientBackground'
 
 // Lazy load pages for code splitting
 const HomePage = lazy(() => import('@/pages/HomePage'));
@@ -37,6 +38,9 @@ export default function AppLayout() {
 
     return (
         <>
+            {/* Global Animated Background */}
+            <MeshGradientBackground />
+            
             {/* 图标侧边栏 */}
             <IconSidebar
                 isDarkMode={appTheme === 'dark'}
@@ -45,12 +49,13 @@ export default function AppLayout() {
 
             <Layout style={{
                 minHeight: '100vh',
-                marginLeft: '72px',  // 为图标侧边栏留出空间
-                backgroundColor: appTheme === 'dark' ? '#1f2937' : '#ffffff'
+                marginLeft: '72px',
+                backgroundColor: 'transparent'
             }}>
                 <Content style={{
-                    backgroundColor: appTheme === 'dark' ? '#1f2937' : '#f9fafb',
-                    padding: '2rem 1.5rem 0'  // 上 左右 下
+                    backgroundColor: 'transparent',
+                    padding: '2rem 1.5rem 0',
+                    transition: 'background-color 0.3s ease'
                 }}>
                     <Suspense fallback={<PageLoading />}>
                         <div className="page-enter-active min-h-full">

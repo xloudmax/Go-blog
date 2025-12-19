@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   Button,
-  Typography
+  Typography,
 } from 'antd';
 
 import { useBlogList, useBlogDashboard } from '@/hooks';
@@ -11,8 +11,10 @@ import ArticleListContainer from '@/components/ArticleListContainer';
 import TagCloud from '@/components/TagCloud';
 import SearchAndFilter from '@/components/SearchAndFilter';
 import ArticleSkeleton from '@/components/ArticleSkeleton';
+import HeroArticleCard from '@/components/HeroArticleCard';
+import HeroSkeleton from '@/components/HeroSkeleton';
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 export default function HomePage() {
 
@@ -65,35 +67,70 @@ export default function HomePage() {
   // 是否正在进行初始加载（没有数据且正在加载）
   const isInitialLoading = loading && posts.length === 0;
 
+  // 格式化当前日期
+  const today = new Date().toLocaleDateString('zh-CN', { weekday: 'long', month: 'long', day: 'numeric' });
+  const dateParts = today.split(' '); // "X月X日 星期X"
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-        {/* 标签云 - 使用全局热门标签 */}
-        {trendingTags && trendingTags.length > 0 && (
-          <TagCloud 
-            tags={trendingTags} 
-            onTagClick={handleTagClick} 
-          />
+    <div className="min-h-screen"> 
+      {/* Background is handled globally by AppLayout transparent content */}
+      
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        
+        {/* APP STORE HEADER */}
+        <div className="mb-8 animate-fade-in-up">
+           <Text className="block text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider text-sm mb-1">
+             {dateParts[1] || 'Today'}
+           </Text>
+           <div className="flex justify-between items-end">
+             <Title level={1} className="!mb-0 !text-5xl font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+               {dateParts[0] || '今日阅读'}
+             </Title>
+             <div className="hidden sm:block">
+                <Button shape="circle" size="large" icon={<span className="text-xl">👤</span>} className="!border-0 !shadow-none !bg-transparent" />
+             </div>
+           </div>
+        </div>
+
+        {/* HERO SECTION */}
+        {isInitialLoading ? (
+           <HeroSkeleton />
+        ) : !error && posts.length > 0 && (
+          <div className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+             <HeroArticleCard post={posts[0]} onNavigate={(slug) => handlePostAction('view', { slug } as BlogPost)} />
+          </div>
         )}
 
-        {/* 搜索和筛选 */}
-        <SearchAndFilter
-          onSearch={handleSearch}
-          onFilter={handleFilter}
-          activeFilters={filter as PostFilter}
-          onClearFilters={clearFilters}
-          allTags={allTags}
-        />
+        {/* TAGS RIBBON */}
+        {trendingTags && trendingTags.length > 0 && (
+          <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <TagCloud 
+              tags={trendingTags} 
+              onTagClick={handleTagClick} 
+            />
+          </div>
+        )}
 
-        {/* 内容区域 */}
+        {/* Search Bar (Floating Glass) */}
+        <div className="mb-8 sticky top-4 z-40 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+           <SearchAndFilter
+             onSearch={handleSearch}
+             onFilter={handleFilter}
+             activeFilters={filter as PostFilter}
+             onClearFilters={clearFilters}
+             allTags={allTags}
+           />
+        </div>
+
+        {/* REMAINING POSTS GRID */}
         {isInitialLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, index) => (
               <ArticleSkeleton key={index} />
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-16">
+          <div className="text-center py-16 glassy-card rounded-2xl">
             <Text className="text-red-500">{error.message}</Text>
             <div className="mt-4">
               <Button onClick={() => refetch()}>重新加载</Button>
@@ -101,22 +138,31 @@ export default function HomePage() {
           </div>
         ) : (
           <>
-            <ArticleListContainer 
-              posts={posts}
-              loading={false} // Container 内部只负责显示列表，loading 状态由外部控制
-              error={null}
-              onAction={handlePostAction}
-            />
+            <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                <Title level={3} className="mb-6 font-bold">更多好文</Title>
+                <ArticleListContainer 
+                  posts={posts.slice(1)} // Skip the first one as it's the Hero
+                  loading={false}
+                  error={null}
+                  onAction={handlePostAction}
+                />
+            </div>
             
             {/* 加载更多按钮 */}
-            {posts.length > 0 && (
-              <div className="mt-8 text-center">
+            {posts.length > 1 && (
+              <div className="mt-12 text-center pb-12">
                 <Button 
                   onClick={() => loadMore()} 
                   loading={loading}
                   disabled={loading}
+                  className="px-8 py-6 h-auto rounded-full text-lg font-medium hover:scale-105 transition-transform shadow-lg border-0"
+                  style={{
+                      background: 'var(--glass-bg)',
+                      backdropFilter: 'blur(10px)',
+                      color: 'var(--color-primary)'
+                  }}
                 >
-                  {loading ? '加载中...' : '加载更多'}
+                  {loading ? '加载中...' : '浏览更多往期内容'}
                 </Button>
               </div>
             )}

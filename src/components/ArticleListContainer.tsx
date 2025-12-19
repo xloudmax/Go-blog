@@ -85,13 +85,18 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-      {posts.map((post) => (
-        <ArticleCard
-          key={post.id}
-          post={post}
-          onNavigate={handleNavigate}
-          onAction={handlePostAction}
-        />
+      {posts.map((post, index) => (
+        <div 
+          key={post.id} 
+          className="animate-fade-in-up"
+          style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'both' }}
+        >
+          <ArticleCard
+            post={post}
+            onNavigate={handleNavigate}
+            onAction={handlePostAction}
+          />
+        </div>
       ))}
     </div>
   );
