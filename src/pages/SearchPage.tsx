@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useTheme } from '@/components/ThemeProvider';
 import {
   Input,
   Select,
@@ -36,7 +35,6 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const SearchPage: React.FC = () => {
-  const { isDarkMode } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<SearchFilters>({});
   const [sortBy, setSortBy] = useState<SearchSortBy>('RELEVANCE');
@@ -149,7 +147,7 @@ const SearchPage: React.FC = () => {
       style={{ 
         padding: '0 12px', 
         boxSizing: 'border-box',
-        backgroundColor: isDarkMode ? '#111827' : '#f9fafb'
+        backgroundColor: 'transparent'
       }}
     >
       <div className="w-full max-w-[2400px] mx-auto py-8">

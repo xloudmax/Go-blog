@@ -54,12 +54,12 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     useEffect(() => {
         localStorage.setItem('theme', theme);
 
-        // 移除旧主题类
-        const otherTheme = theme === 'light' ? 'dark' : 'light';
-        document.documentElement.classList.remove(otherTheme);
-
-        // 添加新主题类
+        // 移除所有主题相关类
+        document.documentElement.classList.remove('light', 'dark');
+        
+        // 添加基础主题类
         document.documentElement.classList.add(theme);
+        
         document.documentElement.setAttribute('data-theme', theme);
         document.documentElement.style.colorScheme = theme;
 

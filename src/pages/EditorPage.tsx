@@ -29,13 +29,11 @@ import {
 import { useQuery } from '@apollo/client';
 import MarkdownEditor from '@/components/MarkdownEditor'
 import { useBlogActions, POST_QUERY } from '@/api/graphql/blog'
-import { useTheme } from '@/components/ThemeProvider';
 
 
 const { Title, Text, Paragraph } = Typography;
 
 export default function EditorPage() {
-    const { isDarkMode } = useTheme();
     const { file: fileNameFromParams } = useParams<{ file?: string }>()
     const navigate = useNavigate()
     const { createPost, updatePost } = useBlogActions()
@@ -225,7 +223,7 @@ export default function EditorPage() {
             style={{ 
                 padding: '0 12px', 
                 boxSizing: 'border-box',
-                backgroundColor: isDarkMode ? '#111827' : '#f9fafb'
+                backgroundColor: 'transparent'
             }}
         >
             <div className="w-full max-w-[2400px] mx-auto py-8">

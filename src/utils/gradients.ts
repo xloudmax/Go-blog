@@ -1,11 +1,18 @@
 
 export const HERO_GRADIENTS = [
-  'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)', // Blue - Cyan
-  'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', // Violet - Pink
-  'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', // Emerald - Blue
-  'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)', // Amber - Red
-  'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', // Indigo - Purple
-  'linear-gradient(135deg, #f43f5e 0%, #fe18d3 100%)', // Rose - Magenta
+  // Premium App Store Style Gradients
+  'linear-gradient(135deg, #00C6FB 0%, #005BEA 100%)', // Blue Ocean
+  'linear-gradient(135deg, #F5576C 0%, #F093FB 100%)', // Pink Purple
+  'linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)', // Cyan
+  'linear-gradient(135deg, #43E97B 0%, #38F9D7 100%)', // Sea Green
+  'linear-gradient(135deg, #FA709A 0%, #FEE140 100%)', // Orange Pink
+  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Deep Purple
+  'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)', // Sky Blue
+  'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)', // Soft Purple
+  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', // Sunset
+  'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', // Mint Blue
+  'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)', // Soft Lavender
+  'linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)', // Candy
 ];
 
 /**

@@ -6,6 +6,7 @@ import {
 } from 'antd';
 import { useAdminNavigation } from '../../hooks';
 import { useAppUser } from '../../hooks';
+import { useTheme } from '@/components/ThemeProvider';
 import AdminDashboard from './AdminDashboard';
 import UserManagement from './UserManagement';
 import InviteCodeManagement from './InviteCodeManagement';
@@ -18,6 +19,7 @@ import TagManagement from './TagManagement';
 const { Title } = Typography;
 
 export default function AdminPage() {
+  const { isDarkMode } = useTheme();
   const { isAdmin } = useAppUser();
   const { currentTab, setCurrentTab, navigationItems, checkAdminAccess } = useAdminNavigation();
   
@@ -57,11 +59,18 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" style={{ padding: '0 40px', boxSizing: 'border-box' }}>
-      <div className="max-w-7xl mx-auto py-12">
+    <div 
+      className="min-h-screen" 
+      style={{ 
+        padding: '0 12px', 
+        boxSizing: 'border-box',
+        backgroundColor: 'transparent'
+      }}
+    >
+      <div className="w-full max-w-[2400px] mx-auto py-8">
         {/* 页面标题在容器外 */}
-        <div className="mb-8">
-          <Title level={2} className="mb-4 text-gray-900 dark:text-gray-100">
+        <div className="mb-6">
+          <Title level={2} className="mb-2" style={{ color: isDarkMode ? '#f9fafb' : '#374151' }}>
             管理员控制台
           </Title>
           <Typography.Paragraph type="secondary" className="mb-0">
@@ -70,9 +79,9 @@ export default function AdminPage() {
         </div>
 
         {/* 导航菜单 */}
-        <Card className="mb-6 mx-8">
+        <Card className="mb-5 optimized-card" bodyStyle={{ padding: '0 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
+            <div style={{ width: '100%', overflowX: 'auto' }}>
               <Menu
                 mode="horizontal"
                 selectedKeys={[currentTab]}
@@ -81,9 +90,10 @@ export default function AdminPage() {
                   label: item.label,
                   onClick: () => setCurrentTab(item.id as typeof currentTab)
                 }))}
-                theme="light"
+                theme={isDarkMode ? 'dark' : 'light'}
                 style={{
                   backgroundColor: 'transparent',
+                  borderBottom: 'none',
                   lineHeight: '48px',
                   minWidth: '150px',
                   justifyContent: 'flex-start',
@@ -95,9 +105,10 @@ export default function AdminPage() {
         </Card>
 
         {/* 内容区域 */}
-        <Card className="mx-8">
+        <Card className="optimized-card">
           {/* 统一的页面标题 */}
           <div style={{ marginBottom: '24px' }}>
+            {/* 标题部分保持不变 */}
             {currentTab === 'dashboard' && (
               <>
                 <Title level={3} style={{ margin: '0 0 8px 0' }}>仪表盘</Title>
@@ -110,6 +121,7 @@ export default function AdminPage() {
                 <Typography.Text type="secondary">管理系统用户和权限</Typography.Text>
               </>
             )}
+            {/* ... other tabs ... */}
             {currentTab === 'posts' && (
               <>
                 <Title level={3} style={{ margin: '0 0 8px 0' }}>文章管理</Title>

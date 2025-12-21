@@ -209,6 +209,7 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
       >
         {/* 主题切换 */}
         {onThemeToggle && (
+            <div className="flex flex-col items-center gap-4">
           <Tooltip title={isDarkMode ? '切换到亮色模式' : '切换到暗色模式'} placement="right">
             <div
               onClick={onThemeToggle}
@@ -228,6 +229,7 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
               </span>
             </div>
           </Tooltip>
+          </div>
         )}
 
         {/* 退出登录 */}
