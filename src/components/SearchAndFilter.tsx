@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Input, Select, Button, Tag, Popover, ConfigProvider } from 'antd';
-import { SearchOutlined, FilterOutlined, CloseOutlined } from '@ant-design/icons';
+import { Select, Button, Popover, ConfigProvider } from 'antd';
+import { SearchOutlined, FilterOutlined } from '@ant-design/icons';
 import type { PostFilter } from '@/types';
 
 const { Option } = Select;
@@ -11,18 +11,21 @@ interface SearchAndFilterProps {
   activeFilters: PostFilter;
   onClearFilters: () => void;
   allTags: string[];
+  className?: string;
 }
 
 const SearchAndFilter: React.FC<SearchAndFilterProps> = ({ 
   onSearch, 
   onFilter, 
   activeFilters,
-  onClearFilters,
-  allTags
+  allTags,
+  className = ''
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>(activeFilters?.tags || []);
   const [isFocused, setIsFocused] = useState(false);
+
+  // Derive selected tags from props
+  const selectedTags = activeFilters?.tags || [];
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -30,7 +33,6 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   };
 
   const handleTagChange = (tags: string[]) => {
-    setSelectedTags(tags);
     onFilter({ ...activeFilters, tags });
   };
 
@@ -38,48 +40,30 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     onFilter({ ...activeFilters, status: value as never });
   };
 
-  const clearAllFilters = () => {
-    setSearchQuery('');
-    setSelectedTags([]);
-    onClearFilters();
-  };
-
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className={`flex flex-col ${className}`}>
       {/* Search Bar Container */}
       <div 
-        className={`flex items-center w-full max-w-3xl backdrop-blur-xl rounded-full px-4 py-2 transition-all duration-300 ${isFocused ? 'bg-white/40 shadow-xl' : 'bg-white/25 shadow-lg hover:bg-white/30'}`}
+        className={`flex items-center backdrop-blur-xl rounded-full !pl-4 pr-4 py-2 transition-all duration-300 ${isFocused ? 'bg-white/40 shadow-xl' : 'bg-white/25 shadow-lg hover:bg-white/30'}`}
         style={{
           border: '1px solid rgba(255, 255, 255, 0.3)',
-          height: '56px'
         }}
       >
-        <SearchOutlined className={`text-xl mr-3 ${isFocused ? 'text-blue-600' : 'text-gray-500'}`} />
+        <SearchOutlined className={`text-lg !mr-4 ${isFocused ? 'text-blue-500' : 'text-gray-400'}`} />
         
-        {/* Transparent Ant Design Input */}
-        <ConfigProvider
-           theme={{
-             components: {
-               Input: {
-                 colorBgContainer: 'transparent',
-                 activeBorderColor: 'transparent',
-                 hoverBorderColor: 'transparent',
-               }
-             }
-           }}
-        >
-          <Input 
-            placeholder="Search topics..." 
-            variant="borderless"
-            className="flex-grow !bg-transparent text-lg font-medium text-gray-800 placeholder-gray-500"
-            style={{ backgroundColor: 'transparent', boxShadow: 'none' }}
-            value={searchQuery}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onPressEnter={(e) => handleSearch((e.target as HTMLInputElement).value)}
-          />
-        </ConfigProvider>
+        <input
+          placeholder="Search topics..." 
+          className="flex-grow bg-transparent border-none outline-none text-lg font-medium text-gray-800 placeholder-gray-500 min-w-0"
+          value={searchQuery}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch((e.target as HTMLInputElement).value);
+            }
+          }}
+        />
 
         {/* Divider */}
         <div className="h-6 w-px bg-gray-400/20 mx-3"></div>
@@ -88,14 +72,29 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         <Popover
            placement="bottomRight"
            trigger="click"
-           overlayInnerStyle={{ 
-             borderRadius: '16px', 
-             padding: '16px', 
-             background: 'rgba(255, 255, 255, 0.8)', 
-             backdropFilter: 'blur(20px)',
-             boxShadow: '0 20px 40px rgba(0,0,0,0.1)' 
+           styles={{ 
+             body: {
+               borderRadius: '16px', 
+               padding: '16px', 
+               background: 'rgba(255, 255, 255, 0.8)', 
+               backdropFilter: 'blur(20px)',
+               boxShadow: '0 20px 40px rgba(0,0,0,0.1)' 
+             }
            }}
            content={
+             <ConfigProvider
+                theme={{
+                  components: {
+                    Select: {
+                      optionSelectedBg: 'rgba(24, 144, 255, 0.1)',
+                      optionSelectedColor: '#1890ff',
+                      colorBgContainer: '#ffffff',
+                      colorText: '#333333',
+                      colorTextPlaceholder: '#999999',
+                    }
+                  }
+                }}
+             >
              <div className="w-64">
                 <div className="mb-4">
                    <div className="text-xs font-bold text-gray-500 mb-2">TAGS</div>
@@ -127,6 +126,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                    </Select>
                 </div>
              </div>
+             </ConfigProvider>
            }
         >
            <Button 
@@ -137,28 +137,8 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
            </Button>
         </Popover>
       </div>
-
-      {/* Active Filter Pills (Minimal) */}
-      {(selectedTags.length > 0 || activeFilters.status) && (
-        <div className="mt-4 flex flex-wrap gap-2 animate-fade-in">
-          {selectedTags.map(tag => (
-            <Tag key={tag} closable onClose={() => handleTagChange(selectedTags.filter(t => t !== tag))} className="rounded-full px-3 py-1 border-0 bg-white/40 backdrop-blur-md">
-              #{tag}
-            </Tag>
-          ))}
-          {activeFilters.status && (
-            <Tag closable onClose={() => handleStatusChange('')} className="rounded-full px-3 py-1 border-0 bg-blue-100/50 text-blue-600 backdrop-blur-md">
-              {activeFilters.status}
-            </Tag>
-          )}
-          <Button type="link" size="small" onClick={clearAllFilters} className="text-gray-500 hover:text-black">
-             Clear
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
 
 export default SearchAndFilter;
-

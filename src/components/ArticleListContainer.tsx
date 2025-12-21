@@ -83,8 +83,26 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
     );
   }
 
+  // 动态计算网格布局
+  const getGridClass = () => {
+    const baseClasses = "!gap-y-12 !gap-x-8 md:!gap-x-10 lg:!gap-x-12 pb-12";
+    
+    // 只有1篇文章时，居中显示，不留白
+    if (posts.length === 1) {
+      return `grid grid-cols-1 max-w-3xl mx-auto ${baseClasses}`;
+    }
+    
+    // 只有2篇文章时，使用双列布局
+    if (posts.length === 2) {
+      return `grid grid-cols-1 md:grid-cols-2 ${baseClasses}`;
+    }
+    
+    // 3篇及以上，使用三列布局
+    return `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${baseClasses}`;
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+    <div className={getGridClass()}>
       {posts.map((post, index) => (
         <div 
           key={post.id} 

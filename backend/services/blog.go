@@ -82,6 +82,10 @@ func (s *BlogService) CreatePost(input *models.CreatePostInput, authorID uint) (
 		AuthorID:    authorID,
 	}
 
+	if input.Excerpt != nil {
+		post.Excerpt = *input.Excerpt
+	}
+
 	// 设置标签和分类
 	if len(input.Tags) > 0 {
 		var tags []models.Tag
@@ -160,6 +164,11 @@ func (s *BlogService) CreatePostFromInput(input *models.CreateBlogPostInput, aut
 		Status:      input.Status,
 	}
 
+	if input.Excerpt != "" {
+		excerpt := input.Excerpt
+		createInput.Excerpt = &excerpt
+	}
+
 	// 处理标签和分类
 	if len(input.Tags) > 0 {
 		createInput.Tags = input.Tags
@@ -217,6 +226,10 @@ func (s *BlogService) UpdatePost(postID uint, input *models.UpdatePostInput, use
 		post.Content = *input.Content
 		now := time.Now()
 		post.LastEditedAt = &now
+	}
+
+	if input.Excerpt != nil {
+		post.Excerpt = *input.Excerpt
 	}
 
 	if input.CoverImageURL != nil {
@@ -290,7 +303,9 @@ func (s *BlogService) UpdatePostFromInput(postID uint, input *models.UpdateBlogP
 		Tags:          input.Tags,
 		Categories:    input.Categories,
 		CoverImageURL: input.CoverImageURL,
-		Status:        input.Status,
+
+		Status:  input.Status,
+		Excerpt: input.Excerpt,
 	}
 
 	return s.UpdatePost(postID, updateInput, userID, userRole)

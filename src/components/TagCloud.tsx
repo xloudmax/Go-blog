@@ -35,7 +35,7 @@ const TagCloud: React.FC<TagCloudProps> = ({ tags, onTagClick }) => {
           <div key={tag.name} className="snap-start flex-shrink-0">
              <div
                 onClick={() => onTagClick(tag.name)}
-                className="cursor-pointer px-5 py-2.5 rounded-2xl flex items-center space-x-2 transition-all duration-300 hover:scale-105 active:scale-95"
+                className="cursor-pointer px-5 py-2.5 rounded-2xl flex items-center !gap-3 transition-all duration-300 hover:scale-105 active:scale-95"
                 style={{
                   background: 'var(--glass-bg)',
                   backdropFilter: 'var(--glass-blur)',

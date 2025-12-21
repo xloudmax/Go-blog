@@ -21,6 +21,8 @@ type BlogPost struct {
 	Status         string            `gorm:"type:varchar(20);not null;default:'DRAFT'" json:"status"`          // 状态（DRAFT, PUBLISHED, ARCHIVED）
 	PublishedAt    *time.Time        `json:"published_at,omitempty"`                                           // 发布时间
 	LastEditedAt   *time.Time        `json:"last_edited_at,omitempty"`                                         // 最后编辑时间
+	NotionPageID   string            `gorm:"index" json:"notion_page_id,omitempty"`                            // Notion Page ID
+	NotionLastEdit *time.Time        `json:"notion_last_edit,omitempty"`                                       // Notion 上的最后编辑时间
 	AuthorID       uint              `gorm:"not null" json:"author_id"`                                        // 作者 ID，外键关联到用户表
 	Author         User              `gorm:"foreignKey:AuthorID" json:"author"`                                // 关联用户表，作者信息
 	Versions       []BlogPostVersion `gorm:"foreignKey:BlogPostID" json:"versions,omitempty"`                  // 版本历史

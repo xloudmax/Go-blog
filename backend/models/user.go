@@ -97,6 +97,7 @@ type CreatePostInput struct {
 	Tags          []string `json:"tags,omitempty"`
 	Categories    []string `json:"categories,omitempty"`
 	CoverImageURL *string  `json:"cover_image_url,omitempty"`
+	Excerpt       *string  `json:"excerpt,omitempty"` // Added Excerpt
 	AccessLevel   string   `json:"access_level,omitempty"`
 	Status        string   `json:"status,omitempty"`
 }
@@ -108,6 +109,7 @@ type UpdatePostInput struct {
 	Tags          []string `json:"tags,omitempty"`
 	Categories    []string `json:"categories,omitempty"`
 	CoverImageURL *string  `json:"cover_image_url,omitempty"`
+	Excerpt       *string  `json:"excerpt,omitempty"` // Added Excerpt
 	AccessLevel   *string  `json:"access_level,omitempty"`
 	Status        *string  `json:"status,omitempty"`
 }

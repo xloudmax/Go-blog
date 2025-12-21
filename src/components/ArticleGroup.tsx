@@ -44,7 +44,7 @@ const ArticleGroup: React.FC<ArticleGroupProps> = ({
         <Text className="font-semibold text-gray-800 dark:text-gray-200 text-xl">
           {groupName}
         </Text>
-        <Text className="text-base text-gray-500 font-normal bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-1">
+        <Text className="text-base text-gray-500 font-normal bg-gray-100 dark:bg-gray-700 rounded-full !px-1.5 !py-0.5">
           {posts.length}
         </Text>
       </div>

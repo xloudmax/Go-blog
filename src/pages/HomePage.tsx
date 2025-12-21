@@ -1,22 +1,26 @@
-import React, { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import {
   Button,
   Typography,
 } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 import { useBlogList, useBlogDashboard } from '@/hooks';
 import type { PostFilter, BlogPost } from '@/types';
 import { PostStatus } from '@/generated/graphql';
 import ArticleListContainer from '@/components/ArticleListContainer';
-import TagCloud from '@/components/TagCloud';
+
 import SearchAndFilter from '@/components/SearchAndFilter';
 import ArticleSkeleton from '@/components/ArticleSkeleton';
 import HeroArticleCard from '@/components/HeroArticleCard';
 import HeroSkeleton from '@/components/HeroSkeleton';
+import ActiveFilters from '@/components/ActiveFilters';
 
 const { Text, Title } = Typography;
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   // 博客列表管理 - 使用服务端过滤和分页
   const {
@@ -54,14 +58,14 @@ export default function HomePage() {
     // TODO: 支持其他筛选条件
   };
 
-  // 处理标签点击
-  const handleTagClick = (tag: string) => {
-    filterByTags([tag]);
-  };
+
 
   // 处理文章操作
-  const handlePostAction = (_action: 'view' | 'edit' | 'share', _post: BlogPost) => {
-    // 这里可以添加全局的操作处理逻辑
+  const handlePostAction = (action: 'view' | 'edit' | 'share', post: BlogPost) => {
+    if (action === 'view') {
+      navigate(`/post/${post.slug}`);
+    }
+    // TODO: implement edit/share
   };
 
   // 是否正在进行初始加载（没有数据且正在加载）
@@ -71,25 +75,58 @@ export default function HomePage() {
   const today = new Date().toLocaleDateString('zh-CN', { weekday: 'long', month: 'long', day: 'numeric' });
   const dateParts = today.split(' '); // "X月X日 星期X"
 
+  // 无限滚动监听
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [loading, loadMore]);
+
   return (
     <div className="min-h-screen"> 
       {/* Background is handled globally by AppLayout transparent content */}
       
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[2400px] mx-auto py-8 px-2 md:px-6">
         
         {/* APP STORE HEADER */}
-        <div className="mb-8 animate-fade-in-up">
-           <Text className="block text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider text-sm mb-1">
+        <div className="!mb-5 animate-fade-in-up">
+           <div className="flex justify-between items-start mb-0">
+           <Text className="block text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider text-sm mb-0">
              {dateParts[1] || 'Today'}
            </Text>
-           <div className="flex justify-between items-end">
-             <Title level={1} className="!mb-0 !text-5xl font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
-               {dateParts[0] || '今日阅读'}
-             </Title>
-             <div className="hidden sm:block">
-                <Button shape="circle" size="large" icon={<span className="text-xl">👤</span>} className="!border-0 !shadow-none !bg-transparent" />
-             </div>
+           <div className="flex items-center gap-4">
+              <SearchAndFilter
+                onSearch={handleSearch}
+                onFilter={handleFilter}
+                activeFilters={filter as PostFilter}
+                onClearFilters={clearFilters}
+                allTags={allTags}
+                className="w-96"
+              />
+              <ActiveFilters 
+                  activeFilters={filter as PostFilter}
+                  onFilterChange={handleFilter}
+                  onClearFilters={clearFilters}
+                  className="!mt-0 !mb-0 !justify-end"
+              />
            </div>
+           </div>
+             <div className="flex justify-between items-end">
+               <Title level={1} className="!mb-0 !text-5xl font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                 {dateParts[0] || '今日阅读'}
+               </Title>
+             </div>
         </div>
 
         {/* HERO SECTION */}
@@ -101,26 +138,11 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* TAGS RIBBON */}
-        {trendingTags && trendingTags.length > 0 && (
-          <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            <TagCloud 
-              tags={trendingTags} 
-              onTagClick={handleTagClick} 
-            />
-          </div>
-        )}
 
-        {/* Search Bar (Floating Glass) */}
-        <div className="mb-8 sticky top-4 z-40 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-           <SearchAndFilter
-             onSearch={handleSearch}
-             onFilter={handleFilter}
-             activeFilters={filter as PostFilter}
-             onClearFilters={clearFilters}
-             allTags={allTags}
-           />
-        </div>
+
+
+
+
 
         {/* REMAINING POSTS GRID */}
         {isInitialLoading ? (
@@ -139,35 +161,41 @@ export default function HomePage() {
         ) : (
           <>
             <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-                <Title level={3} className="mb-6 font-bold">更多好文</Title>
-                <ArticleListContainer 
-                  posts={posts.slice(1)} // Skip the first one as it's the Hero
-                  loading={false}
-                  error={null}
-                  onAction={handlePostAction}
-                />
+                {/* Spacer between Hero and Grid */}
+                <div className="w-full h-4" />
+
+                {posts.length > 1 ? (
+                  <ArticleListContainer 
+                    posts={posts.slice(1)} 
+                    loading={false}
+                    error={null}
+                    onAction={handlePostAction}
+                  />
+                ) : (
+                  <div className="py-10 text-center text-gray-400 italic">
+                    {/* Only show this if we have posts (handled by !error && posts.length > 0 check above) but only 1 post */}
+                     Stay tuned for more!
+                  </div>
+                )}
             </div>
             
-            {/* 加载更多按钮 */}
-            {posts.length > 1 && (
-              <div className="mt-12 text-center pb-12">
-                <Button 
-                  onClick={() => loadMore()} 
-                  loading={loading}
-                  disabled={loading}
-                  className="px-8 py-6 h-auto rounded-full text-lg font-medium hover:scale-105 transition-transform shadow-lg border-0"
-                  style={{
-                      background: 'var(--glass-bg)',
-                      backdropFilter: 'blur(10px)',
-                      color: 'var(--color-primary)'
-                  }}
-                >
-                  {loading ? '加载中...' : '浏览更多往期内容'}
-                </Button>
+            {/* Infinite Scroll Sentinel */}
+            {!isInitialLoading && !error && (
+              <div ref={observerTarget} className="mt-8 py-8 flex justify-center w-full">
+                {loading && (
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                        <span className="text-gray-400 text-sm">加载更多内容...</span>
+                    </div>
+                )}
+                {!loading && (
+                   <div className="h-4 w-full" /> /* Invisible trigger zone */
+                )}
               </div>
             )}
           </>
         )}
+
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTheme } from '@/components/ThemeProvider';
 import {
   Input,
   Select,
@@ -35,6 +36,7 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const SearchPage: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<SearchFilters>({});
   const [sortBy, setSortBy] = useState<SearchSortBy>('RELEVANCE');
@@ -142,8 +144,15 @@ const SearchPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" style={{ padding: '0 40px', boxSizing: 'border-box' }}>
-      <div className="max-w-7xl mx-auto py-12">
+    <div 
+      className="min-h-screen" 
+      style={{ 
+        padding: '0 12px', 
+        boxSizing: 'border-box',
+        backgroundColor: isDarkMode ? '#111827' : '#f9fafb'
+      }}
+    >
+      <div className="w-full max-w-[2400px] mx-auto py-8">
         {/* 标准页面标题 */}
         <div className="mb-6">
           <Title level={2} className="mb-4">
@@ -153,7 +162,7 @@ const SearchPage: React.FC = () => {
       
       {/* 搜索框 */}
       <div className="mb-6">
-        <div className="flex gap-2 max-w-2xl">
+        <div className="flex gap-2 w-full">
           <Input
             size="large"
             placeholder="输入关键词搜索博客文章..."
@@ -163,15 +172,7 @@ const SearchPage: React.FC = () => {
             suffix={<SearchOutlined />}
             className="flex-1"
           />
-          <Button
-            type="primary"
-            size="large"
-            icon={<SearchOutlined />}
-            onClick={handleSearch}
-            loading={enhancedLoading}
-          >
-            搜索
-          </Button>
+
         </div>
       </div>
       

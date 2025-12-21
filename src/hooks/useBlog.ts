@@ -46,7 +46,7 @@ export const useBlogList = (initialLimit = 10) => {
 
   // 加载更多
   const loadMore = useCallback(() => {
-    setLimit((prev) => prev + 10);
+    setLimit((prev) => prev + 3);
   }, []);
 
   // 搜索过滤

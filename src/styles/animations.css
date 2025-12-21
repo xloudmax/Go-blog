@@ -18,6 +18,10 @@
   }
 }
 
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
 /* 缩放淡入动画 */
 @keyframes scaleFadeIn {
   from {

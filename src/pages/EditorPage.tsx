@@ -29,11 +29,13 @@ import {
 import { useQuery } from '@apollo/client';
 import MarkdownEditor from '@/components/MarkdownEditor'
 import { useBlogActions, POST_QUERY } from '@/api/graphql/blog'
+import { useTheme } from '@/components/ThemeProvider';
 
 
 const { Title, Text, Paragraph } = Typography;
 
 export default function EditorPage() {
+    const { isDarkMode } = useTheme();
     const { file: fileNameFromParams } = useParams<{ file?: string }>()
     const navigate = useNavigate()
     const { createPost, updatePost } = useBlogActions()
@@ -123,7 +125,7 @@ export default function EditorPage() {
         }
     };
 
-    const handleSave = async (currentMarkdown: string) => {
+    const handleSave = async (currentMarkdown: string, status?: 'DRAFT' | 'PUBLISHED') => {
         // 验证必填字段
         if (!newFileTitle.trim()) {
             notification.error({
@@ -155,6 +157,7 @@ export default function EditorPage() {
                     categories: post.categories || [],
                     coverImageUrl: coverImage.trim() || undefined,
                     excerpt: excerpt.trim() || undefined,
+                    status: status // 支持更新状态
                 };
 
                 const result = await updatePost(post.id, updateData);
@@ -162,7 +165,7 @@ export default function EditorPage() {
                 if (result) {
                     notification.success({
                         message: '成功',
-                        description: '文章更新成功！',
+                        description: status === 'PUBLISHED' ? '文章已发布！' : '文章更新成功！',
                         duration: 5,
                     });
                     navigate(`/post/${result.slug}`);
@@ -176,6 +179,7 @@ export default function EditorPage() {
                     categories: [],
                     coverImageUrl: coverImage.trim() || undefined,
                     excerpt: excerpt.trim() || undefined,
+                    status: status || 'DRAFT' // 默认为草稿，如果指定则使用指定状态
                 };
 
                 const result = await createPost(postData);
@@ -216,19 +220,26 @@ export default function EditorPage() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" style={{ padding: '0 20px', boxSizing: 'border-box' }}>
-            <div className="max-w-7xl mx-auto py-12">
+        <div 
+            className="min-h-screen" 
+            style={{ 
+                padding: '0 12px', 
+                boxSizing: 'border-box',
+                backgroundColor: isDarkMode ? '#111827' : '#f9fafb'
+            }}
+        >
+            <div className="w-full max-w-[2400px] mx-auto py-8">
                 {/* 标准页面标题 */}
                 <div className="mb-6">
                     <Title level={2} className="mb-4">
                         {isEditMode ? '编辑文章' : '创建文章'}
                     </Title>
                     <Paragraph type="secondary" className="mb-0">
-                        {isEditMode ? '修改现有文章内容' : '创作新的精彩内容'}
+                        {isEditMode ? '修改现有文章内容' : '创作新的'}
                     </Paragraph>
                 </div>
 
-            <Card className="mb-5 optimized-card mx-8">
+            <Card className="mb-5 optimized-card">
                 <Title level={4} className="text-heading-3">文章信息</Title>
                 <Divider className="my-3" />
                 <Row gutter={[16, 16]}>
@@ -311,7 +322,7 @@ export default function EditorPage() {
                 </Card>
 
             {/* 操作按钮栏 */}
-            <Card className="mb-5 optimized-card mx-8">
+            <Card className="mb-5 optimized-card">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <Space>
                         <Button 
@@ -366,18 +377,12 @@ export default function EditorPage() {
                         >
                             版本历史
                         </Button>
-                        {!isEditMode && (
                             <Button 
                                 icon={<CloudUploadOutlined />} 
-                                onClick={() => notification.info({
-                                    message: '提示',
-                                    description: '发布功能即将推出',
-                                    duration: 3,
-                                })}
+                                onClick={() => handleSave(markdownContent, 'PUBLISHED')}
                             >
                                 发布
                             </Button>
-                        )}
                     </Space>
                 </div>
             </Card>
