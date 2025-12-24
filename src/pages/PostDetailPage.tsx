@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Typography,
@@ -29,6 +29,7 @@ import MarkdownViewer from '../components/MarkdownViewer';
 import CommentSection from '@/components/CommentSection';
 import TableOfContents from '@/components/TableOfContents';
 import BackToTop from '@/components/BackToTop';
+import confetti from 'canvas-confetti';
 
 const { Title, Paragraph } = Typography;
 
@@ -48,10 +49,34 @@ export default function PostDetailPage() {
 
   // 使用优化后的点赞 Hook
   const { isLiked, likeCount, handleLike } = useLike({
-    postId: post?.slug || '',
+    postId: post?.id || '',
+    postSlug: post?.slug || '',
     initialIsLiked: post?.isLiked || false,
     initialLikeCount: post?.stats?.likeCount || 0,
   });
+
+  const likeButtonRef = useRef<HTMLButtonElement>(null);
+
+  const onLikeClick = async () => {
+    if (!isLiked) {
+      const rect = likeButtonRef.current?.getBoundingClientRect();
+      if (rect) {
+        const x = (rect.left + rect.width / 2) / window.innerWidth;
+        const y = (rect.top + rect.height / 2) / window.innerHeight;
+        
+        confetti({
+          particleCount: 40,
+          spread: 50,
+          origin: { x, y },
+          scalar: 0.7,
+          colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+          disableForReducedMotion: true,
+          zIndex: 10000,
+        });
+      }
+    }
+    await handleLike();
+  };
 
   // 当文章数据变化时重新初始化点赞状态
   useEffect(() => {
@@ -87,6 +112,41 @@ export default function PostDetailPage() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // 手势处理 - 右滑返回
+  const touchStart = useRef<{ x: number, y: number } | null>(null);
+  const touchEnd = useRef<{ x: number, y: number } | null>(null);
+  const minSwipeDistance = 100; // px
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEnd.current = null; 
+    touchStart.current = {
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY
+    };
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEnd.current = {
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY
+    };
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart.current || !touchEnd.current) return;
+    
+    const distanceX = touchStart.current.x - touchEnd.current.x;
+    const distanceY = touchStart.current.y - touchEnd.current.y;
+    const isRightSwipe = distanceX < -minSwipeDistance;
+    
+    // 确保是水平滑动主导（垂直位移较小）
+    if (Math.abs(distanceX) > Math.abs(distanceY)) {
+        if (isRightSwipe) {
+            navigate(-1);
+        }
+    }
   };
 
   if (loading) {
@@ -132,7 +192,12 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', padding: '0 20px', boxSizing: 'border-box' }}>
+    <div 
+        style={{ minHeight: '100vh', padding: '0 20px', boxSizing: 'border-box' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+    >
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '3rem 0' }}>
         {/* 标准页面标题和导航 */}
         <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -156,10 +221,7 @@ export default function PostDetailPage() {
             <div
               style={{
                 marginBottom: '1.5rem',
-                padding: '2rem',
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: '8px',
-                border: '1px solid var(--color-border)',
+                padding: '0', // Reduced padding since no border bounds it
               }}
             >
               <div style={{ marginBottom: '1.5rem' }}>
@@ -219,8 +281,9 @@ export default function PostDetailPage() {
                     {/* 点赞按钮 - 使用优化后的逻辑 */}
                     <Tooltip title={isLiked ? "取消点赞" : "点赞"}>
                       <Button
+                        ref={likeButtonRef}
                         icon={<LikeOutlined />}
-                        onClick={handleLike}
+                        onClick={onLikeClick}
                         type={isLiked ? "primary" : "default"}
                         disabled={!isAuthenticated}
                       >

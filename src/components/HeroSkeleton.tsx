@@ -4,8 +4,8 @@ import { Skeleton } from 'antd';
 const HeroSkeleton: React.FC = () => {
   return (
     <div 
-      className="w-full relative overflow-hidden rounded-[32px] mb-12"
-      style={{ height: '500px', backgroundColor: 'rgba(200, 200, 200, 0.1)' }}
+      className="w-full relative overflow-hidden rounded-[24px] mb-12"
+      style={{ height: '390px', backgroundColor: 'rgba(200, 200, 200, 0.1)' }}
     >
       <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-end">
         {/* Top Label */}

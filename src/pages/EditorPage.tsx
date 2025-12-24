@@ -81,6 +81,27 @@ export default function EditorPage() {
         }
     }, [isEditMode, post])
 
+    // 提取文章摘要 (仅当摘要为空时自动填充)
+    const extractExcerpt = useCallback((content: string, maxLength: number = 200) => {
+        if (!content) return '';
+        // 移除Markdown标记
+        const plainText = content
+            .replace(/[#*`>\-[\]()]/g, '')
+            .replace(/!\[.*?]\(.*?\)/g, '')
+            .replace(/\[.*?]\(.*?\)/g, '')
+            .trim();
+        return plainText.length > maxLength 
+            ? plainText.substring(0, maxLength) + '...'
+            : plainText;
+    }, []);
+
+    // 当内容变化且摘要为空时，自动生成摘要
+    useEffect(() => {
+        if (!isEditMode && markdownContent && !excerpt) {
+            setExcerpt(extractExcerpt(markdownContent));
+        }
+    }, [markdownContent, excerpt, isEditMode, extractExcerpt]);
+
 
 
     // 添加标签

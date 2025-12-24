@@ -6,6 +6,7 @@ import {
 import type { BlogPost } from '@/types';
 import { getGradientByString } from '@/utils/gradients';
 
+import { motion } from 'framer-motion';
 import { useApolloClient } from '@apollo/client';
 import { POST_QUERY } from '@/api/graphql';
 
@@ -46,13 +47,20 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate }) => {
   };
 
   return (
-    <div 
-      className="group relative w-full overflow-hidden rounded-[24px] cursor-pointer transition-all duration-500 ease-out hover:shadow-2xl hover:scale-[1.01]"
+    <motion.div 
+      className="group relative w-full overflow-hidden rounded-[24px] cursor-pointer"
       style={{ 
-        height: '320px', // Slightly smaller than hero
-        boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.25)',
-        transform: 'translateZ(0)'
+        height: '320px', 
+        transformStyle: 'preserve-3d'
       }}
+      initial={{ boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.25)' }}
+      whileHover={{ 
+        y: -8, 
+        scale: 1.02,
+        boxShadow: '0 25px 50px -12px rgba(59, 130, 246, 0.15)' // Blue-ish glow on hover
+      }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       onMouseEnter={prefetchPost}
       onClick={() => onNavigate(post.slug)}
     >
@@ -111,7 +119,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate }) => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

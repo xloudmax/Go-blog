@@ -3,11 +3,12 @@ import { Routes, Route, Link } from 'react-router-dom'
 import {
   Layout,
   Typography,
+  Grid
 } from 'antd';
 import { ThemeContext } from '../components/ThemeProvider'
-import { useAppUser } from '../hooks/appStateHooks'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
 import IconSidebar from '@/components/IconSidebar'
+import MobileBottomBar from '@/components/MobileBottomBar'
 import PageLoading from '@/components/PageLoading'
 import { MeshGradientBackground } from '@/components/MeshGradientBackground'
 
@@ -26,36 +27,45 @@ const NotificationPage = lazy(() => import('@/pages/NotificationPage'));
 
 const { Content, Footer } = Layout;
 const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 export default function AppLayout() {
     const { theme: appTheme, toggle } = useContext(ThemeContext)
-    const { isAuthenticated } = useAppUser() // Keep this if needed for layout logic, e.g. hiding sidebar items? 
-    // Actually IconSidebar might need auth state, but it handles it internally or passed via props?
-    // IconSidebar doesn't take auth props in previous code.
+    const screens = useBreakpoint();
     
     // 使用自定义 Hook 处理离线文章同步
     useOfflineSync();
+
+    // Determine sidebar width based on screen size (0 on mobile, 72px on desktop)
+    const isMobile = !screens.md;
 
     return (
         <>
             {/* Global Animated Background */}
             <MeshGradientBackground />
             
-            {/* 图标侧边栏 */}
-            <IconSidebar
-                isDarkMode={appTheme === 'dark'}
-                onThemeToggle={toggle}
-            />
+            {/* 图标侧边栏 - Desktop Only */}
+            <div className="hidden md:block">
+                <IconSidebar
+                    isDarkMode={appTheme === 'dark'}
+                    onThemeToggle={toggle}
+                />
+            </div>
+
+            {/* 移动端底部导航 - Mobile Only */}
+            {isMobile && <MobileBottomBar />}
 
             <Layout style={{
                 minHeight: '100vh',
-                marginLeft: '72px',
-                backgroundColor: 'transparent'
+                marginLeft: isMobile ? 0 : '72px',
+                marginBottom: isMobile ? '64px' : 0, // Padding for bottom bar
+                backgroundColor: 'transparent',
+                transition: 'all 0.3s ease'
             }}>
                 <Content style={{
                     backgroundColor: 'transparent',
-                    padding: '2rem 1.5rem 0',
-                    transition: 'background-color 0.3s ease'
+                    padding: isMobile ? '1rem 1rem 0' : '2rem 1.5rem 0',
+                    transition: 'all 0.3s ease'
                 }}>
                     <Suspense fallback={<PageLoading />}>
                         <div className="page-enter-active min-h-full">
@@ -89,7 +99,7 @@ export default function AppLayout() {
                         </div>
                     </Suspense>
                 </Content>
-                <Footer className="text-center bg-gray-100 dark:bg-gray-800 py-4">
+                <Footer className="text-center bg-gray-100 dark:bg-gray-800 py-4 pb-[env(safe-area-inset-bottom)]">
                     <Text type="secondary" className="text-sm">Xloudmax © {new Date().getFullYear()}</Text>
                 </Footer>
             </Layout>

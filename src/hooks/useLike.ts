@@ -7,11 +7,12 @@ import type { PostQueryData } from '@/generated/graphql';
 
 export interface UseLikeProps {
   postId: string;
+  postSlug: string;
   initialIsLiked: boolean;
   initialLikeCount: number;
 }
 
-export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikeProps) => {
+export const useLike = ({ postId, postSlug, initialIsLiked, initialLikeCount }: UseLikeProps) => {
   const { isAuthenticated } = useAppUser();
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
@@ -57,13 +58,13 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
         // 更新 POST_QUERY 缓存
         const existingPost = cache.readQuery<PostQueryData>({
           query: POST_QUERY,
-          variables: { slug: postId },
+          variables: { slug: postSlug },
         });
 
         if (existingPost?.post) {
           cache.writeQuery<PostQueryData>({
             query: POST_QUERY,
-            variables: { slug: postId },
+            variables: { slug: postSlug },
             data: {
               post: {
                 ...existingPost.post,
@@ -120,13 +121,13 @@ export const useLike = ({ postId, initialIsLiked, initialLikeCount }: UseLikePro
         // 更新 POST_QUERY 缓存
         const existingPost = cache.readQuery<PostQueryData>({
           query: POST_QUERY,
-          variables: { slug: postId },
+          variables: { slug: postSlug },
         });
 
         if (existingPost?.post) {
           cache.writeQuery<PostQueryData>({
             query: POST_QUERY,
-            variables: { slug: postId },
+            variables: { slug: postSlug },
             data: {
               post: {
                 ...existingPost.post,

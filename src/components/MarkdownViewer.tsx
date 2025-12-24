@@ -12,7 +12,7 @@ import rehypeSlug from 'rehype-slug'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import 'github-markdown-css'
 import 'katex/dist/katex.min.css'
-import { Card } from 'antd'
+import { Card, Image } from 'antd'
 import './MarkdownViewer.css' // 引入自定义样式
 import MermaidChart from './MermaidChart'
 
@@ -39,8 +39,9 @@ const customSchema = {
 const components: Components = {
     code(props: any) {
         const { className, children, inline, ...rest } = props
-        const language = className?.replace('language-', '')
-        if (!inline && language === 'mermaid') {
+        const match = /language-(\w+)/.exec(className || '')
+        
+        if (!inline && match && match[1] === 'mermaid') {
             return <MermaidChart code={String(children).trim()} />
         }
         return (
@@ -49,6 +50,21 @@ const components: Components = {
             </code>
         )
     },
+    img(props: any) {
+        return (
+            <Image
+                src={props.src}
+                alt={props.alt}
+                className={props.className}
+                style={{ borderRadius: '8px', maxWidth: '100%', cursor: 'zoom-in' }}
+                placeholder={
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                        loading...
+                    </div>
+                }
+            />
+        )
+    }
 }
 
 export default function MarkdownViewer({ content }: MarkdownViewerProps) {

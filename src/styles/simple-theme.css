@@ -27,26 +27,29 @@
 }
 
 /* 暗色模式 */
+/* 暗色模式 - Premium Slate */
 html.dark {
-  --color-primary: #60a5fa;
+  --color-primary: #60a5fa; /* Blue 400 */
 
-  --color-bg: #111827;
-  --color-bg-secondary: #1f2937;
+  --color-bg: #0f172a; /* Slate 900 - Rich Dark Background */
+  --color-bg-secondary: #1e293b; /* Slate 800 - Surface */
+  --color-bg-tertiary: #334155; /* Slate 700 - Code blocks/Inputs */
 
-  --color-text: #f9fafb;
-  --color-text-secondary: #d1d5db;
-  --color-text-tertiary: #9ca3af;
+  --color-text: #f8fafc; /* Slate 50 */
+  --color-text-secondary: #cbd5e1; /* Slate 300 */
+  --color-text-tertiary: #94a3b8; /* Slate 400 */
 
-  --color-border: #374151;
-  --color-border-secondary: #4b5563;
+  --color-border: #334155; /* Slate 700 */
+  --color-border-secondary: #475569; /* Slate 600 */
 
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
 
-  /* 玻璃拟态变量 - 暗色 */
-  --glass-bg: rgba(30, 41, 59, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  /* 玻璃拟态变量 - 暗色极简 (Ultra Glass) */
+  --glass-bg: rgba(30, 41, 59, 0.6); /* Reduced opacity for more transparency */
+  --glass-border: rgba(255, 255, 255, 0.08); /* Subtle inner glow */
+  --glass-blur: blur(20px); /* Increased blur for premium feel */
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 /* 全局应用 */
@@ -218,5 +221,25 @@ html.dark .ant-select-focused .ant-select-selector {
 .bg-gradient-primary,
 .notion-btn,
 .optimized-button-primary {
+
   background: var(--color-primary) !important;
 }
+
+/* Tabs 玻璃化适配 */
+.ant-tabs-tab {
+  color: var(--color-text-secondary) !important;
+}
+
+.ant-tabs-tab:hover {
+  color: var(--color-text) !important;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--color-primary) !important;
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
+}
+
+.ant-tabs-ink-bar {
+  background: var(--color-primary) !important;
+}
+

@@ -210,7 +210,6 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
 
   return (
     <div className="toc-container">
-      <div className="toc-header">目录</div>
       <ul className="toc-list">
         {tocItems.map((item) => renderTocItem(item))}
       </ul>

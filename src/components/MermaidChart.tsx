@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import mermaid from 'mermaid'
+import { useTheme } from './ThemeProvider'
 
-mermaid.initialize({
-    startOnLoad: false,
-    securityLevel: 'loose',
-    theme: 'neutral',
-})
+
 
 interface MermaidChartProps {
     code: string
@@ -13,6 +10,7 @@ interface MermaidChartProps {
 
 export default function MermaidChart({ code }: MermaidChartProps) {
     const containerRef = useRef<HTMLDivElement>(null)
+    const { theme } = useTheme()
     const elementId = useMemo(
         () => `mermaid-${Math.random().toString(36).substring(2, 9)}`,
         []
@@ -23,6 +21,13 @@ export default function MermaidChart({ code }: MermaidChartProps) {
 
         const renderChart = async () => {
             if (!containerRef.current) return
+
+            // Initialize with current theme
+            mermaid.initialize({
+                startOnLoad: false,
+                securityLevel: 'loose',
+                theme: theme === 'dark' ? 'dark' : 'neutral',
+            })
 
             try {
                 const { svg } = await mermaid.render(elementId, code)
@@ -49,7 +54,7 @@ export default function MermaidChart({ code }: MermaidChartProps) {
         return () => {
             isMounted = false
         }
-    }, [code, elementId])
+    }, [code, elementId, theme])
 
     return <div className="mermaid-chart" ref={containerRef} role="img" aria-label="Mermaid diagram" />
 }

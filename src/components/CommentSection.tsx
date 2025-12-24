@@ -241,12 +241,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
           />
 
           <div style={{ flex: 1 }}>
-            {/* 评论内容卡片 */}
+            {/* 评论内容卡片 - Minimalist Style */}
             <div
               style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderRadius: '8px',
-                padding: '12px 16px',
+                // Removed background and borders for cleaner look
+                padding: '4px 0',
               }}
             >
               {/* 评论头部 */}
@@ -519,17 +518,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
       <div
         style={{
           marginBottom: '2rem',
-          padding: '1rem',
-          backgroundColor: 'var(--color-bg-secondary)',
-          borderRadius: '8px',
+          padding: '0',
+          background: 'transparent',
         }}
       >
         <TextArea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          placeholder="发表你的评论..."
+          placeholder="What are your thoughts?"
           autoSize={{ minRows: 3, maxRows: 6 }}
-          style={{ marginBottom: '12px' }}
+          className="!bg-gray-50 dark:!bg-[#151b28] !border-gray-200 dark:!border-gray-800 rounded-xl"
+          style={{ marginBottom: '12px', padding: '16px' }}
         />
         <Button
           type="primary"

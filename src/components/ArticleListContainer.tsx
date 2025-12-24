@@ -1,17 +1,33 @@
 import React from 'react';
 import { Typography, Alert } from 'antd';
-import type { BlogPost } from '@/types';
-import ArticleCard from './ArticleCard';
 import { useNavigate } from 'react-router-dom';
+import { BlogPost } from '../types';
+import ArticleCard from './ArticleCard';
+import { motion } from 'framer-motion';
 
-const { Title, Text } = Typography;
+const { Text, Title } = Typography;
 
 interface ArticleListContainerProps {
   posts: BlogPost[];
   loading: boolean;
-  error: Error | null;
-  onAction: (action: 'view' | 'edit' | 'share', post: BlogPost) => void;
+  error?: Error;
+  onAction?: (action: string, post: BlogPost) => void;
 }
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
 
 const ArticleListContainer: React.FC<ArticleListContainerProps> = ({ 
   posts, 
@@ -21,34 +37,15 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  // 处理导航
   const handleNavigate = (slug: string) => {
+    console.log('Navigating to post:', slug);
     navigate(`/post/${slug}`);
   };
 
-  // 处理文章操作
-  const handlePostAction = (action: 'view' | 'edit' | 'share', post: BlogPost) => {
-    switch (action) {
-      case 'view':
-        navigate(`/post/${post.slug}`);
-        break;
-      case 'edit':
-        navigate(`/editor/posts/${post.slug}`);
-        break;
-      case 'share':
-        { navigator.clipboard.writeText(`${window.location.origin}/post/${post.slug}`);
-        // 使用 notification 而不是 message
-        const notification = (window as any).antdNotification || (window as any).notification;
-        if (notification && notification.success) {
-          notification.success({
-            message: '链接已复制',
-            description: '文章链接已复制到剪贴板',
-            duration: 2,
-          });
-        }
-        break; }
+  const handlePostAction = (action: string, post: BlogPost) => {
+    if (onAction) {
+      onAction(action, post);
     }
-    onAction(action, post);
   };
 
   if (loading) {
@@ -85,7 +82,7 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
 
   // 动态计算网格布局
   const getGridClass = () => {
-    const baseClasses = "!gap-y-12 !gap-x-8 md:!gap-x-10 lg:!gap-x-12 pb-12";
+    const baseClasses = "!gap-y-8 !gap-x-6 md:!gap-x-8 lg:!gap-x-[30px] pb-12";
     
     // 只有1篇文章时，居中显示，不留白
     if (posts.length === 1) {
@@ -102,21 +99,22 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
   };
 
   return (
-    <div className={getGridClass()}>
-      {posts.map((post, index) => (
-        <div 
-          key={post.id} 
-          className="animate-fade-in-up"
-          style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'both' }}
-        >
+    <motion.div 
+      className={getGridClass()}
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
+      {posts.map((post) => (
+        <motion.div key={post.id} variants={item}>
           <ArticleCard
             post={post}
             onNavigate={handleNavigate}
             onAction={handlePostAction}
           />
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 };
 

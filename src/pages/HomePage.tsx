@@ -13,6 +13,7 @@ import ArticleListContainer from '@/components/ArticleListContainer';
 import SearchAndFilter from '@/components/SearchAndFilter';
 import ArticleSkeleton from '@/components/ArticleSkeleton';
 import HeroArticleCard from '@/components/HeroArticleCard';
+import HeroCarousel from '@/components/HeroCarousel';
 import HeroSkeleton from '@/components/HeroSkeleton';
 import ActiveFilters from '@/components/ActiveFilters';
 
@@ -134,7 +135,10 @@ export default function HomePage() {
            <HeroSkeleton />
         ) : !error && posts.length > 0 && (
           <div className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-             <HeroArticleCard post={posts[0]} onNavigate={(slug) => handlePostAction('view', { slug } as BlogPost)} />
+             <HeroCarousel 
+                posts={posts.slice(0, 3)} 
+                onNavigate={(slug) => handlePostAction('view', { slug } as BlogPost)} 
+             />
           </div>
         )}
 
@@ -166,7 +170,7 @@ export default function HomePage() {
 
                 {posts.length > 1 ? (
                   <ArticleListContainer 
-                    posts={posts.slice(1)} 
+                    posts={posts.slice(3)} 
                     loading={false}
                     error={null}
                     onAction={handlePostAction}
