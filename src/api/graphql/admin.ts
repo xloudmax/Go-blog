@@ -185,6 +185,29 @@ export const REBUILD_SEARCH_INDEX_MUTATION = gql`
   }
 `;
 
+// Notion同步
+export const SYNC_NOTION_MUTATION = gql`
+  mutation SyncNotion($pageId: String) {
+    syncNotion(pageId: $pageId) {
+      success
+      message
+      code
+    }
+  }
+`;
+
+// 获取Notion页面列表
+export const GET_NOTION_PAGES_QUERY = gql`
+  query GetNotionPages {
+    getNotionPages {
+      id
+      title
+      lastEditedAt
+      url
+    }
+  }
+`;
+
 // ==================== CUSTOM HOOKS ====================
 
 // 用户管理 Hook
@@ -700,5 +723,40 @@ export const useCommentModeration = () => {
       approve: approveError,
       reject: rejectError,
     },
+  };
+};
+
+// Notion同步 Hook
+export const useNotionSync = () => {
+  const [syncNotionMutation, { loading, error }] = useMutation(SYNC_NOTION_MUTATION, {
+    context: { endpoint: 'admin' },
+  });
+
+  const syncNotion = async (pageId?: string) => {
+    const result = await syncNotionMutation({
+      variables: { pageId },
+    });
+    return result.data?.syncNotion;
+  };
+
+  return {
+    syncNotion,
+    loading,
+    error,
+  };
+};
+
+// 获取Notion页面列表 Hook
+export const useNotionPages = () => {
+  const { data, loading, error, refetch } = useQuery(GET_NOTION_PAGES_QUERY, {
+    context: { endpoint: 'admin' },
+    fetchPolicy: 'network-only', // 总是从服务器获取最新列表
+  });
+
+  return {
+    pages: data?.getNotionPages || [],
+    loading,
+    error,
+    refetch,
   };
 };

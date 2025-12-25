@@ -23,7 +23,87 @@ import (
 	"gorm.io/gorm"
 )
 
+// Author is the resolver for the author field.
+func (r *blogPostResolver) Author(ctx context.Context, obj *BlogPost) (*User, error) {
+	if obj.Author != nil {
+		return obj.Author, nil
+	}
 
+	// Parse AuthorID
+	authorID, err := strconv.ParseUint(obj.AuthorID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid author id: %v", err)
+	}
+
+	// Use DataLoader
+	loader := GetDataLoaderFromContext(ctx)
+	if loader == nil {
+		// Fallback to direct DB query
+		var user models.User
+		if err := r.Resolver.DB.First(&user, uint(authorID)).Error; err != nil {
+			return nil, err
+		}
+		return convertToGraphQLUser(&user), nil
+	}
+
+	user, err := loader.LoadAuthor(ctx, uint(authorID))
+	if err != nil {
+		return nil, err
+	}
+	return convertToGraphQLUser(user), nil
+}
+
+// Stats is the resolver for the stats field.
+func (r *blogPostResolver) Stats(ctx context.Context, obj *BlogPost) (*BlogPostStats, error) {
+	if obj.Stats != nil {
+		return obj.Stats, nil
+	}
+
+	// Parse PostID
+	postID, err := strconv.ParseUint(obj.ID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid post id: %v", err)
+	}
+
+	loader := GetDataLoaderFromContext(ctx)
+	if loader == nil {
+		// Fallback
+		var stats models.BlogPostStats
+		err := r.Resolver.DB.Where("blog_post_id = ?", uint(postID)).First(&stats).Error
+		if err != nil {
+			// Return default stats if not found
+			return &BlogPostStats{
+				ID:        strconv.FormatUint(uint64(postID), 10) + "_stats",
+				ViewCount: 0,
+				LikeCount: 0,
+			}, nil
+		}
+		return &BlogPostStats{
+			ID:           strconv.FormatUint(uint64(stats.ID), 10),
+			ViewCount:    stats.ViewCount,
+			LikeCount:    stats.LikeCount,
+			ShareCount:   stats.ShareCount,
+			CommentCount: stats.CommentCount,
+			LastViewedAt: stats.LastViewedAt,
+			UpdatedAt:    stats.UpdatedAt,
+		}, nil
+	}
+
+	stats, err := loader.LoadStats(ctx, uint(postID))
+	if err != nil {
+		return nil, err
+	}
+
+	return &BlogPostStats{
+		ID:           strconv.FormatUint(uint64(stats.ID), 10),
+		ViewCount:    stats.ViewCount,
+		LikeCount:    stats.LikeCount,
+		ShareCount:   stats.ShareCount,
+		CommentCount: stats.CommentCount,
+		LastViewedAt: stats.LastViewedAt,
+		UpdatedAt:    stats.UpdatedAt,
+	}, nil
+}
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, input RegisterInput) (*AuthPayload, error) {
@@ -368,17 +448,17 @@ func (r *mutationResolver) RequestPasswordReset(ctx context.Context, input Reque
 		// 查看 AuthService 实现:
 		// if errors.Is(err, gorm.ErrRecordNotFound) { return models.ErrUserNotFound }
 		// 所以如果返回 ErrUserNotFound，我们应该吞掉错误并返回成功消息。
-		
+
 		// 稍微改一下策略：AuthService的RequestPasswordReset如果返回ErrUserNotFound，我们应该视为"成功"（即不让前端知道失败）。
 		// 但 AuthService 现在的实现是直接返回 error。
-		
+
 		// 让我们简单点，先调用。
 		// 如果是 ErrUserNotFound，我们吞掉。
 		// 如果是其他错误，记录日志但返回通用错误。
-		
+
 		// 重新看 AuthService 实现:
 		// if errors.Is(err, gorm.ErrRecordNotFound) { return models.ErrUserNotFound }
-		
+
 		if err.Error() == models.ErrUserNotFound.Error() {
 			// 用户不存在，为了安全，假装发送成功
 		} else {
@@ -1272,6 +1352,50 @@ func (r *mutationResolver) RebuildSearchIndex(ctx context.Context) (*GeneralResp
 	}, nil
 }
 
+// SyncNotion is the resolver for the syncNotion field.
+// SyncNotion is the resolver for the syncNotion field.
+// SyncNotion is the resolver for the syncNotion field.
+func (r *mutationResolver) SyncNotion(ctx context.Context, pageID *string) (*GeneralResponse, error) {
+	// 获取当前用户（需管理员权限）
+	user, err := requireAdmin(ctx, r.Resolver.DB)
+	if err != nil {
+		return nil, fmt.Errorf("未授权访问: %w", err)
+	}
+
+	if r.Resolver.NotionService == nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr("Notion服务未初始化，请检查是否配置了 NOTION_API_KEY"),
+			Code:    strPtr("NOTION_SERVICE_NOT_INIT"),
+		}, nil
+	}
+
+	targetPageID := ""
+	if pageID != nil {
+		targetPageID = *pageID
+	}
+
+	// 执行同步
+	if err := r.Resolver.NotionService.SyncPosts(ctx, user, targetPageID); err != nil {
+		return &GeneralResponse{
+			Success: false,
+			Message: strPtr(fmt.Sprintf("同步失败: %v", err)),
+			Code:    strPtr("SYNC_FAILED"),
+		}, nil
+	}
+
+	successMsg := "Notion文章同步成功"
+	if targetPageID != "" {
+		successMsg = fmt.Sprintf("Notion页面 %s 同步成功", targetPageID)
+	}
+
+	return &GeneralResponse{
+		Success: true,
+		Message: strPtr(successMsg),
+		Code:    strPtr("SUCCESS"),
+	}, nil
+}
+
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, input CreateCommentInput) (*BlogPostComment, error) {
 	// 获取当前用户
@@ -2129,8 +2253,6 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, filt
 		return nil, fmt.Errorf("获取文章列表失败: %w", err)
 	}
 
-
-
 	// 转换结果
 	result := make([]*BlogPost, len(posts))
 	for i, post := range posts {
@@ -2601,8 +2723,6 @@ func (r *queryResolver) GetPopularPosts(ctx context.Context, limit *int) ([]*Blo
 		return nil, fmt.Errorf("获取热门文章失败: %w", err)
 	}
 
-
-
 	// 转换结果
 	result := make([]*BlogPost, len(posts))
 	for i, post := range posts {
@@ -2643,8 +2763,6 @@ func (r *queryResolver) GetRecentPosts(ctx context.Context, limit *int) ([]*Blog
 	if err != nil {
 		return nil, fmt.Errorf("获取最新文章失败: %w", err)
 	}
-
-
 
 	// 转换结果
 	result := make([]*BlogPost, len(posts))
@@ -2929,6 +3047,36 @@ func (r *queryResolver) GetTagCategoryStats(ctx context.Context) (*TagCategorySt
 	}, nil
 }
 
+// GetNotionPages is the resolver for the getNotionPages field.
+func (r *queryResolver) GetNotionPages(ctx context.Context) ([]*NotionPage, error) {
+	// 验证管理员权限
+	_, err := requireAdmin(ctx, r.Resolver.DB)
+	if err != nil {
+		return nil, fmt.Errorf("未授权访问: %w", err)
+	}
+
+	if r.Resolver.NotionService == nil {
+		return nil, fmt.Errorf("Notion服务未初始化")
+	}
+
+	pages, err := r.Resolver.NotionService.ListPages(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取Notion页面失败: %w", err)
+	}
+
+	var result []*NotionPage
+	for _, p := range pages {
+		result = append(result, &NotionPage{
+			ID:           p.ID,
+			Title:        p.Title,
+			LastEditedAt: p.LastEditedAt,
+			URL:          p.URL,
+		})
+	}
+
+	return result, nil
+}
+
 // Notifications is the resolver for the notifications field.
 func (r *queryResolver) Notifications(ctx context.Context, limit *int, offset *int) ([]*Notification, error) {
 	// 获取当前用户
@@ -2983,88 +3131,6 @@ func (r *queryResolver) UnreadNotificationCount(ctx context.Context) (int, error
 	}
 
 	return int(count), nil
-}
-
-// Author is the resolver for the author field.
-func (r *blogPostResolver) Author(ctx context.Context, obj *BlogPost) (*User, error) {
-	if obj.Author != nil {
-		return obj.Author, nil
-	}
-
-	// Parse AuthorID
-	authorID, err := strconv.ParseUint(obj.AuthorID, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("invalid author id: %v", err)
-	}
-
-	// Use DataLoader
-	loader := GetDataLoaderFromContext(ctx)
-	if loader == nil {
-		// Fallback to direct DB query
-		var user models.User
-		if err := r.Resolver.DB.First(&user, uint(authorID)).Error; err != nil {
-			return nil, err
-		}
-		return convertToGraphQLUser(&user), nil
-	}
-
-	user, err := loader.LoadAuthor(ctx, uint(authorID))
-	if err != nil {
-		return nil, err
-	}
-	return convertToGraphQLUser(user), nil
-}
-
-// Stats is the resolver for the stats field.
-func (r *blogPostResolver) Stats(ctx context.Context, obj *BlogPost) (*BlogPostStats, error) {
-	if obj.Stats != nil {
-		return obj.Stats, nil
-	}
-
-	// Parse PostID
-	postID, err := strconv.ParseUint(obj.ID, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("invalid post id: %v", err)
-	}
-
-	loader := GetDataLoaderFromContext(ctx)
-	if loader == nil {
-		// Fallback
-		var stats models.BlogPostStats
-		err := r.Resolver.DB.Where("blog_post_id = ?", uint(postID)).First(&stats).Error
-		if err != nil {
-			// Return default stats if not found
-			return &BlogPostStats{
-				ID:        strconv.FormatUint(uint64(postID), 10) + "_stats",
-				ViewCount: 0,
-				LikeCount: 0,
-			}, nil
-		}
-		return &BlogPostStats{
-			ID:           strconv.FormatUint(uint64(stats.ID), 10),
-			ViewCount:    stats.ViewCount,
-			LikeCount:    stats.LikeCount,
-			ShareCount:   stats.ShareCount,
-			CommentCount: stats.CommentCount,
-			LastViewedAt: stats.LastViewedAt,
-			UpdatedAt:    stats.UpdatedAt,
-		}, nil
-	}
-
-	stats, err := loader.LoadStats(ctx, uint(postID))
-	if err != nil {
-		return nil, err
-	}
-
-	return &BlogPostStats{
-		ID:           strconv.FormatUint(uint64(stats.ID), 10),
-		ViewCount:    stats.ViewCount,
-		LikeCount:    stats.LikeCount,
-		ShareCount:   stats.ShareCount,
-		CommentCount: stats.CommentCount,
-		LastViewedAt: stats.LastViewedAt,
-		UpdatedAt:    stats.UpdatedAt,
-	}, nil
 }
 
 // BlogPost returns BlogPostResolver implementation.

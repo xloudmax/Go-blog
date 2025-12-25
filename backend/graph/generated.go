@@ -67,6 +67,7 @@ type ComplexityRoot struct {
 		ID            func(childComplexity int) int
 		IsLiked       func(childComplexity int) int
 		LastEditedAt  func(childComplexity int) int
+		NotionPageID  func(childComplexity int) int
 		PublishedAt   func(childComplexity int) int
 		Slug          func(childComplexity int) int
 		Stats         func(childComplexity int) int
@@ -195,6 +196,7 @@ type ComplexityRoot struct {
 		ReportComment              func(childComplexity int, id string) int
 		RequestPasswordReset       func(childComplexity int, input RequestPasswordResetInput) int
 		SendVerificationCode       func(childComplexity int, email string, typeArg VerificationType) int
+		SyncNotion                 func(childComplexity int, pageID *string) int
 		UnlikeComment              func(childComplexity int, id string) int
 		UnlikePost                 func(childComplexity int, id string) int
 		UpdateComment              func(childComplexity int, id string, input UpdateCommentInput) int
@@ -218,6 +220,13 @@ type ComplexityRoot struct {
 		Type           func(childComplexity int) int
 	}
 
+	NotionPage struct {
+		ID           func(childComplexity int) int
+		LastEditedAt func(childComplexity int) int
+		Title        func(childComplexity int) int
+		URL          func(childComplexity int) int
+	}
+
 	PopularQuery struct {
 		Count        func(childComplexity int) int
 		LastSearched func(childComplexity int) int
@@ -229,6 +238,7 @@ type ComplexityRoot struct {
 		Comments                func(childComplexity int, blogPostID *string, limit *int, offset *int, filter *CommentFilterInput, sort *CommentSortInput) int
 		EnhancedSearch          func(childComplexity int, input SearchInput) int
 		GetCategories           func(childComplexity int, limit *int, offset *int, search *string) int
+		GetNotionPages          func(childComplexity int) int
 		GetPopularPosts         func(childComplexity int, limit *int) int
 		GetRecentPosts          func(childComplexity int, limit *int) int
 		GetSearchStats          func(childComplexity int) int
@@ -365,6 +375,7 @@ type MutationResolver interface {
 	DeactivateInviteCode(ctx context.Context, id string) (*GeneralResponse, error)
 	ClearCache(ctx context.Context) (*GeneralResponse, error)
 	RebuildSearchIndex(ctx context.Context) (*GeneralResponse, error)
+	SyncNotion(ctx context.Context, pageID *string) (*GeneralResponse, error)
 	CreateComment(ctx context.Context, input CreateCommentInput) (*BlogPostComment, error)
 	UpdateComment(ctx context.Context, id string, input UpdateCommentInput) (*BlogPostComment, error)
 	DeleteComment(ctx context.Context, id string) (*GeneralResponse, error)
@@ -406,6 +417,7 @@ type QueryResolver interface {
 	GetTags(ctx context.Context, limit *int, offset *int, search *string) ([]*TagInfo, error)
 	GetCategories(ctx context.Context, limit *int, offset *int, search *string) ([]*CategoryInfo, error)
 	GetTagCategoryStats(ctx context.Context) (*TagCategoryStats, error)
+	GetNotionPages(ctx context.Context) ([]*NotionPage, error)
 	Notifications(ctx context.Context, limit *int, offset *int) ([]*Notification, error)
 	UnreadNotificationCount(ctx context.Context) (int, error)
 }
@@ -520,6 +532,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BlogPost.LastEditedAt(childComplexity), true
+	case "BlogPost.notionPageId":
+		if e.complexity.BlogPost.NotionPageID == nil {
+			break
+		}
+
+		return e.complexity.BlogPost.NotionPageID(childComplexity), true
 	case "BlogPost.publishedAt":
 		if e.complexity.BlogPost.PublishedAt == nil {
 			break
@@ -1273,6 +1291,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SendVerificationCode(childComplexity, args["email"].(string), args["type"].(VerificationType)), true
+	case "Mutation.syncNotion":
+		if e.complexity.Mutation.SyncNotion == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_syncNotion_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SyncNotion(childComplexity, args["pageId"].(*string)), true
 	case "Mutation.unlikeComment":
 		if e.complexity.Mutation.UnlikeComment == nil {
 			break
@@ -1423,6 +1452,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Notification.Type(childComplexity), true
 
+	case "NotionPage.id":
+		if e.complexity.NotionPage.ID == nil {
+			break
+		}
+
+		return e.complexity.NotionPage.ID(childComplexity), true
+	case "NotionPage.lastEditedAt":
+		if e.complexity.NotionPage.LastEditedAt == nil {
+			break
+		}
+
+		return e.complexity.NotionPage.LastEditedAt(childComplexity), true
+	case "NotionPage.title":
+		if e.complexity.NotionPage.Title == nil {
+			break
+		}
+
+		return e.complexity.NotionPage.Title(childComplexity), true
+	case "NotionPage.url":
+		if e.complexity.NotionPage.URL == nil {
+			break
+		}
+
+		return e.complexity.NotionPage.URL(childComplexity), true
+
 	case "PopularQuery.count":
 		if e.complexity.PopularQuery.Count == nil {
 			break
@@ -1486,6 +1540,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.GetCategories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["search"].(*string)), true
+	case "Query.getNotionPages":
+		if e.complexity.Query.GetNotionPages == nil {
+			break
+		}
+
+		return e.complexity.Query.GetNotionPages(childComplexity), true
 	case "Query.getPopularPosts":
 		if e.complexity.Query.GetPopularPosts == nil {
 			break
@@ -2520,6 +2580,17 @@ func (ec *executionContext) field_Mutation_sendVerificationCode_args(ctx context
 		return nil, err
 	}
 	args["type"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_syncNotion_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "pageId", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["pageId"] = arg0
 	return args, nil
 }
 
@@ -3589,6 +3660,35 @@ func (ec *executionContext) fieldContext_BlogPost_updatedAt(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _BlogPost_notionPageId(ctx context.Context, field graphql.CollectedField, obj *BlogPost) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BlogPost_notionPageId,
+		func(ctx context.Context) (any, error) {
+			return obj.NotionPageID, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_BlogPost_notionPageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPost",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BlogPost_author(ctx context.Context, field graphql.CollectedField, obj *BlogPost) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3879,6 +3979,8 @@ func (ec *executionContext) fieldContext_BlogPostComment_blogPost(_ context.Cont
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -4752,6 +4854,8 @@ func (ec *executionContext) fieldContext_CategoryInfo_posts(_ context.Context, f
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -4903,6 +5007,8 @@ func (ec *executionContext) fieldContext_EnhancedSearchResult_posts(_ context.Co
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -6297,6 +6403,8 @@ func (ec *executionContext) fieldContext_Mutation_createPost(ctx context.Context
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -6378,6 +6486,8 @@ func (ec *executionContext) fieldContext_Mutation_updatePost(ctx context.Context
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -6508,6 +6618,8 @@ func (ec *executionContext) fieldContext_Mutation_publishPost(ctx context.Contex
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -6589,6 +6701,8 @@ func (ec *executionContext) fieldContext_Mutation_archivePost(ctx context.Contex
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -6670,6 +6784,8 @@ func (ec *executionContext) fieldContext_Mutation_likePost(ctx context.Context, 
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -6751,6 +6867,8 @@ func (ec *executionContext) fieldContext_Mutation_unlikePost(ctx context.Context
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -7203,6 +7321,55 @@ func (ec *executionContext) fieldContext_Mutation_rebuildSearchIndex(_ context.C
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GeneralResponse", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_syncNotion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_syncNotion,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SyncNotion(ctx, fc.Args["pageId"].(*string))
+		},
+		nil,
+		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_syncNotion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_GeneralResponse_success(ctx, field)
+			case "message":
+				return ec.fieldContext_GeneralResponse_message(ctx, field)
+			case "code":
+				return ec.fieldContext_GeneralResponse_code(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GeneralResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_syncNotion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -8337,6 +8504,8 @@ func (ec *executionContext) fieldContext_Notification_relatedPost(_ context.Cont
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -8576,6 +8745,122 @@ func (ec *executionContext) fieldContext_Notification_createdAt(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionPage_id(ctx context.Context, field graphql.CollectedField, obj *NotionPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotionPage_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotionPage_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionPage_title(ctx context.Context, field graphql.CollectedField, obj *NotionPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotionPage_title,
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotionPage_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionPage_lastEditedAt(ctx context.Context, field graphql.CollectedField, obj *NotionPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotionPage_lastEditedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastEditedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotionPage_lastEditedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotionPage_url(ctx context.Context, field graphql.CollectedField, obj *NotionPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotionPage_url,
+		func(ctx context.Context) (any, error) {
+			return obj.URL, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotionPage_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotionPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8924,6 +9209,8 @@ func (ec *executionContext) fieldContext_Query_post(ctx context.Context, field g
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -9005,6 +9292,8 @@ func (ec *executionContext) fieldContext_Query_posts(ctx context.Context, field 
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -9482,6 +9771,8 @@ func (ec *executionContext) fieldContext_Query_getPopularPosts(ctx context.Conte
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -9563,6 +9854,8 @@ func (ec *executionContext) fieldContext_Query_getRecentPosts(ctx context.Contex
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -9874,6 +10167,45 @@ func (ec *executionContext) fieldContext_Query_getTagCategoryStats(_ context.Con
 				return ec.fieldContext_TagCategoryStats_categories(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TagCategoryStats", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getNotionPages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getNotionPages,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().GetNotionPages(ctx)
+		},
+		nil,
+		ec.marshalNNotionPage2ᚕᚖrepairᚑplatformᚋgraphᚐNotionPageᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getNotionPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_NotionPage_id(ctx, field)
+			case "title":
+				return ec.fieldContext_NotionPage_title(ctx, field)
+			case "lastEditedAt":
+				return ec.fieldContext_NotionPage_lastEditedAt(ctx, field)
+			case "url":
+				return ec.fieldContext_NotionPage_url(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NotionPage", field.Name)
 		},
 	}
 	return fc, nil
@@ -10296,6 +10628,8 @@ func (ec *executionContext) fieldContext_SearchResult_posts(_ context.Context, f
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -11279,6 +11613,8 @@ func (ec *executionContext) fieldContext_TagInfo_posts(_ context.Context, field 
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -11696,6 +12032,8 @@ func (ec *executionContext) fieldContext_User_posts(ctx context.Context, field g
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "notionPageId":
+				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
 				return ec.fieldContext_BlogPost_author(ctx, field)
 			case "versions":
@@ -14363,6 +14701,8 @@ func (ec *executionContext) _BlogPost(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "notionPageId":
+			out.Values[i] = ec._BlogPost_notionPageId(ctx, field, obj)
 		case "author":
 			field := field
 
@@ -15220,6 +15560,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "syncNotion":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_syncNotion(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createComment":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createComment(ctx, field)
@@ -15418,6 +15765,60 @@ func (ec *executionContext) _Notification(ctx context.Context, sel ast.Selection
 			}
 		case "createdAt":
 			out.Values[i] = ec._Notification_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var notionPageImplementors = []string{"NotionPage"}
+
+func (ec *executionContext) _NotionPage(ctx context.Context, sel ast.SelectionSet, obj *NotionPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notionPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotionPage")
+		case "id":
+			out.Values[i] = ec._NotionPage_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._NotionPage_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastEditedAt":
+			out.Values[i] = ec._NotionPage_lastEditedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "url":
+			out.Values[i] = ec._NotionPage_url(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -15950,6 +16351,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getTagCategoryStats(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getNotionPages":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getNotionPages(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -17520,6 +17943,60 @@ func (ec *executionContext) unmarshalNNotificationType2repairᚑplatformᚋgraph
 
 func (ec *executionContext) marshalNNotificationType2repairᚑplatformᚋgraphᚐNotificationType(ctx context.Context, sel ast.SelectionSet, v NotificationType) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNNotionPage2ᚕᚖrepairᚑplatformᚋgraphᚐNotionPageᚄ(ctx context.Context, sel ast.SelectionSet, v []*NotionPage) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNNotionPage2ᚖrepairᚑplatformᚋgraphᚐNotionPage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNNotionPage2ᚖrepairᚑplatformᚋgraphᚐNotionPage(ctx context.Context, sel ast.SelectionSet, v *NotionPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._NotionPage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPopularQuery2ᚕᚖrepairᚑplatformᚋgraphᚐPopularQueryᚄ(ctx context.Context, sel ast.SelectionSet, v []*PopularQuery) graphql.Marshaler {

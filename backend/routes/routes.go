@@ -13,6 +13,7 @@ import (
 	"repair-platform/graph"
 	"repair-platform/middleware"
 	"repair-platform/models"
+	"repair-platform/services"
 	"strings"
 	"time"
 
@@ -25,7 +26,7 @@ import (
 )
 
 // SetupRoutes 设置应用程序的路由和中间件（全面迁移到GraphQL）
-func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
+func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *services.NotionService) {
 	logger := middleware.GetLogger()
 	logger.Infow("开始注册路由")
 
@@ -49,7 +50,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	middleware.CleanupExpiredVisits(10 * time.Minute)
 
 	// 设置 GraphQL 路由（唯一接口）
-	setupGraphQLRoutes(r, db, cfg)
+	setupGraphQLRoutes(r, db, cfg, notionService)
 
 	// 设置上传路由
 	setupUploadRoutes(r, db, cfg)
@@ -61,12 +62,12 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 }
 
 // setupGraphQLRoutes 设置 GraphQL 路由（唯一接口）
-func setupGraphQLRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
+func setupGraphQLRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *services.NotionService) {
 	logger := middleware.GetLogger()
 	logger.Infow("设置 GraphQL 路由")
 
 	// 创建 GraphQL resolver
-	resolver := graph.NewResolver(db)
+	resolver := graph.NewResolver(db, notionService)
 
 	// 创建 GraphQL 服务器
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))

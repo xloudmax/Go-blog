@@ -8,19 +8,19 @@ export const typePolicies: TypePolicies = {
   Query: {
     fields: {
       // 博客文章分页缓存
-      posts: {
-        keyArgs: ['filter', 'sort'], // 基于筛选和排序参数创建缓存键
-      },
+      // posts: {
+      //   keyArgs: ['filter', 'sort'], // 基于筛选和排序参数创建缓存键
+      // },
       
       // 用户列表分页缓存
-      users: {
-        keyArgs: ['search', 'role', 'isVerified'], // 基于搜索和筛选参数
-      },
+      // users: {
+      //   keyArgs: ['search', 'role', 'isVerified'], // 基于搜索和筛选参数
+      // },
       
       // 邀请码列表分页缓存
-      inviteCodes: {
-        keyArgs: ['isActive'], // 基于状态筛选
-      },
+      // inviteCodes: {
+      //   keyArgs: ['isActive'], // 基于状态筛选
+      // },
       
       // 文件列表缓存
       files: {

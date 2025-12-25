@@ -53,6 +53,7 @@ type BlogPost struct {
 	LastEditedAt  *time.Time         `json:"lastEditedAt,omitempty"`
 	CreatedAt     time.Time          `json:"createdAt"`
 	UpdatedAt     time.Time          `json:"updatedAt"`
+	NotionPageID  *string            `json:"notionPageId,omitempty"`
 	Author        *User              `json:"author"`
 	Versions      []*BlogPostVersion `json:"versions"`
 	Stats         *BlogPostStats     `json:"stats"`
@@ -204,6 +205,13 @@ type Notification struct {
 	Recipient      *User            `json:"recipient"`
 	IsRead         bool             `json:"isRead"`
 	CreatedAt      time.Time        `json:"createdAt"`
+}
+
+type NotionPage struct {
+	ID           string    `json:"id"`
+	Title        string    `json:"title"`
+	LastEditedAt time.Time `json:"lastEditedAt"`
+	URL          string    `json:"url"`
 }
 
 type PopularQuery struct {

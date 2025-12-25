@@ -11,6 +11,7 @@ import IconSidebar from '@/components/IconSidebar'
 import MobileBottomBar from '@/components/MobileBottomBar'
 import PageLoading from '@/components/PageLoading'
 import { MeshGradientBackground } from '@/components/MeshGradientBackground'
+import BackToTop from '@/components/BackToTop'
 
 // Lazy load pages for code splitting
 const HomePage = lazy(() => import('@/pages/HomePage'));
@@ -103,6 +104,9 @@ export default function AppLayout() {
                     <Text type="secondary" className="text-sm">Xloudmax © {new Date().getFullYear()}</Text>
                 </Footer>
             </Layout>
+
+            {/* Global Back To Top */}
+            <BackToTop />
         </>
     );
 }

@@ -281,7 +281,7 @@ export const useSystemAdmin = () => {
 // 管理员权限和导航hook
 export const useAdminNavigation = () => {
   const { isAdmin, requireAdmin, userRole } = useAdminAuth();
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'users' | 'posts' | 'comments' | 'invites' | 'tags' | 'analytics' | 'system'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'users' | 'posts' | 'comments' | 'invites' | 'tags' | 'analytics' | 'system' | 'notion'>('dashboard');
 
   // 导航项配置
   const navigationItems = useMemo(() => [
@@ -326,6 +326,12 @@ export const useAdminNavigation = () => {
       label: '搜索分析',
       icon: 'analytics',
       description: '搜索统计和趋势',
+    },
+    {
+      id: 'notion',
+      label: 'Notion同步',
+      icon: 'cloud-sync',
+      description: 'Notion内容同步管理',
     },
     {
       id: 'system',

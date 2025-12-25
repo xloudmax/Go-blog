@@ -14,15 +14,7 @@ interface ArticleListContainerProps {
   onAction?: (action: string, post: BlogPost) => void;
 }
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
+
 
 const item = {
   hidden: { opacity: 0, y: 20 },
@@ -99,14 +91,15 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
   };
 
   return (
-    <motion.div 
-      className={getGridClass()}
-      variants={container}
-      initial="hidden"
-      animate="show"
-    >
+    <div className={getGridClass()}>
       {posts.map((post) => (
-        <motion.div key={post.id} variants={item}>
+        <motion.div 
+          key={post.id} 
+          variants={item}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-50px" }}
+        >
           <ArticleCard
             post={post}
             onNavigate={handleNavigate}
@@ -114,7 +107,7 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
           />
         </motion.div>
       ))}
-    </motion.div>
+    </div>
   );
 };
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { 
   usePostsQuery, 
   usePopularPostsQuery, 
@@ -17,7 +17,7 @@ import type {
 } from '@/types';
 
 // 博客列表hook
-export const useBlogList = (initialLimit = 10) => {
+export const useBlogList = (initialLimit = 15) => {
   const [limit, setLimit] = useState(initialLimit);
   const [offset, setOffset] = useState(0);
   const [filter, setFilter] = useState<PostFilterInput>({
@@ -34,19 +34,46 @@ export const useBlogList = (initialLimit = 10) => {
       offset,
       filter,
       sort
-    }
+    },
+    notifyOnNetworkStatusChange: true // Ensure loading state updates on refetch
   });
 
-  const posts = useMemo(() => data?.posts || [], [data?.posts]);
+  // 缓存上一份有效数据，防止 loading 时页面跳动
+  const lastPostsRef = useRef<BlogPost[]>([]);
+  const posts = useMemo(() => {
+    if (data?.posts) {
+      lastPostsRef.current = data.posts as BlogPost[];
+      return data.posts as BlogPost[];
+    }
+    return lastPostsRef.current;
+  }, [data?.posts]);
   
   // 简单的分页处理
   const goToPage = useCallback((page: number) => {
     setOffset((page - 1) * limit);
   }, [limit]);
 
-  // 加载更多
+  const loadMoreTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 加载更多 (防抖)
   const loadMore = useCallback(() => {
-    setLimit((prev) => prev + 3);
+    if (loadMoreTimeoutRef.current) {
+      clearTimeout(loadMoreTimeoutRef.current);
+    }
+    
+    loadMoreTimeoutRef.current = setTimeout(() => {
+      setLimit((prev) => prev + 3);
+      loadMoreTimeoutRef.current = null;
+    }, 300); // 300ms debounce
+  }, []);
+
+  // 清里定时器
+  useEffect(() => {
+    return () => {
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+      }
+    };
   }, []);
 
   // 搜索过滤
@@ -75,6 +102,7 @@ export const useBlogList = (initialLimit = 10) => {
 
   return {
     posts: posts as BlogPost[],
+    hasMore: posts.length >= limit, // Simple check: if we got fewer posts than limit, we reached the end
     loading,
     error,
     refetch,
@@ -152,11 +180,11 @@ export const useBlogDashboard = () => {
     const totalViews = popularPosts.reduce((sum, post) => sum + (post.stats?.viewCount || 0), 0);
     const totalLikes = popularPosts.reduce((sum, post) => sum + (post.stats?.likeCount || 0), 0);
     const totalPosts = popularPosts.length + recentPosts.length;
-    const engagementRate = popularPosts.length > 0 
-      ? (totalLikes / Math.max(totalViews, 1)) * 100 
+    const engagementRate = popularPosts.length > 0
+      ? (totalLikes / Math.max(totalViews, 1)) * 100
       : 0;
     const avgEngagement = totalPosts > 0 ? (totalLikes + totalViews) / totalPosts : 0;
-    
+
     return {
       totalViews,
       totalLikes,
@@ -165,7 +193,7 @@ export const useBlogDashboard = () => {
       avgEngagement,
     };
   }, [popularPosts, recentPosts]);
-  
+
   return {
     popularPosts: popularPosts as BlogPost[],
     recentPosts: recentPosts as BlogPost[],

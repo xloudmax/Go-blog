@@ -74,6 +74,7 @@ type BlogPost {
   lastEditedAt: Time
   createdAt: Time!
   updatedAt: Time!
+  notionPageId: String # Notion Page ID, if synced from Notion
   
   # 关联数据
   author: User!
@@ -431,6 +432,7 @@ type Mutation {
   # 系统管理（管理员）
   clearCache: GeneralResponse!
   rebuildSearchIndex: GeneralResponse!
+  syncNotion(pageId: String): GeneralResponse!
 }
 
 # 搜索统计信息类型
@@ -632,7 +634,18 @@ type Notification {
   createdAt: Time!
 }
 
+# Notion 页面信息
+type NotionPage {
+  id: String!
+  title: String!
+  lastEditedAt: Time!
+  url: String!
+}
+
 extend type Query {
+  # 获取 Notion 页面列表（管理员）
+  getNotionPages: [NotionPage!]!
+
   # 获取当前用户的通知列表
   notifications(limit: Int = 20, offset: Int = 0): [Notification!]!
 

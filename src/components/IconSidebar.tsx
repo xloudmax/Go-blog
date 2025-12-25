@@ -19,7 +19,8 @@ interface MenuItem {
   key: string;
   icon: React.ReactNode;
   label: string;
-  path: string;
+  path?: string;
+  onClick?: () => void;
   requireAuth?: boolean;
   requireAdmin?: boolean;
 }
@@ -92,20 +93,25 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
   const filteredTopItems = filterMenuItems(topMenuItems);
 
   // 判断是否为当前路径
-  const isActive = (path: string) => {
+  const isActive = (path?: string) => {
+    if (!path) return false;
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   // 菜单项点击处理
-  const handleItemClick = (path: string) => {
-    navigate(path);
+  const handleItemClick = (item: MenuItem) => {
+    if (item.onClick) {
+      item.onClick();
+    } else if (item.path) {
+      navigate(item.path);
+    }
   };
 
   // 渲染菜单项的通用组件
   const renderMenuItem = (item: MenuItem) => (
     <Tooltip key={item.key} title={item.label} placement="right">
       <div
-        onClick={() => handleItemClick(item.path)}
+        onClick={() => handleItemClick(item)}
         className="w-11 h-11 flex items-center justify-center cursor-pointer transition-all duration-200"
         style={{
           color: isActive(item.path)

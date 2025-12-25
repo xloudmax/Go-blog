@@ -30,6 +30,7 @@ export default function HomePage() {
     error,
     refetch,
     loadMore,
+    hasMore,
     filter,
     filterBySearch,
     filterByTags,
@@ -80,7 +81,7 @@ export default function HomePage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loading) {
+        if (entries[0].isIntersecting && !loading && hasMore) {
           loadMore();
         }
       },
@@ -92,7 +93,7 @@ export default function HomePage() {
     }
 
     return () => observer.disconnect();
-  }, [loading, loadMore]);
+  }, [loading, loadMore, hasMore]);
 
   return (
     <div className="min-h-screen"> 
@@ -172,7 +173,7 @@ export default function HomePage() {
                   <ArticleListContainer 
                     posts={posts.slice(3)} 
                     loading={false}
-                    error={null}
+                    error={undefined}
                     onAction={handlePostAction}
                   />
                 ) : (
@@ -185,15 +186,9 @@ export default function HomePage() {
             
             {/* Infinite Scroll Sentinel */}
             {!isInitialLoading && !error && (
-              <div ref={observerTarget} className="mt-8 py-8 flex justify-center w-full">
-                {loading && (
-                    <div className="flex flex-col items-center gap-2">
-                        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                        <span className="text-gray-400 text-sm">加载更多内容...</span>
-                    </div>
-                )}
-                {!loading && (
-                   <div className="h-4 w-full" /> /* Invisible trigger zone */
+              <div ref={observerTarget} className="mt-8 py-8 flex justify-center w-full min-h-[50px]">
+                {!loading && !hasMore && (
+                   <div className="text-gray-400 italic">No more posts</div>
                 )}
               </div>
             )}

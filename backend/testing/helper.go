@@ -65,7 +65,7 @@ func SetupTestEnvironment(t *testing.T) *TestHelper {
 
 	// 创建 Gin 路由
 	router := gin.New()
-	routes.SetupRoutes(router, db, cfg)
+	routes.SetupRoutes(router, db, cfg, nil)
 
 	return &TestHelper{
 		DB:     db,

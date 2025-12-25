@@ -12,6 +12,7 @@ import (
 	"repair-platform/middleware"
 	"repair-platform/models"
 	"repair-platform/routes"
+	"repair-platform/services"
 	"syscall"
 	"time"
 
@@ -69,9 +70,18 @@ func main() {
 	}
 	logger.Infow("数据库连接已初始化")
 
+	// 初始化 Services
+	logger.Infow("初始化服务")
+	notionService := services.NewNotionService(db)
+	if notionService == nil {
+		logger.Warnw("Notion服务初始化失败 (可能是缺少 API Key)")
+	} else {
+		logger.Infow("Notion服务已初始化")
+	}
+
 	// 配置路由
 	logger.Infow("配置路由和中间件")
-	routes.SetupRoutes(r, db, cfg)
+	routes.SetupRoutes(r, db, cfg, notionService)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,

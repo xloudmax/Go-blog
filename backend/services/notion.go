@@ -29,13 +29,70 @@ func NewNotionService(db *gorm.DB) *NotionService {
 	}
 }
 
-// SyncPosts 同步所有文章
-func (s *NotionService) SyncPosts(ctx context.Context, adminUser *models.User) error {
+// SyncPosts 同步文章
+func (s *NotionService) SyncPosts(ctx context.Context, adminUser *models.User, pageID string) error {
 	if s == nil {
 		return fmt.Errorf("Notion API Key not configured")
 	}
 
-	// 1. 搜索所有 Page
+	var pages []*notionapi.Page
+
+	if pageID != "" {
+		// Sync single page
+		page, err := s.client.Page.Get(ctx, notionapi.PageID(pageID))
+		if err != nil {
+			return fmt.Errorf("failed to get page %s: %w", pageID, err)
+		}
+		pages = append(pages, page)
+	} else {
+		// Sync all pages
+		req := &notionapi.SearchRequest{
+			Filter: notionapi.SearchFilter{
+				Property: "object",
+				Value:    "page",
+			},
+			Sort: &notionapi.SortObject{
+				Direction: notionapi.SortOrderDESC,
+				Timestamp: notionapi.TimestampLastEdited,
+			},
+		}
+
+		res, err := s.client.Search.Do(ctx, req)
+		if err != nil {
+			return fmt.Errorf("search failed: %w", err)
+		}
+
+		for _, result := range res.Results {
+			if page, ok := result.(*notionapi.Page); ok {
+				pages = append(pages, page)
+			}
+		}
+	}
+
+	for _, page := range pages {
+		if err := s.processPage(ctx, page, adminUser); err != nil {
+			fmt.Printf("Error processing page %s: %v\n", page.ID, err)
+			continue
+		}
+	}
+
+	return nil
+}
+
+// NotionPageMeta 包含Notion页面的基本信息
+type NotionPageMeta struct {
+	ID           string
+	Title        string
+	LastEditedAt time.Time
+	URL          string
+}
+
+// ListPages 获取所有文章列表（仅元数据）
+func (s *NotionService) ListPages(ctx context.Context) ([]*NotionPageMeta, error) {
+	if s == nil {
+		return nil, fmt.Errorf("Notion API Key not configured")
+	}
+
 	req := &notionapi.SearchRequest{
 		Filter: notionapi.SearchFilter{
 			Property: "object",
@@ -49,21 +106,38 @@ func (s *NotionService) SyncPosts(ctx context.Context, adminUser *models.User) e
 
 	res, err := s.client.Search.Do(ctx, req)
 	if err != nil {
-		return fmt.Errorf("search failed: %w", err)
+		return nil, fmt.Errorf("search failed: %w", err)
 	}
 
+	var pages []*NotionPageMeta
 	for _, result := range res.Results {
 		if page, ok := result.(*notionapi.Page); ok {
-			if err := s.processPage(ctx, page, adminUser); err != nil {
-				fmt.Printf("Error processing page %s: %v\n", page.ID, err)
-				continue
+			title := "Untitled"
+			if len(page.Properties) > 0 {
+				for _, prop := range page.Properties {
+					if prop.GetType() == notionapi.PropertyTypeTitle {
+						if titleProp, ok := prop.(*notionapi.TitleProperty); ok {
+							if len(titleProp.Title) > 0 {
+								title = titleProp.Title[0].PlainText
+							}
+						}
+					}
+				}
 			}
+
+			pages = append(pages, &NotionPageMeta{
+				ID:           page.ID.String(),
+				Title:        title,
+				LastEditedAt: page.LastEditedTime,
+				URL:          page.URL,
+			})
 		}
 	}
 
-	return nil
+	return pages, nil
 }
 
+// processPage 处理单个Page的转换和存储
 func (s *NotionService) processPage(ctx context.Context, page *notionapi.Page, adminUser *models.User) error {
 	// 获取标题
 	title, err := s.getPageTitle(page)
@@ -109,7 +183,21 @@ func (s *NotionService) processPage(ctx context.Context, page *notionapi.Page, a
 			CreatedAt:      now,
 			UpdatedAt:      now,
 		}
-		return s.db.Create(&newPost).Error
+		if err := s.db.Create(&newPost).Error; err != nil {
+			return err
+		}
+
+		// 创建默认统计数据
+		newStats := models.BlogPostStats{
+			BlogPostID:   newPost.ID,
+			ViewCount:    0,
+			LikeCount:    0,
+			ShareCount:   0,
+			CommentCount: 0,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		}
+		return s.db.Create(&newStats).Error
 	} else {
 		// 更新现有文章
 		post.Title = title
@@ -142,15 +230,19 @@ func (s *NotionService) getPageTitle(page *notionapi.Page) (string, error) {
 			}
 		}
 	}
-	return "", fmt.Errorf("title property not found")
+	return "Untitled", nil // Default to Untitled if no title found
 }
 
 func (s *NotionService) getPageContent(ctx context.Context, pageID notionapi.ObjectID) (string, error) {
+	return s.fetchAndConvertChildren(ctx, notionapi.BlockID(pageID), 0)
+}
+
+func (s *NotionService) fetchAndConvertChildren(ctx context.Context, blockID notionapi.BlockID, depth int) (string, error) {
 	var blocks []notionapi.Block
 	cursor := notionapi.Cursor("")
 
 	for {
-		res, err := s.client.Block.GetChildren(ctx, notionapi.BlockID(pageID), &notionapi.Pagination{
+		res, err := s.client.Block.GetChildren(ctx, blockID, &notionapi.Pagination{
 			StartCursor: cursor,
 			PageSize:    100,
 		})
@@ -165,43 +257,258 @@ func (s *NotionService) getPageContent(ctx context.Context, pageID notionapi.Obj
 	}
 
 	var mdBuilder strings.Builder
-	for _, block := range blocks {
-		mdBuilder.WriteString(s.blockToMarkdown(block))
-		mdBuilder.WriteString("\n\n")
+	for i, block := range blocks {
+		content, err := s.blockToMarkdown(ctx, block, depth)
+		if err != nil {
+			return "", err
+		}
+		mdBuilder.WriteString(content)
+
+		// Add appropriate spacing
+		if i < len(blocks)-1 {
+			nextBlock := blocks[i+1]
+			if isListBlock(block) && isListBlock(nextBlock) {
+				mdBuilder.WriteString("\n")
+			} else {
+				mdBuilder.WriteString("\n\n")
+			}
+		}
 	}
 
 	return mdBuilder.String(), nil
 }
 
-func (s *NotionService) blockToMarkdown(block notionapi.Block) string {
+func (s *NotionService) convertTable(ctx context.Context, block *notionapi.TableBlock) (string, error) {
+	var rows []notionapi.TableRowBlock
+	cursor := notionapi.Cursor("")
+	for {
+		res, err := s.client.Block.GetChildren(ctx, block.ID, &notionapi.Pagination{
+			StartCursor: cursor,
+			PageSize:    100,
+		})
+		if err != nil {
+			return "", err
+		}
+		for _, child := range res.Results {
+			if row, ok := child.(*notionapi.TableRowBlock); ok {
+				rows = append(rows, *row)
+			}
+		}
+		if !res.HasMore {
+			break
+		}
+		cursor = notionapi.Cursor(res.NextCursor)
+	}
+
+	if len(rows) == 0 {
+		return "", nil
+	}
+
+	var sb strings.Builder
+
+	// Determine column count from the first row
+	colCount := 0
+	if len(rows) > 0 {
+		colCount = len(rows[0].TableRow.Cells)
+	}
+
+	for i, row := range rows {
+		sb.WriteString("|")
+		for _, cell := range row.TableRow.Cells {
+			sb.WriteString(" ")
+			sb.WriteString(strings.ReplaceAll(s.richTextToMarkdown(cell), "\n", "<br>")) // Handle newlines in cells
+			sb.WriteString(" |")
+		}
+		sb.WriteString("\n")
+
+		// Add header separator if it's the first row and has_column_header is true
+		// Or if has_column_header is false, markdown table still needs a separator after first row to be a table?
+		// Actually standard GFM requires a header row. If Notion says no header, we still expect the first row to be treated as header
+		// because MD tables always have headers.
+		if i == 0 {
+			sb.WriteString("|")
+			for j := 0; j < colCount; j++ {
+				sb.WriteString(" --- |")
+			}
+			sb.WriteString("\n")
+		}
+	}
+	return sb.String(), nil
+}
+
+func isListBlock(block notionapi.Block) bool {
+	switch block.(type) {
+	case *notionapi.BulletedListItemBlock, *notionapi.NumberedListItemBlock, *notionapi.ToDoBlock:
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *NotionService) blockToMarkdown(ctx context.Context, block notionapi.Block, depth int) (string, error) {
+	indent := strings.Repeat("    ", depth)
+
+	handleChildren := func(b notionapi.Block) (string, error) {
+		if b.GetHasChildren() {
+			childrenContent, err := s.fetchAndConvertChildren(ctx, b.GetID(), depth+1)
+			if err != nil {
+				return "", err
+			}
+			return "\n" + childrenContent, nil
+		}
+		return "", nil
+	}
+
 	switch b := block.(type) {
 	case *notionapi.ParagraphBlock:
-		return s.richTextToMarkdown(b.Paragraph.RichText)
+		text := s.richTextToMarkdown(b.Paragraph.RichText)
+		children, err := handleChildren(b)
+		if err != nil {
+			return "", err
+		}
+		return indent + text + children, nil
+
 	case *notionapi.Heading1Block:
-		return "# " + s.richTextToMarkdown(b.Heading1.RichText)
+		return "# " + s.richTextToMarkdown(b.Heading1.RichText), nil
 	case *notionapi.Heading2Block:
-		return "## " + s.richTextToMarkdown(b.Heading2.RichText)
+		return "## " + s.richTextToMarkdown(b.Heading2.RichText), nil
 	case *notionapi.Heading3Block:
-		return "### " + s.richTextToMarkdown(b.Heading3.RichText)
+		return "### " + s.richTextToMarkdown(b.Heading3.RichText), nil
+
 	case *notionapi.BulletedListItemBlock:
-		return "- " + s.richTextToMarkdown(b.BulletedListItem.RichText)
+		text := s.richTextToMarkdown(b.BulletedListItem.RichText)
+		children, err := handleChildren(b)
+		if err != nil {
+			return "", err
+		}
+		return indent + "- " + text + children, nil
+
 	case *notionapi.NumberedListItemBlock:
-		return "1. " + s.richTextToMarkdown(b.NumberedListItem.RichText)
+		text := s.richTextToMarkdown(b.NumberedListItem.RichText)
+		children, err := handleChildren(b)
+		if err != nil {
+			return "", err
+		}
+		return indent + "1. " + text + children, nil
+
+	case *notionapi.ToDoBlock:
+		text := s.richTextToMarkdown(b.ToDo.RichText)
+		checked := " "
+		if b.ToDo.Checked {
+			checked = "x"
+		}
+		children, err := handleChildren(b)
+		if err != nil {
+			return "", err
+		}
+		return indent + fmt.Sprintf("- [%s] %s", checked, text) + children, nil
+
+	case *notionapi.ToggleBlock:
+		summary := s.richTextToMarkdown(b.Toggle.RichText)
+		children, err := handleChildren(b)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%s<details><summary>%s</summary>\n%s\n%s</details>", indent, summary, children, indent), nil
+
 	case *notionapi.QuoteBlock:
-		return "> " + s.richTextToMarkdown(b.Quote.RichText)
+		text := s.richTextToMarkdown(b.Quote.RichText)
+		children, err := handleChildren(b)
+		if err != nil {
+			return "", err
+		}
+		return indent + "> " + text + children, nil
+
+	case *notionapi.CalloutBlock:
+		text := s.richTextToMarkdown(b.Callout.RichText)
+		icon := ""
+		if b.Callout.Icon != nil {
+			if b.Callout.Icon.Type == "emoji" && b.Callout.Icon.Emoji != nil {
+				icon = string(*b.Callout.Icon.Emoji) + " "
+			}
+		}
+		children, err := handleChildren(b)
+		if err != nil {
+			return "", err
+		}
+		return indent + "> " + icon + text + children, nil
+
+	case *notionapi.DividerBlock:
+		return "---", nil
+
 	case *notionapi.CodeBlock:
 		lang := b.Code.Language
 		code := s.richTextToMarkdown(b.Code.RichText)
-		return fmt.Sprintf("```%s\n%s\n```", lang, code)
-	case *notionapi.ImageBlock:
-		if b.Image.Type == "external" {
-			return fmt.Sprintf("![image](%s)", b.Image.External.URL)
-		} else if b.Image.Type == "file" {
-			return fmt.Sprintf("![image](%s)", b.Image.File.URL)
+		caption := s.richTextToMarkdown(b.Code.Caption)
+		if caption != "" {
+			caption = "\n*" + caption + "*" // Add caption as italic text below code
 		}
-		// TODO: Support more block types like ToDo, Toggle, etc.
+		return fmt.Sprintf("```%s\n%s\n```%s", lang, code, caption), nil
+
+	case *notionapi.ImageBlock:
+		url := ""
+		if b.Image.Type == "external" {
+			url = b.Image.External.URL
+		} else if b.Image.Type == "file" {
+			url = b.Image.File.URL
+		}
+		caption := s.richTextToMarkdown(b.Image.Caption)
+		if caption == "" {
+			caption = "image"
+		}
+		return fmt.Sprintf("![%s](%s)", caption, url), nil
+
+	case *notionapi.VideoBlock:
+		url := ""
+		if b.Video.Type == "external" {
+			url = b.Video.External.URL
+		} else if b.Video.Type == "file" {
+			url = b.Video.File.URL
+		}
+		caption := s.richTextToMarkdown(b.Video.Caption)
+		if caption == "" {
+			caption = "Video"
+		}
+		return fmt.Sprintf("[%s](%s)", caption, url), nil
+
+	case *notionapi.FileBlock:
+		url := ""
+		if b.File.Type == "external" {
+			url = b.File.External.URL
+		} else if b.File.Type == "file" {
+			url = b.File.File.URL
+		}
+		caption := s.richTextToMarkdown(b.File.Caption)
+		if caption == "" {
+			caption = "File"
+		}
+		return fmt.Sprintf("[%s](%s)", caption, url), nil
+
+	case *notionapi.PdfBlock:
+		url := ""
+		if b.Pdf.Type == "external" {
+			url = b.Pdf.External.URL
+		} else if b.Pdf.Type == "file" {
+			url = b.Pdf.File.URL
+		}
+		caption := s.richTextToMarkdown(b.Pdf.Caption)
+		if caption == "" {
+			caption = "PDF"
+		}
+		return fmt.Sprintf("[%s](%s)", caption, url), nil
+
+	case *notionapi.BookmarkBlock:
+		url := b.Bookmark.URL
+		caption := s.richTextToMarkdown(b.Bookmark.Caption)
+		if caption == "" {
+			caption = url
+		}
+		return fmt.Sprintf("[%s](%s)", caption, url), nil
+
+	case *notionapi.TableBlock:
+		return s.convertTable(ctx, b)
 	}
-	return ""
+	return "", nil
 }
 
 func (s *NotionService) richTextToMarkdown(richText []notionapi.RichText) string {

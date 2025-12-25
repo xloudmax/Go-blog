@@ -20,7 +20,8 @@ import {
   EditOutlined,
   CalendarOutlined,
   UserOutlined,
-  CommentOutlined
+  CommentOutlined,
+  CloudSyncOutlined
 } from '@ant-design/icons';
 import { useQuery } from '@apollo/client';
 import { POST_QUERY } from '@/api/graphql';
@@ -268,14 +269,25 @@ export default function PostDetailPage() {
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     {/* 编辑按钮 - 只有作者可见 */}
                     {isAuthenticated && user?.username === post.author.username && (
-                      <Tooltip title="编辑文章">
-                        <Button
-                          icon={<EditOutlined />}
-                          onClick={() => navigate(`/editor/posts/${post.slug}`)}
-                        >
-                          编辑
-                        </Button>
-                      </Tooltip>
+                      post.notionPageId ? (
+                        <Tooltip title="此文章由 Notion 同步，请在 Notion 中编辑">
+                           <Button
+                             icon={<CloudSyncOutlined />}
+                             disabled
+                           >
+                             Notion 同步
+                           </Button>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="编辑文章">
+                          <Button
+                            icon={<EditOutlined />}
+                            onClick={() => navigate(`/editor/posts/${post.slug}`)}
+                          >
+                            编辑
+                          </Button>
+                        </Tooltip>
+                      )
                     )}
 
                     {/* 点赞按钮 - 使用优化后的逻辑 */}

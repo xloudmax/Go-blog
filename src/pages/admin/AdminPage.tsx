@@ -4,6 +4,7 @@ import {
   Card,
   Result
 } from 'antd';
+
 import { useAdminNavigation } from '../../hooks';
 import { useAppUser } from '../../hooks';
 import { useTheme } from '@/components/ThemeProvider';
@@ -15,6 +16,7 @@ import PostManagement from './PostManagement';
 import CommentManagement from './CommentManagement';
 import SearchAnalytics from './SearchAnalytics';
 import TagManagement from './TagManagement';
+import NotionManagement from './NotionManagement';
 
 const { Title } = Typography;
 
@@ -22,7 +24,9 @@ export default function AdminPage() {
   const { isDarkMode } = useTheme();
   const { isAdmin } = useAppUser();
   const { currentTab, setCurrentTab, navigationItems, checkAdminAccess } = useAdminNavigation();
-  
+  // const { syncNotion, loading: notionLoading } = useNotionSync();
+
+
   // 权限检查
   if (!isAdmin || !checkAdminAccess()) {
     return (
@@ -53,6 +57,8 @@ export default function AdminPage() {
         return <SearchAnalytics />;
       case 'system':
         return <SystemManagement />;
+      case 'notion':
+        return <NotionManagement />;
       default:
         return <AdminDashboard />;
     }
@@ -77,6 +83,8 @@ export default function AdminPage() {
             系统管理和数据维护
           </Typography.Paragraph>
         </div>
+        
+        {/* Sync Notion Button Removed - Moved to NotionManagement page */}
 
         {/* 导航菜单 */}
         <Card className="mb-5 optimized-card" bodyStyle={{ padding: '0 12px' }}>
@@ -150,6 +158,12 @@ export default function AdminPage() {
               <>
                 <Title level={3} style={{ margin: '0 0 8px 0' }}>搜索分析</Title>
                 <Typography.Text type="secondary">搜索统计和趋势分析</Typography.Text>
+              </>
+            )}
+            {currentTab === 'notion' && (
+              <>
+                <Title level={3} style={{ margin: '0 0 8px 0' }}>Notion 同步</Title>
+                <Typography.Text type="secondary">管理 Notion 页面同步状态</Typography.Text>
               </>
             )}
             {currentTab === 'system' && (

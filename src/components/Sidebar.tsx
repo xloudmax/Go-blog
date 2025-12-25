@@ -139,6 +139,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {isDarkMode ? <SunOutlined className="text-xl text-neutral-400" /> : <MoonOutlined className="text-xl text-neutral-500" />}
              </div>
            )}
+            {isAdmin && (
+              <div onClick={handleSyncNotion} className="cursor-pointer">
+                 <CloudSyncOutlined spin={notionLoading} className="text-xl text-neutral-500 hover:text-neutral-800 dark:text-neutral-400" />
+              </div>
+            )}
         </div>
       </div>
     );
@@ -196,6 +201,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex flex-col pb-2">
             {/* Placeholder for favorites */}
             <div className="px-5 py-1 text-xs text-neutral-400 italic">No favorites yet</div>
+             {isAdmin && (
+               <MenuItem 
+                 icon={<CloudSyncOutlined spin={notionLoading} />} 
+                 label="Sync Notion" 
+                 onClick={handleSyncNotion}
+               />
+            )}
           </div>
         )}
 
