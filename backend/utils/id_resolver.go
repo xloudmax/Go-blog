@@ -130,7 +130,7 @@ func (info *IDInfo) AsUUID() (string, error) {
 	if info.Type == IDTypeUUID {
 		return info.UUIDValue, nil
 	}
-	return "", fmt.Errorf("ID类型不是UUID: %s (类型: %v)", info.Original, info.Type)
+	return "", fmt.Errorf("id类型不是UUID: %s (类型: %v)", info.Original, info.Type)
 }
 
 // IsNumeric 检查是否为数字ID
