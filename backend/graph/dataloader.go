@@ -2,184 +2,138 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"repair-platform/models"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/graph-gophers/dataloader/v7"
 	"gorm.io/gorm"
 )
 
-// DataLoader 批量加载器的简化实现
+// 定义 Loader Key 类型，必须实现 String() 方法 (虽然 v7 使用泛型，但某些接口可能仍需)
+// v7 中 Key 是泛型 K comparable
+
+// DataLoader 包含所有的 Loaders
 type DataLoader struct {
-	db            *gorm.DB
-	authorCache   map[uint]*models.User
-	statsCache    map[uint]*models.BlogPostStats
-	mutex         sync.RWMutex
-	lastClearTime time.Time
+	UserLoader  *dataloader.Loader[uint, *models.User]
+	StatsLoader *dataloader.Loader[uint, *models.BlogPostStats]
 }
 
-// NewDataLoader 创建新的数据加载器
+// NewDataLoader 创建新的数据加载器实例
 func NewDataLoader(db *gorm.DB) *DataLoader {
-	return &DataLoader{
-		db:            db,
-		authorCache:   make(map[uint]*models.User),
-		statsCache:    make(map[uint]*models.BlogPostStats),
-		lastClearTime: time.Now(),
-	}
-}
+	// 用户加载器
+	batchUsers := func(ctx context.Context, keys []uint) []*dataloader.Result[*models.User] {
+		var results []*dataloader.Result[*models.User] = make([]*dataloader.Result[*models.User], len(keys))
 
-// LoadAuthor 加载作者信息
-func (dl *DataLoader) LoadAuthor(ctx context.Context, userID uint) (*models.User, error) {
-	dl.mutex.RLock()
-	if user, exists := dl.authorCache[userID]; exists {
-		dl.mutex.RUnlock()
-		return user, nil
-	}
-	dl.mutex.RUnlock()
-
-	// 不在缓存中，从数据库加载
-	var user models.User
-	err := dl.db.First(&user, userID).Error
-	if err != nil {
-		return nil, err
-	}
-
-	// 保存到缓存
-	dl.mutex.Lock()
-	dl.authorCache[userID] = &user
-	dl.mutex.Unlock()
-
-	return &user, nil
-}
-
-// LoadStats 加载统计信息
-func (dl *DataLoader) LoadStats(ctx context.Context, postID uint) (*models.BlogPostStats, error) {
-	dl.mutex.RLock()
-	if stats, exists := dl.statsCache[postID]; exists {
-		dl.mutex.RUnlock()
-		return stats, nil
-	}
-	dl.mutex.RUnlock()
-
-	// 不在缓存中，从数据库加载
-	var stats models.BlogPostStats
-	err := dl.db.Where("blog_post_id = ?", postID).First(&stats).Error
-	if err != nil {
-		// 如果没有统计记录，创建一个默认的
-		stats = models.BlogPostStats{
-			BlogPostID: postID,
-			ViewCount:  0,
-			LikeCount:  0,
+		// 初始化结果并将所有结果默认为 nil/error
+		for i := range results {
+			results[i] = &dataloader.Result[*models.User]{Data: nil, Error: nil}
 		}
-	}
 
-	// 保存到缓存
-	dl.mutex.Lock()
-	dl.statsCache[postID] = &stats
-	dl.mutex.Unlock()
-
-	return &stats, nil
-}
-
-// BatchLoadAuthors 批量加载作者信息
-func (dl *DataLoader) BatchLoadAuthors(ctx context.Context, userIDs []uint) (map[uint]*models.User, error) {
-	// 检查哪些用户不在缓存中
-	dl.mutex.RLock()
-	var missingIDs []uint
-	result := make(map[uint]*models.User)
-
-	for _, userID := range userIDs {
-		if user, exists := dl.authorCache[userID]; exists {
-			result[userID] = user
-		} else {
-			missingIDs = append(missingIDs, userID)
-		}
-	}
-	dl.mutex.RUnlock()
-
-	// 批量加载缺失的用户
-	if len(missingIDs) > 0 {
+		// 执行批量查询
 		var users []models.User
-		err := dl.db.Where("id IN ?", missingIDs).Find(&users).Error
-		if err != nil {
-			return nil, err
+		if err := db.Where("id IN ?", keys).Find(&users).Error; err != nil {
+			// 如果查询失败，所有结果都设为错误
+			for i := range results {
+				results[i].Error = err
+			}
+			return results
 		}
 
-		// 更新缓存和结果
-		dl.mutex.Lock()
+		// 将查询结果映射回 keys 的顺序
+		userMap := make(map[uint]*models.User)
 		for i := range users {
-			dl.authorCache[users[i].ID] = &users[i]
-			result[users[i].ID] = &users[i]
+			userMap[users[i].ID] = &users[i]
 		}
-		dl.mutex.Unlock()
+
+		for i, key := range keys {
+			if user, ok := userMap[key]; ok {
+				results[i].Data = user
+			} else {
+				// 没找到用户，不报错，返回 nil 或者根据业务需求处理
+				// 这里保持 nil
+				results[i].Error = fmt.Errorf("user not found: %d", key)
+			}
+		}
+
+		return results
 	}
 
-	return result, nil
-}
+	// 统计加载器
+	batchStats := func(ctx context.Context, keys []uint) []*dataloader.Result[*models.BlogPostStats] {
+		var results []*dataloader.Result[*models.BlogPostStats] = make([]*dataloader.Result[*models.BlogPostStats], len(keys))
 
-// BatchLoadStats 批量加载统计信息
-func (dl *DataLoader) BatchLoadStats(ctx context.Context, postIDs []uint) (map[uint]*models.BlogPostStats, error) {
-	// 检查哪些统计不在缓存中
-	dl.mutex.RLock()
-	var missingIDs []uint
-	result := make(map[uint]*models.BlogPostStats)
-
-	for _, postID := range postIDs {
-		if stats, exists := dl.statsCache[postID]; exists {
-			result[postID] = stats
-		} else {
-			missingIDs = append(missingIDs, postID)
-		}
-	}
-	dl.mutex.RUnlock()
-
-	// 批量加载缺失的统计
-	if len(missingIDs) > 0 {
+		// 执行批量查询
 		var stats []models.BlogPostStats
-		err := dl.db.Where("blog_post_id IN ?", missingIDs).Find(&stats).Error
-		if err != nil {
-			return nil, err
+		if err := db.Where("blog_post_id IN ?", keys).Find(&stats).Error; err != nil {
+			for i := range results {
+				results[i] = &dataloader.Result[*models.BlogPostStats]{Error: err}
+			}
+			return results
 		}
 
+		// 映射结果
 		statsMap := make(map[uint]*models.BlogPostStats)
 		for i := range stats {
 			statsMap[stats[i].BlogPostID] = &stats[i]
 		}
 
-		// 更新缓存和结果
-		dl.mutex.Lock()
-		for _, postID := range missingIDs {
-			if stat, exists := statsMap[postID]; exists {
-				dl.statsCache[postID] = stat
-				result[postID] = stat
+		for i, key := range keys {
+			if stat, ok := statsMap[key]; ok {
+				results[i] = &dataloader.Result[*models.BlogPostStats]{Data: stat}
 			} else {
-				// 创建默认统计
+				// 未找到统计数据，返回默认空统计
 				defaultStats := &models.BlogPostStats{
-					BlogPostID: postID,
+					BlogPostID: key,
 					ViewCount:  0,
 					LikeCount:  0,
+					// ID 必须设置，否则前端可能会报错
+					ID: 0, // 或者是临时ID
 				}
-				dl.statsCache[postID] = defaultStats
-				result[postID] = defaultStats
+				results[i] = &dataloader.Result[*models.BlogPostStats]{Data: defaultStats}
 			}
 		}
-		dl.mutex.Unlock()
+
+		return results
 	}
 
+	// 配置 Loader 选项
+	// 设置 Wait 时间为 2ms，足以收集同一事件循环中的请求
+	userLoader := dataloader.NewBatchedLoader(batchUsers, dataloader.WithWait[uint, *models.User](2*time.Millisecond))
+	statsLoader := dataloader.NewBatchedLoader(batchStats, dataloader.WithWait[uint, *models.BlogPostStats](2*time.Millisecond))
+
+	return &DataLoader{
+		UserLoader:  userLoader,
+		StatsLoader: statsLoader,
+	}
+}
+
+// LoadAuthor 加载作者
+func (dl *DataLoader) LoadAuthor(ctx context.Context, userID uint) (*models.User, error) {
+	thunk := dl.UserLoader.Load(ctx, userID)
+	result, err := thunk()
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
-// ClearCache 清理缓存
-func (dl *DataLoader) ClearCache() {
-	dl.mutex.Lock()
-	dl.authorCache = make(map[uint]*models.User)
-	dl.statsCache = make(map[uint]*models.BlogPostStats)
-	dl.lastClearTime = time.Now()
-	dl.mutex.Unlock()
+// LoadStats 加载统计
+func (dl *DataLoader) LoadStats(ctx context.Context, postID uint) (*models.BlogPostStats, error) {
+	thunk := dl.StatsLoader.Load(ctx, postID)
+	result, err := thunk()
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
-// GetDataLoaderFromContext 从上下文获取DataLoader
+// Loaders 接口 (兼容旧代码如需)
+// 下面的方法是为了保持与旧接口的某种兼容性，或者方便其他地方调用
+// 但实际上 schema.resolvers.go 已经修改为调用 LoadAuthor/LoadStats，所以接口签名是最重要的
+
+// 辅助方法：GetDataLoaderFromContext
 func GetDataLoaderFromContext(ctx context.Context) *DataLoader {
 	if dl, ok := ctx.Value("dataloader").(*DataLoader); ok {
 		return dl
@@ -187,7 +141,7 @@ func GetDataLoaderFromContext(ctx context.Context) *DataLoader {
 	return nil
 }
 
-// DataLoaderMiddleware Gin中间件，为每个请求注入新的DataLoader
+// DataLoaderMiddleware Gin中间件
 func DataLoaderMiddleware(db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		loader := NewDataLoader(db)

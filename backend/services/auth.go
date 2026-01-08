@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"repair-platform/config"
+	"repair-platform/middleware"
 	"repair-platform/models"
 	"strings"
 	"time"
@@ -78,8 +79,10 @@ func (s *AuthService) RegisterUser(input *models.RegisterInput) (*models.User, s
 	if adminInviteCode != "" && input.InviteCode == adminInviteCode {
 		role = "ADMIN"
 		// 记录安全审计日志
-		fmt.Printf("[SECURITY AUDIT] 使用管理员邀请码注册 - Username: %s, Email: %s, Time: %s\n",
-			input.Username, input.Email, time.Now().Format(time.RFC3339))
+		middleware.GetLogger().Infow("SECURITY AUDIT: Admin Invite Code Used",
+			"username", input.Username,
+			"email", input.Email,
+			"time", time.Now().Format(time.RFC3339))
 	}
 
 	user := &models.User{
@@ -137,7 +140,7 @@ func (s *AuthService) RegisterUser(input *models.RegisterInput) (*models.User, s
 		// 发送验证邮件
 		if err := s.sendVerificationEmail(user.Email, verificationCode, "REGISTER"); err != nil {
 			// 记录错误但不阻止注册流程
-			fmt.Printf("发送验证邮件失败: %v\n", err)
+			middleware.GetLogger().Errorw("发送验证邮件失败", "error", err)
 		}
 	} else {
 		// 配置允许跳过验证时直接标记为已验证
@@ -240,7 +243,7 @@ func (s *AuthService) EmailLogin(email string) error {
 		// 发送验证邮件
 		if err := s.sendVerificationEmail(email, code, "LOGIN"); err != nil {
 			// 记录错误但不阻止邮箱登录流程
-			fmt.Printf("发送验证邮件失败: %v\n", err)
+			middleware.GetLogger().Errorw("发送验证邮件失败", "error", err)
 		}
 	}
 
@@ -318,7 +321,7 @@ func (s *AuthService) SendVerificationCode(email, codeType string) error {
 		// 发送验证邮件
 		if err := s.sendVerificationEmail(email, code, codeType); err != nil {
 			// 记录错误但不阻止流程
-			fmt.Printf("发送验证邮件失败: %v\n", err)
+			middleware.GetLogger().Errorw("发送验证邮件失败", "error", err)
 		}
 	}
 
@@ -359,7 +362,7 @@ func (s *AuthService) RequestPasswordReset(email string) error {
 	// 发送密码重置邮件
 	if err := s.sendPasswordResetEmail(user.Email, token.Token); err != nil {
 		// 记录错误但不阻止流程
-		fmt.Printf("发送密码重置邮件失败: %v\n", err)
+		middleware.GetLogger().Errorw("发送密码重置邮件失败", "error", err)
 	}
 
 	return nil

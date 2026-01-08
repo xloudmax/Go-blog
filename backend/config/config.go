@@ -56,7 +56,7 @@ type Config struct {
 
 // LoadConfig 加载应用配置
 func LoadConfig() *Config {
-	return &Config{
+	cfg := &Config{
 		// 基础配置
 		Environment: getEnv("GIN_MODE", "development"),
 		Port:        getEnv("PORT", "11451"),
@@ -66,7 +66,7 @@ func LoadConfig() *Config {
 		DatabaseURL: getEnv("DATABASE_URL", "blog_platform.db"),
 
 		// JWT 配置
-		JWTSecret:      getEnv("JWT_SECRET", "JNU_technicians_club"),
+		JWTSecret:      getEnv("JWT_SECRET", ""),
 		BcryptCost:     getEnvAsInt("BCRYPT_COST", 12),
 		SessionTimeout: getEnv("SESSION_TIMEOUT", "24h"),
 		RefreshTimeout: getEnv("REFRESH_TOKEN_TIMEOUT", "168h"),
@@ -95,7 +95,22 @@ func LoadConfig() *Config {
 		CacheEnabled: getEnvAsBool("CACHE_ENABLED", true),
 		CacheTTL:     getEnv("CACHE_TTL", "900s"),
 	}
+
+	// 安全检查：生产环境下必须配置 JWT_SECRET
+	if cfg.JWTSecret == "" {
+		if cfg.IsProduction() {
+			panic("CRITICAL SECURITY ERROR: JWT_SECRET environment variable is not set! refusing to start in production mode.")
+		}
+		// 开发环境给一个默认的不安全密钥，防止 crash
+		if cfg.IsDevelopment() || cfg.IsTest() {
+			cfg.JWTSecret = "dev_unsafe_secret_do_not_use_in_prod"
+		}
+	}
+
+	return cfg
 }
+
+// GetGinMode 获取 Gin 运行模式（映射到 Gin 支持的模式）
 
 // GetGinMode 获取 Gin 运行模式（映射到 Gin 支持的模式）
 func (c *Config) GetGinMode() string {

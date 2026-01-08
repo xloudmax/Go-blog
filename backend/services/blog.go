@@ -585,7 +585,14 @@ func (s *BlogService) GetPosts(limit, offset int, filter *PostFilter, sort *Post
 		}
 		if len(filter.Tags) > 0 {
 			for _, tag := range filter.Tags {
-				query = query.Where("tags LIKE ?", "%"+tag+"%")
+				// 使用子查询进行精确匹配，替代模糊查询
+				// 确保文章关联了指定名称的标签
+				subQuery := s.db.Table("blog_post_tags").
+					Select("blog_post_tags.blog_post_id").
+					Joins("JOIN tags ON tags.id = blog_post_tags.tag_id").
+					Where("tags.name = ?", tag)
+
+				query = query.Where("id IN (?)", subQuery)
 			}
 		}
 		if len(filter.Categories) > 0 {
@@ -628,7 +635,7 @@ func (s *BlogService) GetPosts(limit, offset int, filter *PostFilter, sort *Post
 				query = query.Order("title ASC")
 			}
 		case "likes":
-			query = query.Joins("LEFT JOIN blog_post_stats ON blog_post_stats.blog_post_id = blog_posts.id")
+			query = query.Joins("LEFT JOIN blog_post_stats ON blog_post_stats.blog_post_id = blog_post.id")
 			if sort.Direction == "DESC" {
 				query = query.Order("blog_post_stats.like_count DESC")
 			} else {
@@ -726,7 +733,7 @@ func (s *BlogService) GetPopularPosts(limit int, userID *uint, userRole string) 
 	var posts []*models.BlogPost
 	if err := query.Limit(limit).Find(&posts).Error; err != nil {
 		// 添加详细的错误日志
-		fmt.Printf("GetPopularPosts query error: %v\n", err)
+		middleware.GetLogger().Errorw("GetPopularPosts query error", "error", err)
 		return nil, models.ErrInternalServerError
 	}
 
@@ -779,52 +786,36 @@ func (s *BlogService) GetPostVersions(postID uint, userID uint, userRole string)
 }
 
 // GetTrendingTags 获取热门标签
+// GetTrendingTags 获取热门标签
 func (s *BlogService) GetTrendingTags(limit int) ([]string, error) {
-	var posts []models.BlogPost
-	if err := s.db.Select("tags").Where("status = 'PUBLISHED' AND access_level = 'PUBLIC' AND tags != ''").Find(&posts).Error; err != nil {
+	var tags []string
+
+	// 使用聚合查询优化性能
+	// SELECT tags.name FROM tags
+	// JOIN blog_post_tags ON ...
+	// JOIN blog_post ON ...
+	// WHERE proper conditions
+	// GROUP BY tags.name
+	// ORDER BY count DESC
+
+	err := s.db.Table("tags").
+		Select("tags.name").
+		Joins("INNER JOIN blog_post_tags ON blog_post_tags.tag_id = tags.id").
+		Joins("INNER JOIN blog_post ON blog_post.id = blog_post_tags.blog_post_id").
+		Where("tags.deleted_at IS NULL").
+		Where("blog_post.deleted_at IS NULL").
+		Where("blog_post.status = ? AND blog_post.access_level = ?", "PUBLISHED", "PUBLIC").
+		Group("tags.name").
+		Order("COUNT(blog_post_tags.blog_post_id) DESC").
+		Limit(limit).
+		Pluck("tags.name", &tags).Error
+
+	if err != nil {
+		middleware.GetLogger().Errorw("GetTrendingTags query failed", "error", err)
 		return nil, models.ErrInternalServerError
 	}
 
-	// 统计标签出现次数
-	tagCount := make(map[string]int)
-	for _, post := range posts {
-		tags := post.GetTagsArray()
-		for _, tag := range tags {
-			tagCount[tag]++
-		}
-	}
-
-	// 排序并返回前N个
-	type tagFreq struct {
-		tag   string
-		count int
-	}
-
-	var sortedTags []tagFreq
-	for tag, count := range tagCount {
-		sortedTags = append(sortedTags, tagFreq{tag: tag, count: count})
-	}
-
-	// 简单的冒泡排序（实际项目中可以使用更高效的排序算法）
-	for i := 0; i < len(sortedTags)-1; i++ {
-		for j := 0; j < len(sortedTags)-i-1; j++ {
-			if sortedTags[j].count < sortedTags[j+1].count {
-				sortedTags[j], sortedTags[j+1] = sortedTags[j+1], sortedTags[j]
-			}
-		}
-	}
-
-	// 提取标签名
-	var result []string
-	maxCount := len(sortedTags)
-	if limit < maxCount {
-		maxCount = limit
-	}
-	for i := 0; i < maxCount; i++ {
-		result = append(result, sortedTags[i].tag)
-	}
-
-	return result, nil
+	return tags, nil
 }
 
 // PostFilter 文章过滤条件

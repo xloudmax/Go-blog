@@ -174,7 +174,7 @@ func (s *CommentService) UpdateComment(commentID uint, content string, userID ui
 	return &comment, nil
 }
 
-// DeleteComment 删除评论
+// DeleteComment 删除评论（递归删除所有子评论）
 func (s *CommentService) DeleteComment(commentID uint, userID uint, userRole string) error {
 	// 查找评论
 	var comment models.BlogPostComment
@@ -198,14 +198,36 @@ func (s *CommentService) DeleteComment(commentID uint, userID uint, userRole str
 		}
 	}()
 
-	// 删除评论及其回复
-	if err := tx.Where("id = ? OR parent_id = ?", commentID, commentID).Delete(&models.BlogPostComment{}).Error; err != nil {
-		tx.Rollback()
-		return err
+	// 收集所有需要删除的评论ID（包括所有后代，防止孤儿数据）
+	idsToDelete := []uint{commentID}
+	currentLevelIDs := []uint{commentID}
+
+	// 循环查找所有下级回复
+	for len(currentLevelIDs) > 0 {
+		var childrenIDs []uint
+		if err := tx.Model(&models.BlogPostComment{}).Where("parent_id IN ?", currentLevelIDs).Pluck("id", &childrenIDs).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+		if len(childrenIDs) > 0 {
+			idsToDelete = append(idsToDelete, childrenIDs...)
+			currentLevelIDs = childrenIDs
+		} else {
+			currentLevelIDs = nil
+		}
 	}
 
-	// 更新文章统计信息
-	if err := tx.Model(&models.BlogPostStats{}).Where("blog_post_id = ?", comment.BlogPostID).UpdateColumn("comment_count", gorm.Expr("comment_count - ?", 1)).Error; err != nil {
+	// 批量删除评论
+	result := tx.Delete(&models.BlogPostComment{}, idsToDelete)
+	if result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+
+	// 更新文章统计信息 (减去实际删除的评论数量)
+	if err := tx.Model(&models.BlogPostStats{}).
+		Where("blog_post_id = ?", comment.BlogPostID).
+		UpdateColumn("comment_count", gorm.Expr("comment_count - ?", result.RowsAffected)).Error; err != nil {
 		tx.Rollback()
 		return err
 	}

@@ -25,13 +25,20 @@ FROM alpine:latest
 # 安装必要的运行时依赖
 RUN apk --no-cache add ca-certificates sqlite
 
-WORKDIR /root/
+# 创建非特权用户
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# 设置工作目录
+WORKDIR /app
 
 # 从构建阶段复制二进制文件
 COPY --from=builder /app/main .
 
-# 创建数据目录
-RUN mkdir -p /root/data
+# 创建数据目录并设置权限
+RUN mkdir -p /app/data && chown -R appuser:appgroup /app
+
+# 切换到非特权用户
+USER appuser
 
 # 暴露端口
 EXPOSE 11451
