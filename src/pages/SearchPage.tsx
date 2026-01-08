@@ -134,9 +134,10 @@ const SearchPage: React.FC = () => {
 
   // 组件卸载时清除计时器
   useEffect(() => {
+    const timeout = searchTimeoutRef.current;
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+      if (timeout) {
+        clearTimeout(timeout);
       }
     };
   }, []);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useContext, ReactNode } from 'react';
 import { useCurrentUser, useAuth } from '@/api/graphql';
 import { AppContext, AppState, AppActions } from '@/context/AppContext';
@@ -69,6 +70,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         setErrorState(null);
       } catch (error: unknown) {
         if (process.env.NODE_ENV === 'development') {
+           // eslint-disable-next-line no-console
            console.error('登出错误:', error instanceof Error ? error.message : String(error));
         }
         // 即使登出失败也清理本地状态
@@ -118,6 +120,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 };
 
 // 使用应用状态的hook
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAppState = () => {
   const context = useContext(AppContext);
   if (!context) {

@@ -108,10 +108,11 @@ export default function TagManagement() {
           duration: 5
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       notification.error({
         message: '错误',
-        description: err.message || '操作失败',
+        description: error.message || '操作失败',
         duration: 5
       });
     }
@@ -140,10 +141,11 @@ export default function TagManagement() {
           duration: 5
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       notification.error({
         message: '错误',
-        description: err.message || '操作失败',
+        description: error.message || '操作失败',
         duration: 5
       });
     }

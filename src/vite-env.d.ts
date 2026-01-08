@@ -14,5 +14,5 @@ interface ImportMeta {
 
 declare module 'apollo-upload-client/createUploadLink.mjs' {
   import { ApolloLink } from '@apollo/client';
-  export default function createUploadLink(options?: any): ApolloLink;
+  export default function createUploadLink(options?: Record<string, unknown>): ApolloLink;
 }

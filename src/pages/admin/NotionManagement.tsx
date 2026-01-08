@@ -19,6 +19,7 @@ import {
 } from '@ant-design/icons';
 import { useAppUser, useAdminNavigation } from '@/hooks';
 import { useNotionPages, useNotionSync } from '@/api/graphql/admin';
+import { NotionPage } from '@/generated/graphql';
 
 const { Title, Text } = Typography;
 
@@ -47,7 +48,8 @@ export default function NotionManagement() {
       } else {
         message.error(result.message || '同步失败');
       }
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       message.error(error.message || '操作失败');
     } finally {
       setSyncingId(null);
@@ -65,7 +67,8 @@ export default function NotionManagement() {
       } else {
         message.error(result.message || '同步失败');
       }
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       message.error(error.message || '操作失败');
     } finally {
       setSyncingId(null);
@@ -93,7 +96,7 @@ export default function NotionManagement() {
       title: '页面标题',
       dataIndex: 'title',
       key: 'title',
-      render: (title: string, record: any) => (
+      render: (title: string, record: NotionPage) => (
         <Space>
           <FileTextOutlined />
           <Text strong>{title || '无标题'}</Text>
@@ -118,7 +121,7 @@ export default function NotionManagement() {
       render: (date: string) => {
         try {
             return new Date(date).toLocaleString();
-        } catch (e) {
+        } catch {
             return date;
         }
       }
@@ -128,7 +131,7 @@ export default function NotionManagement() {
       key: 'action',
       width: 150,
       align: 'right' as const,
-      render: (_: unknown, record: any) => (
+      render: (_: unknown, record: NotionPage) => (
         <Button
           type="primary"
           ghost

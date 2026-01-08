@@ -88,15 +88,13 @@ export default function NotificationPage() {
   };
 
   // 处理通知点击
-  const handleNotificationClick = async (notification: any) => {
+  const handleNotificationClick = async (notification: { id: string; isRead: boolean; relatedPost?: { slug: string } }) => {
     // 标记为已读
     if (!notification.isRead) {
       try {
         await markAsRead({ variables: { id: notification.id } });
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('标记通知为已读失败:', error);
-        }
+      } catch {
+        // 忽略错误
       }
     }
 
@@ -112,7 +110,7 @@ export default function NotificationPage() {
       await markAllAsRead();
       message.success('所有通知已标记为已读');
       refetch();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -123,7 +121,7 @@ export default function NotificationPage() {
       await deleteNotification({ variables: { id } });
       message.success('通知已删除');
       refetch();
-    } catch (error) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -134,7 +132,7 @@ export default function NotificationPage() {
       await clearAll();
       message.success('所有通知已清空');
       refetch();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -193,6 +191,7 @@ export default function NotificationPage() {
             onChange: (newPage) => setPage(newPage),
             showSizeChanger: false,
           }}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           renderItem={(notification: any) => (
             <List.Item
               style={{

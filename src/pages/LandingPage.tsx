@@ -65,24 +65,6 @@ const LandingPage: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [debouncedResize]);
 
-  // 初始化细胞网格
-  useEffect(() => {
-    const initialCells: Cell[][] = [];
-    const { cols, rows } = gridDimensions;
-
-    for (let x = 0; x < cols; x++) {
-      const column: Cell[] = [];
-      for (let y = 0; y < rows; y++) {
-        column.push({ x, y, alive: false });
-      }
-      initialCells.push(column);
-    }
-
-    // 添加简单的初始模式
-    addInitialPatterns(initialCells);
-    setCells(initialCells);
-  }, [gridDimensions]);
-
   // 添加初始模式
   const addInitialPatterns = useCallback((cells: Cell[][]) => {
     if (cells.length === 0 || cells[0].length === 0) return;
@@ -122,6 +104,24 @@ const LandingPage: React.FC = () => {
       }
     }
   }, []);
+
+  // 初始化细胞网格
+  useEffect(() => {
+    const initialCells: Cell[][] = [];
+    const { cols, rows } = gridDimensions;
+
+    for (let x = 0; x < cols; x++) {
+      const column: Cell[] = [];
+      for (let y = 0; y < rows; y++) {
+        column.push({ x, y, alive: false });
+      }
+      initialCells.push(column);
+    }
+
+    // 添加简单的初始模式
+    addInitialPatterns(initialCells);
+    setCells(initialCells);
+  }, [gridDimensions, addInitialPatterns]);
 
   // 简化的生命游戏计算
   const calculateNextGeneration = useCallback((currentCells: Cell[][]) => {

@@ -105,7 +105,8 @@ export default function SystemManagement() {
                         description: '缓存清理成功！',
                         duration: 3,
                     });
-                } catch (error: any) {
+                } catch (err: unknown) {
+                    const error = err as Error;
                     notification.error({
                         message: '错误',
                         description: error.message || '清理缓存失败',
@@ -135,7 +136,8 @@ export default function SystemManagement() {
                         description: '搜索索引重建成功！',
                         duration: 3,
                     });
-                } catch (error: any) {
+                } catch (err: unknown) {
+                    const error = err as Error;
                     notification.error({
                         message: '错误',
                         description: error.message || '重建搜索索引失败',
@@ -160,7 +162,8 @@ export default function SystemManagement() {
                 description: '数据刷新成功！',
                 duration: 3,
             });
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             notification.error({
                 message: '错误',
                 description: error.message || '数据刷新失败',

@@ -77,10 +77,8 @@ export const useLike = ({ postId, postSlug, initialIsLiked, initialLikeCount }: 
             },
           });
         }
-      } catch (error) {
+      } catch {
         // 缓存更新失败时静默处理，避免影响用户体验
-        if (process.env.NODE_ENV === 'development') {
-        }
       }
     },
   });
@@ -139,7 +137,7 @@ export const useLike = ({ postId, postSlug, initialIsLiked, initialLikeCount }: 
             },
           });
         }
-      } catch (error) {
+      } catch {
         // 缓存更新失败时静默处理，避免影响用户体验
       }
     },
@@ -167,7 +165,7 @@ export const useLike = ({ postId, postSlug, initialIsLiked, initialLikeCount }: 
           variables: { id: postId },
         });
       }
-    } catch (error) {
+    } catch {
       // 错误处理已经在 mutation 的 onError 中处理
     }
   }, [isAuthenticated, isLiked, postId, likePost, unlikePost]);

@@ -12,7 +12,6 @@ import ArticleListContainer from '@/components/ArticleListContainer';
 
 import SearchAndFilter from '@/components/SearchAndFilter';
 import ArticleSkeleton from '@/components/ArticleSkeleton';
-import HeroArticleCard from '@/components/HeroArticleCard';
 import HeroCarousel from '@/components/HeroCarousel';
 import HeroSkeleton from '@/components/HeroSkeleton';
 import ActiveFilters from '@/components/ActiveFilters';
@@ -63,7 +62,7 @@ export default function HomePage() {
 
 
   // 处理文章操作
-  const handlePostAction = (action: 'view' | 'edit' | 'share', post: BlogPost) => {
+  const handlePostAction = (action: string, post: BlogPost) => {
     if (action === 'view') {
       navigate(`/post/${post.slug}`);
     }

@@ -89,7 +89,7 @@ export default function CommentManagement() {
         duration: 3,
       });
       refetch();
-    } catch (err) {
+    } catch {
       notification.error({
         message: '错误',
         description: '批准评论失败',
@@ -108,7 +108,7 @@ export default function CommentManagement() {
         duration: 3,
       });
       refetch();
-    } catch (err) {
+    } catch {
       notification.error({
         message: '错误',
         description: '拒绝评论失败',
@@ -135,7 +135,7 @@ export default function CommentManagement() {
             duration: 3,
           });
           refetch();
-        } catch (err) {
+        } catch {
           notification.error({
             message: '错误',
             description: '删除评论失败',

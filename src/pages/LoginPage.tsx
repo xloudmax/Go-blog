@@ -115,12 +115,13 @@ export default function LoginPage() {
                     navigate("/");
                 }
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             // 处理登录错误
-            if (err.message && err.message.includes('用户名或密码错误')) {
+            const error = err as Error;
+            if (error.message && error.message.includes('用户名或密码错误')) {
                 setError('用户名或密码错误，请检查后重试');
             } else {
-                setError(err.message || '登录失败，请稍后重试');
+                setError(error.message || '登录失败，请稍后重试');
             }
         }
     };
@@ -145,8 +146,9 @@ export default function LoginPage() {
                 setShowVerification(true);
                 setCountdown(60); // 60秒倒计时
             }
-        } catch (err: any) {
-            setError(err.message || "发送验证码失败，请重试");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "发送验证码失败，请重试");
         }
     };
 
@@ -176,9 +178,10 @@ export default function LoginPage() {
                     navigate("/");
                 }
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             // 处理不同类型的错误
-            const errorMessage = err.message || "验证失败，请重试";
+            const error = err as Error;
+            const errorMessage = error.message || "验证失败，请重试";
             if (errorMessage.includes('验证码错误') || errorMessage.includes('验证码已过期')) {
                 setError("验证码错误或已过期，请重新获取");
             } else if (errorMessage.includes('用户不存在')) {
@@ -210,8 +213,9 @@ export default function LoginPage() {
                 setCountdown(60); // 重新开始60秒倒计时
                 // 验证码重新发送成功
             }
-        } catch (err: any) {
-            setError(err.message || "发送验证码失败，请稍后重试");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "发送验证码失败，请稍后重试");
         }
     };
 

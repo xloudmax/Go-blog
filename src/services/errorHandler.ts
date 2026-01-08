@@ -90,7 +90,7 @@ const parseNetworkError = (error: unknown): AppError => {
   let code = 'NETWORK_ERROR';
   let type: AppError['type'] = 'network';
   
-  const networkError = error as any;
+  const networkError = error as { statusCode?: number; message?: string };
   if (networkError?.statusCode === 401) {
     message = '认证已过期，请重新登录';
     code = 'UNAUTHENTICATED';
@@ -99,7 +99,7 @@ const parseNetworkError = (error: unknown): AppError => {
     message = '权限不足';
     code = 'FORBIDDEN';
     type = 'auth';
-  } else if (networkError?.statusCode >= 500) {
+  } else if (networkError?.statusCode && networkError.statusCode >= 500) {
     message = '服务器内部错误';
     code = 'INTERNAL_SERVER_ERROR';
     type = 'server';
@@ -127,6 +127,7 @@ const showNotification = (error: AppError) => {
   // 使用来自 App 上下文的 notification 实例，避免静态调用带来的主题警告
   if (!config.notificationApi) {
     if (config.showConsoleErrors && process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.warn('[App Warning] notificationApi is not set in errorHandler config');
     }
     return;
@@ -175,6 +176,7 @@ const logError = (error: AppError) => {
   };
   
   if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
     console.error('[App Error]', errorInfo);
   }
 };
@@ -211,18 +213,18 @@ export const handleError = (error: unknown): AppError => {
     appError = errors[0]; // 返回第一个错误
   }
   // 如果是网络错误
-  else if ((error as any)?.networkError) {
-    appError = handleNetworkError((error as any).networkError);
+  else if ((error as { networkError?: unknown })?.networkError) {
+    appError = handleNetworkError((error as { networkError: unknown }).networkError);
   }
   // 如果是GraphQL错误对象
-  else if ((error as any)?.graphQLErrors) {
-    const errors = handleGraphQLErrors((error as any).graphQLErrors);
+  else if ((error as { graphQLErrors?: GraphQLError[] })?.graphQLErrors) {
+    const errors = handleGraphQLErrors((error as { graphQLErrors: GraphQLError[] }).graphQLErrors);
     appError = errors[0]; // 返回第一个错误
   }
   // 其他错误
   else {
     appError = {
-      message: (error as any)?.message || config.defaultErrorMessage,
+      message: (error as { message?: string })?.message || config.defaultErrorMessage,
       type: 'unknown',
       originalError: error,
     };

@@ -107,7 +107,8 @@ export default function UserManagement() {
                 description: '用户创建成功',
                 duration: 3,
             });
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             notification.error({
                 message: '错误',
                 description: error.message || '创建用户失败',
@@ -135,7 +136,8 @@ export default function UserManagement() {
                 description: '用户更新成功',
                 duration: 3,
             });
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             notification.error({
                 message: '错误',
                 description: error.message || '更新用户失败',
@@ -153,7 +155,8 @@ export default function UserManagement() {
                 description: `用户 "${username}" 删除成功`,
                 duration: 3,
             });
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             notification.error({
                 message: '错误',
                 description: error.message || '删除用户失败',
@@ -173,7 +176,7 @@ export default function UserManagement() {
             return;
         }
 
-        const updates: any = {};
+        const updates: Record<string, unknown> = {};
         switch (action) {
             case 'activate':
                 updates.isActive = true;
@@ -197,7 +200,8 @@ export default function UserManagement() {
                 description: '批量操作成功',
                 duration: 3,
             });
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             notification.error({
                 message: '错误',
                 description: error.message || '批量操作失败',
@@ -373,8 +377,8 @@ export default function UserManagement() {
                             dataIndex: 'role',
                             key: 'role',
                             render: (role: UserRole) => (
-                                <Tag color={role === 'ADMIN' || role === 'admin' ? 'red' : 'default'} className="rounded-full">
-                                    {role === 'ADMIN' || role === 'admin' ? '管理员' : '用户'}
+                                <Tag color={role === 'ADMIN' ? 'red' : 'default'} className="rounded-full">
+                                    {role === 'ADMIN' ? '管理员' : '用户'}
                                 </Tag>
                             )
                         },

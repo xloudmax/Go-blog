@@ -47,9 +47,11 @@ export interface SearchInput {
   sortBy?: SearchSortBy;
 }
 
+import { BlogPost } from '@/generated/graphql';
+
 // 搜索结果
 export interface EnhancedSearchResult {
-  posts: any[];
+  posts: BlogPost[];
   total: number;
   took: string;
   suggestions?: string[];
@@ -77,5 +79,5 @@ export interface UseEnhancedSearchReturn {
   results: EnhancedSearchResult | null;
   loading: boolean;
   error?: Error;
-  fetchMore: any;
+  fetchMore: unknown;
 }

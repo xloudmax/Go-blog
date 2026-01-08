@@ -31,6 +31,7 @@ import {
     UserOutlined,
     CalendarOutlined
 } from '@ant-design/icons';
+import { CreateInviteCodeInput } from '@/generated/graphql';
 
 const {Text} = Typography;
 const {Option} = Select;
@@ -96,7 +97,7 @@ export default function InviteCodeManagement() {
     const handleCreate = async () => {
         try {
             // 处理到期时间
-            const createData: any = {
+            const createData: Partial<CreateInviteCodeInput> = {
                 description: newCodeData.description || undefined,
                 maxUses: newCodeData.maxUses,
             };
@@ -105,7 +106,7 @@ export default function InviteCodeManagement() {
                 createData.expiresAt = new Date(newCodeData.expiresAt).toISOString();
             }
 
-            await handleCreateInviteCode(createData);
+            await handleCreateInviteCode(createData as CreateInviteCodeInput);
 
             setShowCreateModal(false);
             setNewCodeData({
@@ -118,7 +119,8 @@ export default function InviteCodeManagement() {
                 description: '邀请码创建成功',
                 duration: 3,
             });
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             notification.error({
                 message: '错误',
                 description: error.message || '创建邀请码失败',
@@ -136,7 +138,8 @@ export default function InviteCodeManagement() {
                 description: `邀请码 "${code}" 已停用`,
                 duration: 3,
             });
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             notification.error({
                 message: '错误',
                 description: error.message || '停用邀请码失败',
@@ -164,7 +167,8 @@ export default function InviteCodeManagement() {
                 description: `成功停用 ${selectedCodes.length} 个邀请码`,
                 duration: 3,
             });
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             notification.error({
                 message: '错误',
                 description: error.message || '批量停用失败',
@@ -213,7 +217,7 @@ export default function InviteCodeManagement() {
         {
             title: '状态',
             key: 'status',
-            render: (_: any, record: InviteCode) => {
+            render: (_: unknown, record: InviteCode) => {
                 const expired = isExpired(record.expiresAt);
                 const exhausted = isExhausted(record.currentUses, record.maxUses);
 
@@ -247,7 +251,7 @@ export default function InviteCodeManagement() {
         {
             title: '使用情况',
             key: 'usage',
-            render: (_: any, record: InviteCode) => {
+            render: (_: unknown, record: InviteCode) => {
                 const exhausted = isExhausted(record.currentUses, record.maxUses);
                 return (
                     <Text type={exhausted ? 'warning' : undefined}>
@@ -265,7 +269,7 @@ export default function InviteCodeManagement() {
         {
             title: '使用者',
             key: 'usedBy',
-            render: (_: any, record: InviteCode) => {
+            render: (_: unknown, record: InviteCode) => {
                 if (record.usedBy) {
                     return (
                         <div>
@@ -282,7 +286,7 @@ export default function InviteCodeManagement() {
         {
             title: '到期时间',
             key: 'expiresAt',
-            render: (_: any, record: InviteCode) => {
+            render: (_: unknown, record: InviteCode) => {
                 const expired = isExpired(record.expiresAt);
                 return (
                     <Text type={expired ? 'warning' : undefined}>
@@ -300,7 +304,7 @@ export default function InviteCodeManagement() {
         {
             title: '操作',
             key: 'action',
-            render: (_: any, record: InviteCode) => {
+            render: (_: unknown, record: InviteCode) => {
                 const expired = isExpired(record.expiresAt);
                 const exhausted = isExhausted(record.currentUses, record.maxUses);
 

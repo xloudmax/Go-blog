@@ -28,7 +28,7 @@ import {
   FileDoneOutlined
 } from '@ant-design/icons';
 import { usePostsQuery, usePostQuery, useUpdatePostMutation, useDeletePostMutation } from '@/generated/graphql';
-import type { UpdatePostInput, PostStatus, AccessLevel } from '@/generated/graphql';
+import type { UpdatePostInput, PostStatus, AccessLevel, BlogPost as Post } from '@/generated/graphql';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;
@@ -36,7 +36,7 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 const PostManagement: React.FC = () => {
-  const [editingPost, setEditingPost] = useState<any>(null);
+  const [editingPost, setEditingPost] = useState<Partial<Post> | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -71,14 +71,16 @@ const PostManagement: React.FC = () => {
         accessLevel: post.accessLevel,
         coverImageUrl: post.coverImageUrl
       });
-      setEditingPost(post);
+      setEditingPost(post as Partial<Post>);
     }
   }, [postDetailData, isEditModalOpen, form]);
 
   // 打开编辑模态框
-  const handleEdit = useCallback((post: any) => {
-    setEditingPostId(post.id);
-    setIsEditModalOpen(true);
+  const handleEdit = useCallback((post: Partial<Post>) => {
+    if (post.id) {
+      setEditingPostId(post.id);
+      setIsEditModalOpen(true);
+    }
   }, []);
 
   // 关闭编辑模态框
@@ -91,6 +93,7 @@ const PostManagement: React.FC = () => {
 
   // 保存编辑
   const handleSaveEdit = useCallback(async () => {
+    if (!editingPost?.id) return;
     try {
       const values = await form.validateFields();
       const updateInput: UpdatePostInput = {
@@ -115,7 +118,7 @@ const PostManagement: React.FC = () => {
       message.success('文章更新成功');
       handleCloseEdit();
       refetch();
-    } catch (error) {
+    } catch {
       message.error('更新文章失败');
     }
   }, [form, editingPost, updatePost, refetch, handleCloseEdit]);
@@ -128,7 +131,7 @@ const PostManagement: React.FC = () => {
       });
       message.success(`文章 "${postTitle}" 删除成功`);
       refetch();
-    } catch (error) {
+    } catch {
       message.error('删除文章失败');
     }
   }, [deletePost, refetch]);
@@ -169,7 +172,7 @@ const PostManagement: React.FC = () => {
       title: '文章信息',
       key: 'info',
       width: 300,
-      render: (record: any) => (
+      render: (record: Post) => (
         <div>
           <div className="flex items-start space-x-3">
             {record.coverImageUrl && (
@@ -216,7 +219,7 @@ const PostManagement: React.FC = () => {
       title: '作者',
       key: 'author',
       width: 120,
-      render: (record: any) => (
+      render: (record: Post) => (
         <div className="flex items-center space-x-2">
           <Avatar size="small" src={record.author?.avatar} icon={<UserOutlined />} />
           <Text className="text-sm">{record.author?.username}</Text>
@@ -227,7 +230,7 @@ const PostManagement: React.FC = () => {
       title: '状态',
       key: 'status',
       width: 120,
-      render: (record: any) => (
+      render: (record: Post) => (
         <Space direction="vertical" size="small">
           {renderStatusTag(record.status)}
           {renderAccessLevelTag(record.accessLevel)}
@@ -238,7 +241,7 @@ const PostManagement: React.FC = () => {
       title: '标签分类',
       key: 'tags',
       width: 200,
-      render: (record: any) => (
+      render: (record: Post) => (
         <div>
           <div className="mb-1">
             {record.tags?.slice(0, 2).map((tag: string, index: number) => (
@@ -267,7 +270,7 @@ const PostManagement: React.FC = () => {
       title: '时间',
       key: 'time',
       width: 150,
-      render: (record: any) => (
+      render: (record: Post) => (
         <div>
           <div className="flex items-center space-x-1 mb-1">
             <CalendarOutlined className="text-xs text-gray-400" />
@@ -290,7 +293,7 @@ const PostManagement: React.FC = () => {
       title: '操作',
       key: 'actions',
       width: 120,
-      render: (record: any) => (
+      render: (record: Post) => (
         <Space>
           <Tooltip title="查看">
             <Button

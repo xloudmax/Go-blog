@@ -121,11 +121,11 @@ export default function RegisterPage() {
         formData.inviteCode || undefined
       );
 
-      // 注册成功，发送验证码
       await sendVerificationCode(formData.email, "REGISTER");
       setCurrentStep("verify");
-    } catch (err: any) {
-      setError(err.message || "注册失败，请重试");
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || "注册失败，请重试");
     }
   };
 
@@ -146,8 +146,9 @@ export default function RegisterPage() {
           email: formData.email,
         },
       });
-    } catch (err: any) {
-      setError(err.message || "验证码错误或已过期");
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || "验证码错误或已过期");
     }
   };
 
@@ -156,8 +157,9 @@ export default function RegisterPage() {
     setError(null);
     try {
       await sendVerificationCode(formData.email, "REGISTER");
-    } catch (err: any) {
-      setError(err.message || "发送验证码失败");
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || "发送验证码失败");
     }
   };
 

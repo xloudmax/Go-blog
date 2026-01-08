@@ -48,7 +48,7 @@ const ProfilePage: React.FC = () => {
   };
 
   // 提交表单
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: { username?: string; bio?: string }) => {
     try {
       const input: UpdateProfileInput = {
         username: values.username !== user?.username ? values.username : undefined,
@@ -69,7 +69,7 @@ const ProfilePage: React.FC = () => {
       await updateProfile({
         variables: { input: filteredInput }
       });
-    } catch (error) {
+    } catch {
       message.error('更新失败，请重试');
     }
   };
