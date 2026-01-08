@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"math/big"
 	"repair-platform/models"
 	"strconv"
 	"strings"
@@ -357,26 +356,6 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 	}
 }
 
-// ensurePostStats 确保文章有统计记录
-func ensurePostStats(db *gorm.DB, postID uint) error {
-	var existingStats models.BlogPostStats
-	err := db.Where("blog_post_id = ?", postID).First(&existingStats).Error
-
-	// 如果统计记录不存在，创建一个
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		stats := &models.BlogPostStats{
-			BlogPostID:   postID,
-			ViewCount:    0,
-			LikeCount:    0,
-			ShareCount:   0,
-			CommentCount: 0,
-		}
-		return db.Create(stats).Error
-	}
-
-	return err // 返回其他错误，nil表示记录已存在
-}
-
 // SetBlogPostIsLiked 设置博客文章的点赞状态
 func SetBlogPostIsLiked(graphqlPost *BlogPost, post *models.BlogPost, currentUser *models.User, db *gorm.DB) error {
 	if currentUser == nil || post.Stats == nil {
@@ -396,111 +375,4 @@ func SetBlogPostIsLiked(graphqlPost *BlogPost, post *models.BlogPost, currentUse
 	}
 
 	return nil
-}
-
-// convertToGraphQLBlogPostVersion 转换数据库博客版本模型为 GraphQL 博客版本类型
-func convertToGraphQLBlogPostVersion(version *models.BlogPostVersion) *BlogPostVersion {
-	var changeLog *string
-	if version.ChangeLog != "" {
-		changeLog = &version.ChangeLog
-	}
-
-	return &BlogPostVersion{
-		ID:         strconv.FormatUint(uint64(version.ID), 10),
-		VersionNum: version.VersionNum,
-		Title:      version.Title,
-		Content:    version.Content,
-		ChangeLog:  changeLog,
-		CreatedAt:  version.CreatedAt,
-		CreatedBy:  convertToGraphQLUser(&version.CreatedBy),
-	}
-}
-
-// convertToGraphQLInviteCode 转换数据库邀请码模型为 GraphQL 邀请码类型
-func convertToGraphQLInviteCode(inviteCode *models.InviteCode) *InviteCode {
-	var description *string
-	if inviteCode.Description != "" {
-		description = &inviteCode.Description
-	}
-
-	var usedBy *User
-	if inviteCode.UsedBy != nil {
-		usedBy = convertToGraphQLUser(inviteCode.UsedBy)
-	}
-
-	var expiresAt time.Time
-	if inviteCode.ExpiresAt != nil {
-		expiresAt = *inviteCode.ExpiresAt
-	} else {
-		// 如果没有过期时间，返回一个很远的未来时间表示"永不过期"
-		expiresAt = time.Date(2999, 12, 31, 23, 59, 59, 0, time.UTC)
-	}
-
-	return &InviteCode{
-		ID:          strconv.FormatUint(uint64(inviteCode.ID), 10),
-		Code:        inviteCode.Code,
-		CreatedBy:   convertToGraphQLUser(&inviteCode.CreatedBy),
-		UsedBy:      usedBy,
-		UsedAt:      inviteCode.UsedAt,
-		ExpiresAt:   expiresAt,
-		MaxUses:     inviteCode.MaxUses,
-		CurrentUses: inviteCode.CurrentUses,
-		IsActive:    inviteCode.IsActive,
-		Description: description,
-		CreatedAt:   inviteCode.CreatedAt,
-	}
-}
-
-// 系统监控相关函数
-var startTime = time.Now()
-
-// formatBytes 格式化字节数
-func formatBytes(b uint64) string {
-	const unit = 1024
-	if b < unit {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := uint64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
-}
-
-// getUptime 获取系统运行时间
-func getUptime() string {
-	uptime := time.Since(startTime)
-	days := int(uptime.Hours()) / 24
-	hours := int(uptime.Hours()) % 24
-	minutes := int(uptime.Minutes()) % 60
-	seconds := int(uptime.Seconds()) % 60
-
-	if days > 0 {
-		return fmt.Sprintf("%d天%d小时%d分钟%d秒", days, hours, minutes, seconds)
-	} else if hours > 0 {
-		return fmt.Sprintf("%d小时%d分钟%d秒", hours, minutes, seconds)
-	} else if minutes > 0 {
-		return fmt.Sprintf("%d分钟%d秒", minutes, seconds)
-	} else {
-		return fmt.Sprintf("%d秒", seconds)
-	}
-}
-
-// generateInviteCode 生成唯一的邀请码
-func generateInviteCode() string {
-	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	const codeLength = 8
-
-	code := make([]byte, codeLength)
-	for i := range code {
-		randomIndex, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-		if err != nil {
-			// 如果加密随机数生成失败，回退到时间戳
-			return fmt.Sprintf("INV%d", time.Now().Unix())
-		}
-		code[i] = charset[randomIndex.Int64()]
-	}
-
-	return string(code)
 }

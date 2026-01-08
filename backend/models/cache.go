@@ -10,26 +10,9 @@ import (
 
 // MemoryCache 内存缓存结构体
 type MemoryCache struct {
-	data        map[string]*CacheItem
-	mutex       sync.RWMutex
-	janitor     *janitor
-	maxSize     int64    // 最大缓存大小（字节）
-	currentSize int64    // 当前缓存大小
-	lru         *LRUList // LRU链表
-}
-
-// LRUList LRU链表实现
-type LRUList struct {
-	head *LRUNode
-	tail *LRUNode
-	size int
-}
-
-// LRUNode LRU节点
-type LRUNode struct {
-	key  string
-	next *LRUNode
-	prev *LRUNode
+	data    map[string]*CacheItem
+	mutex   sync.RWMutex
+	janitor *janitor
 }
 
 // CacheItem 缓存项结构体

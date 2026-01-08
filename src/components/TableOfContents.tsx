@@ -128,17 +128,17 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
     e.stopPropagation();
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('=== TOC 点击事件触发 ===');
-      console.log('[TOC] 点击目标ID:', targetId);
-      console.log('[TOC] 事件对象:', e.type);
+      // console.log('=== TOC 点击事件触发 ===');
+      // console.log('[TOC] 点击目标ID:', targetId);
+      // console.log('[TOC] 事件对象:', e.type);
     }
 
     const targetElement = document.getElementById(targetId);
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('[TOC] 找到的元素:', targetElement);
-      console.log('[TOC] 元素标签名:', targetElement?.tagName);
-      console.log('[TOC] 元素位置:', targetElement?.getBoundingClientRect());
+      // console.log('[TOC] 找到的元素:', targetElement);
+      // console.log('[TOC] 元素标签名:', targetElement?.tagName);
+      // console.log('[TOC] 元素位置:', targetElement?.getBoundingClientRect());
     }
 
     if (targetElement) {
@@ -148,8 +148,8 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
       const offsetPosition = elementPosition + window.pageYOffset - offsetTop;
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('[TOC] 当前滚动位置:', window.pageYOffset);
-        console.log('[TOC] 目标滚动位置:', offsetPosition);
+        // console.log('[TOC] 当前滚动位置:', window.pageYOffset);
+        // console.log('[TOC] 目标滚动位置:', offsetPosition);
       }
 
       // 平滑滚动到目标位置
