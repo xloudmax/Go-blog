@@ -80,7 +80,6 @@ export const useLike = ({ postId, postSlug, initialIsLiked, initialLikeCount }: 
       } catch (error) {
         // 缓存更新失败时静默处理，避免影响用户体验
         if (process.env.NODE_ENV === 'development') {
-          console.warn('Failed to update cache after like:', error);
         }
       }
     },
@@ -142,7 +141,6 @@ export const useLike = ({ postId, postSlug, initialIsLiked, initialLikeCount }: 
         }
       } catch (error) {
         // 缓存更新失败时静默处理，避免影响用户体验
-        console.warn('Failed to update cache after unlike:', error);
       }
     },
   });

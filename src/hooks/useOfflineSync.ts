@@ -39,7 +39,7 @@ export function useOfflineSync() {
                             // 标记为已同步
                             await offlineStorage.markPostAsSynced(post.id);
                             successCount++;
-                        } catch (error) {
+                        } catch {
                             failCount++;
                         }
                     }
@@ -60,8 +60,8 @@ export function useOfflineSync() {
                     });
                     }
                 }
-            } catch (error) {
-                console.error('Offline sync failed:', error);
+            } catch {
+                // console.error('Offline sync failed:', error);
                 // 静默失败，不打扰用户，除非是严重的逻辑错误
             }
         };

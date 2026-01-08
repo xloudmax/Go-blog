@@ -22,7 +22,7 @@ export interface AppState {
 // 应用状态操作接口
 export interface AppActions {
   // 用户操作
-  login: (identifier: string, password: string, remember?: boolean) => Promise<any>;
+  login: (identifier: string, password: string, remember?: boolean) => Promise<unknown>;
   logout: () => Promise<void>;
   refreshUser: () => void;
 

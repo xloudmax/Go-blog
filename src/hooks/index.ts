@@ -2,6 +2,7 @@
 
 // 应用状态管理
 export * from './useAppState';
+export * from '@/context/AppContext';
 export * from './appStateHooks';
 
 // 博客相关hooks

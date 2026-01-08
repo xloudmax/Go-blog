@@ -2,9 +2,6 @@ import { useState, useEffect, useContext, ReactNode } from 'react';
 import { useCurrentUser, useAuth } from '@/api/graphql';
 import { AppContext, AppState, AppActions } from '@/context/AppContext';
 
-export { AppContext };
-export type { AppState, AppActions };
-
 // 应用状态提供器
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   // 获取用户数据
@@ -70,9 +67,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       try {
         await authLogout();
         setErrorState(null);
-      } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      } catch (error: unknown) {
         if (process.env.NODE_ENV === 'development') {
-          // console.error('登出错误:', error.message);
+           console.error('登出错误:', error instanceof Error ? error.message : String(error));
         }
         // 即使登出失败也清理本地状态
         localStorage.removeItem('token');
