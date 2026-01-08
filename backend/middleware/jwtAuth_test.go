@@ -19,6 +19,7 @@ import (
 func setupConfigForJWTTest() {
 	os.Setenv("GIN_MODE", "production")
 	os.Setenv("EMAIL_ENABLED", "true")
+	os.Setenv("JWT_SECRET", "test_secret_for_ci_execution_123456")
 	config.GetConfig()
 }
 
