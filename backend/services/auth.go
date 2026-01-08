@@ -559,7 +559,7 @@ func (s *AuthService) sendVerificationEmail(email, code, emailType string) error
 
 	// 如果没有配置SMTP，返回错误
 	if smtpHost == "" || smtpUsername == "" || smtpPassword == "" {
-		return fmt.Errorf("SMTP配置缺失，请设置环境变量: SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD")
+		return fmt.Errorf("smtp配置缺失，请设置环境变量: SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD")
 	}
 
 	// 根据邮件类型选择主题和内容

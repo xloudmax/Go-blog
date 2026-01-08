@@ -130,7 +130,7 @@ export const useBlogSearch = () => {
   const [limit, setLimit] = useState(10);
   const [offset, setOffset] = useState(0);
 
-  const { data, loading, error, refetch } = useSearchPostsQuery({
+  const { data, loading, error } = useSearchPostsQuery({
     variables: {
       query: searchQuery,
       limit,

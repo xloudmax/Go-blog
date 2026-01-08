@@ -32,7 +32,7 @@ func NewNotionService(db *gorm.DB) *NotionService {
 // SyncPosts 同步文章
 func (s *NotionService) SyncPosts(ctx context.Context, adminUser *models.User, pageID string) error {
 	if s == nil {
-		return fmt.Errorf("Notion API Key not configured")
+		return fmt.Errorf("notion API Key not configured")
 	}
 
 	var pages []*notionapi.Page

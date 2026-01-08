@@ -90,7 +90,7 @@ const getNewToken = async () => {
     
     return token;
   } catch (error) {
-    console.error('Error refreshing token:', error);
+    // console.error('Error refreshing token:', error);
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     throw error;

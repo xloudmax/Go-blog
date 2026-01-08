@@ -1,50 +1,9 @@
-import { useState, useEffect, useContext, createContext, ReactNode } from 'react';
-import { useCurrentUser, useAuth } from '../api/graphql';
-import { User } from '../generated/graphql';
+import { useState, useEffect, useContext, ReactNode } from 'react';
+import { useCurrentUser, useAuth } from '@/api/graphql';
+import { AppContext, AppState, AppActions } from '@/context/AppContext';
 
-// 应用状态接口
-interface AppState {
-  // 用户状态
-  currentUser: User | null;
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-
-  // 应用状态
-  isLoading: boolean;
-  error: string | null;
-
-  // 主题状态
-  theme: 'light' | 'dark';
-
-  // 侧边栏状态
-  sidebarOpen: boolean;
-}
-
-// 应用状态操作接口
-interface AppActions {
-  // 用户操作
-  login: (identifier: string, password: string, remember?: boolean) => Promise<any>;
-  logout: () => Promise<void>;
-  refreshUser: () => void;
-
-  // 主题操作
-  toggleTheme: () => void;
-  setTheme: (theme: 'light' | 'dark') => void;
-
-  // UI操作
-  toggleSidebar: () => void;
-  setSidebarOpen: (open: boolean) => void;
-
-  // 错误处理
-  setError: (error: string | null) => void;
-  clearError: () => void;
-}
-
-// 应用上下文
-const AppContext = createContext<{
-  state: AppState;
-  actions: AppActions;
-} | null>(null);
+export { AppContext };
+export type { AppState, AppActions };
 
 // 应用状态提供器
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
@@ -101,7 +60,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
           await refetchUser();
         }
         return result;
-      } catch (error: any) {
+      } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
         setErrorState(error.message || '登录失败');
         throw error;
       }
@@ -111,9 +70,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       try {
         await authLogout();
         setErrorState(null);
-      } catch (error: any) {
+      } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
         if (process.env.NODE_ENV === 'development') {
-          console.error('登出错误:', error.message);
+          // console.error('登出错误:', error.message);
         }
         // 即使登出失败也清理本地状态
         localStorage.removeItem('token');
@@ -169,6 +128,3 @@ export const useAppState = () => {
   }
   return context;
 };
-
-// 导出 AppContext 以便其他组件可以使用
-export { AppContext };

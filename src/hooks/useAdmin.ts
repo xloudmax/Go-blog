@@ -160,8 +160,8 @@ export const useInviteAdmin = () => {
   // 统计信息
   const inviteStats = useMemo(() => {
     const total = inviteCodes.length;
-    const active = inviteCodes.filter((code: { isActive: any; }) => code.isActive).length;
-    const used = inviteCodes.filter((code: { usedBy: any; }) => code.usedBy).length;
+    const active = inviteCodes.filter((code: { isActive: boolean; }) => code.isActive).length;
+    const used = inviteCodes.filter((code: { usedBy: unknown; }) => !!code.usedBy).length;
     const expired = inviteCodes.filter((code: { expiresAt: string | number | Date; }) => {
       const now = new Date();
       const expiresAt = new Date(code.expiresAt);

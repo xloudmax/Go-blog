@@ -122,7 +122,7 @@ func (info *IDInfo) AsSlug() (string, error) {
 	if info.Type == IDTypeSlug {
 		return info.SlugValue, nil
 	}
-	return "", fmt.Errorf("id类型不是Slug: %s (类型: %v)", info.Original, info.Type)
+	return "", fmt.Errorf("id类型不是slug: %s (类型: %v)", info.Original, info.Type)
 }
 
 // AsUUID 尝试将ID转换为UUID
