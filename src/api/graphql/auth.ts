@@ -278,9 +278,9 @@ export const useAuth = () => {
         localStorage.setItem('refreshToken', data.refreshToken.refreshToken);
       }
     },
-    onError: (error) => {
+    onError: (_error) => {
       // Token 刷新失败，清除本地存储并重定向到登录页
-      console.error('Token refresh failed:', error);
+      // console.error('Token refresh failed:', error);
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       window.location.href = '/login';

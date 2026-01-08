@@ -135,17 +135,19 @@ func (dl *DataLoader) LoadStats(ctx context.Context, postID uint) (*models.BlogP
 
 // 辅助方法：GetDataLoaderFromContext
 func GetDataLoaderFromContext(ctx context.Context) *DataLoader {
-	if dl, ok := ctx.Value("dataloader").(*DataLoader); ok {
+	if dl, ok := ctx.Value(LoaderKey).(*DataLoader); ok {
 		return dl
 	}
 	return nil
 }
 
+const LoaderKey ContextKey = "dataloader"
+
 // DataLoaderMiddleware Gin中间件
 func DataLoaderMiddleware(db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		loader := NewDataLoader(db)
-		ctx := context.WithValue(c.Request.Context(), "dataloader", loader)
+		ctx := context.WithValue(c.Request.Context(), LoaderKey, loader)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}

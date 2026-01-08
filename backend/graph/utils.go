@@ -7,11 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"net/smtp"
-	"os"
-	"repair-platform/middleware"
 	"repair-platform/models"
-	"repair-platform/services"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +15,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+// 定义 Context Key 类型以避免冲突 (SA1029)
+type ContextKey string
+
+const GinContextKey ContextKey = "GinContext"
 
 // GraphQLError 标准 GraphQL 错误结构
 type GraphQLError struct {
@@ -41,21 +42,6 @@ var (
 	ErrEmailNotVerified   = GraphQLError{Message: "邮箱未验证", Code: "EMAIL_NOT_VERIFIED"}
 	ErrInternalError      = GraphQLError{Message: "服务器内部错误", Code: "INTERNAL_ERROR"}
 )
-
-// isAuthenticated 检查用户是否已认证
-func isAuthenticated(ctx context.Context) bool {
-	_, ok := ctx.Value("username").(string)
-	return ok
-}
-
-// isAdmin 检查用户是否为管理员
-func isAdmin(ctx context.Context, db *gorm.DB) bool {
-	user, err := getUserFromContext(ctx, db)
-	if err != nil {
-		return false
-	}
-	return user.Role == "ADMIN"
-}
 
 // getUserFromContext 从上下文中获取当前用户信息
 func getUserFromContext(ctx context.Context, db *gorm.DB) (*models.User, error) {
@@ -110,7 +96,12 @@ func getUserFromContext(ctx context.Context, db *gorm.DB) (*models.User, error) 
 
 // getGinContext 从GraphQL上下文中获取Gin上下文
 func getGinContext(ctx context.Context) *gin.Context {
-	// 从路由中注入的Gin上下文
+	// 从路由中注入的Gin上下文 (使用自定义 Key)
+	if ginCtx, ok := ctx.Value(GinContextKey).(*gin.Context); ok {
+		return ginCtx
+	}
+
+	// 兼容旧的字符串 Key (如果还有其他地方在使用但未更新)
 	if ginCtx, ok := ctx.Value("GinContext").(*gin.Context); ok {
 		return ginCtx
 	}
@@ -178,11 +169,6 @@ func strPtr(s string) *string {
 	return &s
 }
 
-// requireAuth 验证用户认证
-func requireAuth(ctx context.Context, db *gorm.DB) (*models.User, error) {
-	return getUserFromContext(ctx, db)
-}
-
 // requireAdmin 验证管理员权限
 func requireAdmin(ctx context.Context, db *gorm.DB) (*models.User, error) {
 	user, err := getUserFromContext(ctx, db)
@@ -216,16 +202,6 @@ func requireVerifiedSafe(ctx context.Context, db *gorm.DB) (*models.User, error)
 	return user, nil
 }
 
-// generateSecureCode 生成 6 位安全验证码
-func generateSecureCode() (string, error) {
-	maxValue := big.NewInt(1000000)
-	n, err := rand.Int(rand.Reader, maxValue)
-	if err != nil {
-		return "", fmt.Errorf("无法生成安全随机数: %w", err)
-	}
-	return fmt.Sprintf("%06d", n.Int64()), nil
-}
-
 // generateSecureRefreshToken 生成安全的刷新令牌
 func generateSecureRefreshToken() (string, error) {
 	bytes := make([]byte, 32) // 256 bits
@@ -233,77 +209,6 @@ func generateSecureRefreshToken() (string, error) {
 		return "", fmt.Errorf("无法生成安全随机令牌: %w", err)
 	}
 	return base64.URLEncoding.EncodeToString(bytes), nil
-}
-
-// sendVerificationCode 发送邮件验证码
-// sendVerificationCode 代理到 AuthService 邮件发送逻辑
-func sendVerificationCode(to, code string) error {
-	logger := middleware.GetLogger()
-	authSvc := services.NewAuthService(nil)
-	if err := authSvc.SendVerificationCode(to, "LOGIN"); err != nil {
-		logger.Errorw("发送验证码失败", "email", to, "error", err)
-		return err
-	}
-	logger.Infow("验证码发送完成", "email", to)
-	return nil
-}
-
-// sendPasswordResetEmail 发送密码重置邮件
-func sendPasswordResetEmail(to, token string) error {
-	logger := middleware.GetLogger()
-
-	// 检查是否为开发环境
-	if os.Getenv("GO_ENV") != "production" {
-		logger.Infow("[开发模式] 密码重置令牌", "email", to, "token", token)
-		return nil
-	}
-
-	// 生产环境的邮件发送代码 - 从环境变量读取配置
-	from := os.Getenv("SMTP_USERNAME")
-	password := os.Getenv("SMTP_PASSWORD")
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := os.Getenv("SMTP_PORT")
-
-	// 检查SMTP配置
-	if from == "" || password == "" || smtpHost == "" {
-		logger.Errorw("SMTP配置缺失", "email", to)
-		return fmt.Errorf("SMTP配置缺失")
-	}
-
-	if smtpPort == "" {
-		smtpPort = "587"
-	}
-
-	subject := "Subject: 密码重置\n"
-	// 在实际生产中，这里应该是一个指向前端密码重置页面的链接
-	resetLink := fmt.Sprintf("http://localhost:5173/reset-password?token=%s", token)
-	body := fmt.Sprintf("请点击以下链接重置密码:\n%s\n\n该链接1小时内有效。\n如果您没有请求重置密码，请忽略此邮件。", resetLink)
-	msg := fmt.Sprintf("From: %s\nTo: %s\n%s\n\n%s", from, to, subject, body)
-
-	auth := smtp.PlainAuth("", from, password, smtpHost)
-	err := smtp.SendMail(fmt.Sprintf("%s:%s", smtpHost, smtpPort), auth, from, []string{to}, []byte(msg))
-	if err != nil {
-		logger.Errorw("发送密码重置邮件失败", "email", to, "error", err)
-		return err
-	}
-
-	logger.Infow("密码重置邮件发送成功", "email", to)
-	return nil
-}
-
-// storeVerificationCode 存储验证码（按类型）
-func storeVerificationCode(email, code, codeType string) {
-	ev := models.GetEmailVerificationService()
-	if ev == nil {
-		return
-	}
-	ev.InvalidateCode(email, codeType)
-	ev.Cache().Set(fmt.Sprintf("%s:%s", email, codeType), &models.VerificationCode{
-		Code:      code,
-		Email:     email,
-		Type:      codeType,
-		ExpiresAt: time.Now().Add(15 * time.Minute),
-	}, 15*time.Minute)
 }
 
 // verifyCode 验证验证码
@@ -331,19 +236,6 @@ func parseID(id string) (uint, error) {
 		return 0, ErrInvalidInput
 	}
 	return uint(parsed), nil
-}
-
-// getDBFromContext 从上下文中获取数据库连接
-func getDBFromContext(ctx context.Context) *gorm.DB {
-	if db, ok := ctx.Value("db").(*gorm.DB); ok {
-		return db
-	}
-	return nil
-}
-
-// intPtr 返回整数指针
-func intPtr(i int) *int {
-	return &i
 }
 
 // convertToGraphQLBlogPost 转换数据库博客模型为 GraphQL 博客类型

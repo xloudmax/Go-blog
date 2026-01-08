@@ -87,7 +87,7 @@ func setupGraphQLRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionSe
 	// 注册 GraphQL 端点 - 添加可选JWT认证中间件
 	r.POST("/graphql", middleware.OptionalJWTAuthMiddleware(), func(c *gin.Context) {
 		// 将Gin上下文注入到GraphQL上下文中
-		ctx := context.WithValue(c.Request.Context(), "GinContext", c)
+		ctx := context.WithValue(c.Request.Context(), graph.GinContextKey, c)
 		c.Request = c.Request.WithContext(ctx)
 		srv.ServeHTTP(c.Writer, c.Request)
 	})

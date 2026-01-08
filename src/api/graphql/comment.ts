@@ -1,7 +1,9 @@
 import { gql, useQuery, useMutation } from '@apollo/client';
+import type { BlogPostComment } from '@/types';
 import type { 
-  BlogPostComment
-} from '@/types';
+  CreateCommentInput, 
+  UpdateCommentInput 
+} from '@/generated/graphql';
 
 // ==================== QUERIES ====================
 
@@ -289,7 +291,7 @@ export const useCommentActions = () => {
   const [reportCommentMutation, { loading: reportLoading }] = useMutation(REPORT_COMMENT_MUTATION);
 
   // 创建评论
-  const createComment = async (input: any) => {
+  const createComment = async (input: CreateCommentInput) => {
     const result = await createCommentMutation({
       variables: { input },
     });
@@ -297,7 +299,7 @@ export const useCommentActions = () => {
   };
 
   // 更新评论
-  const updateComment = async (id: string, input: any) => {
+  const updateComment = async (id: string, input: UpdateCommentInput) => {
     const result = await updateCommentMutation({
       variables: { id, input },
     });

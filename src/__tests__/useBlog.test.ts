@@ -27,7 +27,6 @@ describe('useBlog Hook Tests', () => {
     it('should initialize with default filter and sort values', async () => {
       // Mock the usePostsQuery hook return value
       const { usePostsQuery } = await import('../generated/graphql');
-      const mockResult = { items: [] };
       (usePostsQuery as any).mockReturnValue({
         data: { posts: [] },
         loading: false,
@@ -81,7 +80,7 @@ describe('useBlog Hook Tests', () => {
       const { result } = renderHook(() => useBlogList());
 
       act(() => {
-        result.current.setSort({ field: 'title' as any, direction: 'ASC' as any });
+        result.current.setSort({ field: 'title', direction: 'ASC' } as any);
       });
 
       expect(usePostsQuery).toHaveBeenLastCalledWith(expect.objectContaining({

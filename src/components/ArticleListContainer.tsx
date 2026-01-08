@@ -30,7 +30,7 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
   const navigate = useNavigate();
 
   const handleNavigate = (slug: string) => {
-    console.log('Navigating to post:', slug);
+
     navigate(`/post/${slug}`);
   };
 

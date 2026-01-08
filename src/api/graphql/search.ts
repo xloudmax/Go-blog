@@ -80,7 +80,7 @@ export const useEnhancedSearch = () => {
     errorPolicy: 'all',
   });
 
-  const search = (params: { query: string; limit?: number; offset?: number; filters?: any; sortBy?: string }) => {
+  const search = (params: { query: string; limit?: number; offset?: number; filters?: Record<string, unknown>; sortBy?: string }) => {
     const input = {
       query: params.query,
       limit: params.limit || 10,

@@ -37,7 +37,7 @@ const customSchema = {
 }
 
 const components: Components = {
-    code(props: any) {
+    code(props: React.HTMLAttributes<HTMLElement> & { inline?: boolean }) {
         const { className, children, inline, ...rest } = props
         const match = /language-(\w+)/.exec(className || '')
         
@@ -50,7 +50,7 @@ const components: Components = {
             </code>
         )
     },
-    img(props: any) {
+    img(props: React.ImgHTMLAttributes<HTMLImageElement>) {
         return (
             <Image
                 src={props.src}

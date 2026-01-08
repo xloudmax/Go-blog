@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { Button } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import type { BlogPost } from '@/types';
@@ -19,6 +19,16 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0); // 1 = right, -1 = left
 
+  const handleNext = useCallback(() => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % posts.length);
+  }, [posts.length]);
+
+  const handlePrev = useCallback(() => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + posts.length) % posts.length);
+  }, [posts.length]);
+
   useEffect(() => {
     if (posts.length <= 1) return;
 
@@ -27,17 +37,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
     }, autoPlayInterval);
 
     return () => clearInterval(timer);
-  }, [currentIndex, posts.length, autoPlayInterval]);
-
-  const handleNext = () => {
-    setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % posts.length);
-  };
-
-  const handlePrev = () => {
-    setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + posts.length) % posts.length);
-  };
+  }, [currentIndex, posts.length, autoPlayInterval, handleNext]);
 
   const activePost = posts[currentIndex];
 
@@ -76,7 +76,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
         filter: { duration: 0.3 }
       }
     })
-  } as any;
+  } as Variants;
 
   if (!posts || posts.length === 0) return null;
 
