@@ -172,7 +172,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
       positions: [],
       originalError: undefined,
       extensions: error.extensions || {}
-    })) as any[];
+    })) as any[]; // 使用 any 绕过类型检查，因为我们需要转换后的对象符合 errorHandler 的预期
     errorHandler.handleGraphQLErrors(errors);
   }
 

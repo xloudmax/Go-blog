@@ -90,7 +90,7 @@ type NotionPageMeta struct {
 // ListPages 获取所有文章列表（仅元数据）
 func (s *NotionService) ListPages(ctx context.Context) ([]*NotionPageMeta, error) {
 	if s == nil {
-		return nil, fmt.Errorf("Notion API Key not configured")
+		return nil, fmt.Errorf("notion API Key not configured")
 	}
 
 	req := &notionapi.SearchRequest{

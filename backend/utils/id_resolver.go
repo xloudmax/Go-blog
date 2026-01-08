@@ -20,8 +20,8 @@ const (
 
 // IDInfo 包含ID的解析信息
 type IDInfo struct {
-	Original string
-	Type     IDType
+	Original     string
+	Type         IDType
 	NumericValue uint64 // 当类型为Numeric时的数值
 	SlugValue    string // 当类型为Slug时的slug值
 	UUIDValue    string // 当类型为UUID时的UUID值
@@ -114,7 +114,7 @@ func (info *IDInfo) AsNumeric() (uint64, error) {
 	if info.Type == IDTypeNumeric {
 		return info.NumericValue, nil
 	}
-	return 0, fmt.Errorf("ID类型不是数字: %s (类型: %v)", info.Original, info.Type)
+	return 0, fmt.Errorf("id类型不是数字: %s (类型: %v)", info.Original, info.Type)
 }
 
 // AsSlug 尝试将ID转换为Slug
@@ -122,7 +122,7 @@ func (info *IDInfo) AsSlug() (string, error) {
 	if info.Type == IDTypeSlug {
 		return info.SlugValue, nil
 	}
-	return "", fmt.Errorf("ID类型不是Slug: %s (类型: %v)", info.Original, info.Type)
+	return "", fmt.Errorf("id类型不是Slug: %s (类型: %v)", info.Original, info.Type)
 }
 
 // AsUUID 尝试将ID转换为UUID

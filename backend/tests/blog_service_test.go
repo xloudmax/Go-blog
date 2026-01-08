@@ -1,11 +1,10 @@
 package tests
 
 import (
-	"testing"
-	"time"
-	testing_helper "repair-platform/testing"
 	"repair-platform/models"
 	"repair-platform/services"
+	testing_helper "repair-platform/testing"
+	"testing"
 )
 
 func TestBlogService_CreatePost(t *testing.T) {
@@ -24,11 +23,11 @@ func TestBlogService_CreatePost(t *testing.T) {
 
 	t.Run("成功创建文章", func(t *testing.T) {
 		input := &models.CreatePostInput{
-			Title:         "Test Post",
-			Content:       "This is a test post content",
-			Tags:          []string{"test", "blog"},
-			Categories:    []string{"technology"},
-			AccessLevel:   "PUBLIC",
+			Title:       "Test Post",
+			Content:     "This is a test post content",
+			Tags:        []string{"test", "blog"},
+			Categories:  []string{"technology"},
+			AccessLevel: "PUBLIC",
 		}
 
 		post, err := blogService.CreatePost(input, user.ID)
@@ -81,9 +80,9 @@ func TestBlogService_CreatePost(t *testing.T) {
 	t.Run("创建重复slug的文章", func(t *testing.T) {
 		// 先创建一篇文章
 		input1 := &models.CreatePostInput{
-			Title:         "Test Post",
-			Content:       "First post",
-			AccessLevel:   "PUBLIC",
+			Title:       "Test Post",
+			Content:     "First post",
+			AccessLevel: "PUBLIC",
 		}
 
 		post1, err := blogService.CreatePost(input1, user.ID)
@@ -93,9 +92,9 @@ func TestBlogService_CreatePost(t *testing.T) {
 
 		// 再创建一篇相同标题的文章
 		input2 := &models.CreatePostInput{
-			Title:         "Test Post",
-			Content:       "Second post",
-			AccessLevel:   "PUBLIC",
+			Title:       "Test Post",
+			Content:     "Second post",
+			AccessLevel: "PUBLIC",
 		}
 
 		post2, err := blogService.CreatePost(input2, user.ID)
@@ -137,9 +136,9 @@ func TestBlogService_UpdatePost(t *testing.T) {
 
 	t.Run("成功更新文章", func(t *testing.T) {
 		updateInput := &models.UpdatePostInput{
-			Title:   stringPtr("Updated Post"),
-			Content: stringPtr("Updated content"),
-			Tags:    []string{"updated", "test"},
+			Title:       stringPtr("Updated Post"),
+			Content:     stringPtr("Updated content"),
+			Tags:        []string{"updated", "test"},
 			AccessLevel: stringPtr("PRIVATE"),
 		}
 
@@ -451,6 +450,3 @@ func stringPtr(s string) *string {
 }
 
 // Helper function to create time pointer
-func timePtr(t time.Time) *time.Time {
-	return &t
-}

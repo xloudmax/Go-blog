@@ -127,30 +127,13 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (process.env.NODE_ENV === 'development') {
-      // console.log('=== TOC 点击事件触发 ===');
-      // console.log('[TOC] 点击目标ID:', targetId);
-      // console.log('[TOC] 事件对象:', e.type);
-    }
-
     const targetElement = document.getElementById(targetId);
-
-    if (process.env.NODE_ENV === 'development') {
-      // console.log('[TOC] 找到的元素:', targetElement);
-      // console.log('[TOC] 元素标签名:', targetElement?.tagName);
-      // console.log('[TOC] 元素位置:', targetElement?.getBoundingClientRect());
-    }
 
     if (targetElement) {
       // 计算目标位置（考虑固定头部的偏移）
       const offsetTop = 80;
       const elementPosition = targetElement.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - offsetTop;
-
-      if (process.env.NODE_ENV === 'development') {
-        // console.log('[TOC] 当前滚动位置:', window.pageYOffset);
-        // console.log('[TOC] 目标滚动位置:', offsetPosition);
-      }
 
       // 平滑滚动到目标位置
       window.scrollTo({
@@ -160,17 +143,9 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
 
       // 更新 URL hash
       window.history.pushState(null, '', `#${targetId}`);
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[TOC] 滚动命令已发送');
-      }
     } else {
       if (process.env.NODE_ENV === 'development') {
-        console.error('[TOC] ❌ 未找到目标元素，ID:', targetId);
-
         // 调试：列出所有带 ID 的标题元素
-        const allHeadings = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]');
-        console.log('[TOC] 页面中所有标题 ID:', Array.from(allHeadings).map(h => h.id));
       }
     }
   };

@@ -1,19 +1,9 @@
 // src/components/ThemeProvider.tsx
-import React, { useState, useEffect, ReactNode, createContext, useContext } from 'react';
+import React, { useState, useEffect, ReactNode, useContext } from 'react';
+import { ThemeContext, Theme } from '@/context/ThemeContext';
 
-// 1. 导出 Theme 类型，方便其他文件导入使用
-export type Theme = 'light' | 'dark';
-
-interface Ctx {
-    theme: Theme;
-    toggle: () => void;
-}
-
-// 创建 Context，并提供符合 Ctx 接口的默认值
-export const ThemeContext = createContext<Ctx>({
-    theme: 'light', // 默认主题
-    toggle: () => {}, // 空函数作为默认的 toggle 实现
-});
+export { ThemeContext };
+export type { Theme };
 
 interface ThemeProviderProps {
     children: ReactNode;
