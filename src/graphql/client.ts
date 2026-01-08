@@ -44,7 +44,7 @@ const authLink = setContext((_, { headers }) => {
 
 // 获取新Token的逻辑
 let isRefreshing = false;
-let pendingRequests: any[] = [];
+let pendingRequests: (() => void)[] = [];
 
 const resolvePendingRequests = () => {
   pendingRequests.map(callback => callback());
@@ -172,7 +172,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
       positions: [],
       originalError: undefined,
       extensions: error.extensions || {}
-    })) as any[]; // 使用 any 绕过类型检查，因为我们需要转换后的对象符合 errorHandler 的预期
+    })) as unknown as any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
     errorHandler.handleGraphQLErrors(errors);
   }
 

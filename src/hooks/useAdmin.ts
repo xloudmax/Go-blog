@@ -76,8 +76,8 @@ export const useUserAdmin = () => {
   const userStats = useMemo(() => {
     const total = users.length;
     const admins = users.filter((u: { role: string; }) => u.role === 'ADMIN').length;
-    const verified = users.filter((u: { isVerified: any; }) => u.isVerified).length;
-    const active = users.filter((u: { isActive: any; }) => u.isActive).length;
+    const verified = users.filter((u: { isVerified: boolean; }) => u.isVerified).length;
+    const active = users.filter((u: { isActive: boolean; }) => u.isActive).length;
 
     return {
       total,

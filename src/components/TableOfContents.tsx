@@ -98,29 +98,10 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
   const tocItems = useMemo(() => {
     const headings = extractHeadings(content);
 
-    // 开发环境下输出调试信息
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[TOC] 解析到的标题:', headings);
-    }
-
     return buildTocTree(headings);
   }, [content]);
 
-  // 验证页面中的标题 ID（仅在开发模式）
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      // 延迟检查，确保 DOM 已渲染
-      setTimeout(() => {
-        const allHeadings = document.querySelectorAll('.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6');
-        console.log('[TOC] 页面中所有标题元素:', allHeadings.length);
-        console.log('[TOC] 页面中的标题 ID:', Array.from(allHeadings).map(h => ({
-          tag: h.tagName,
-          id: h.id,
-          text: h.textContent?.slice(0, 30)
-        })));
-      }, 500);
-    }
-  }, [content]);
+
 
   // 点击处理函数
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
@@ -156,16 +137,6 @@ export default function TableOfContents({ content }: TableOfContentsProps) {
       <a
         href={`#${item.id}`}
         onClick={(e) => handleClick(e, item.id)}
-        onMouseDown={() => {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[TOC] 鼠标按下:', item.id);
-          }
-        }}
-        onMouseUp={() => {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[TOC] 鼠标抬起:', item.id);
-          }
-        }}
         className="toc-link"
         title={item.text}
       >
