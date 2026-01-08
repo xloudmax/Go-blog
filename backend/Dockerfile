@@ -5,7 +5,7 @@ FROM golang:1.24-alpine AS builder
 WORKDIR /app
 
 # 安装必要的工具
-RUN apk add --no-cache git
+RUN apk add --no-cache git build-base
 
 # 复制 go mod 文件
 COPY go.mod go.sum ./
