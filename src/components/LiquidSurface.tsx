@@ -572,7 +572,7 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
               )}
 
               {/* 5. Edge Masking / Feathering */}
-              {/* We extract the alpha channel of the displacement map to mask the final effect */}
+              {/* Extract the alpha channel of the displacement map to mask the final effect */}
               {/* The displacement map already has alpha=0 where sdf > 0 */}
               <feColorMatrix 
                 in="displacementMap" 
@@ -580,12 +580,14 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
                 values="0 0 0 0 0
                         0 0 0 0 0
                         0 0 0 0 0
-                        0 0 0 0.8 0" 
-                result="edgeMask" 
+                        0 0 0 1 0" 
+                result="hardEdgeMask" 
               />
+              <feGaussianBlur in="hardEdgeMask" stdDeviation="0.75" result="softEdgeMask" />
+              
               <feComposite 
                 in="glassWithHighlight" 
-                in2="edgeMask" 
+                in2="softEdgeMask" 
                 operator="in" 
                 result="finalGlass" 
               />
