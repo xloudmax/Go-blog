@@ -217,6 +217,14 @@ export type LoginInput = {
   remember?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+export type MechanismNode = {
+  __typename?: 'MechanismNode';
+  children?: Maybe<Array<MechanismNode>>;
+  id: Scalars['String']['output'];
+  label: Scalars['String']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   adminCreateUser: User;
@@ -539,6 +547,7 @@ export type Query = {
   comment?: Maybe<BlogPostComment>;
   comments: CommentResult;
   enhancedSearch: EnhancedSearchResult;
+  generateMechanismTree: MechanismNode;
   getCategories: Array<CategoryInfo>;
   getNotionPages: Array<NotionPage>;
   getPopularPosts: Array<BlogPost>;
@@ -579,6 +588,11 @@ export type QueryCommentsArgs = {
 
 export type QueryEnhancedSearchArgs = {
   input: SearchInput;
+};
+
+
+export type QueryGenerateMechanismTreeArgs = {
+  query: Scalars['String']['input'];
 };
 
 
@@ -1324,6 +1338,13 @@ export type AuthPayloadInfoFragment = { __typename?: 'AuthPayload', token: strin
 export type ServerDashboardInfoFragment = { __typename?: 'ServerDashboard', serverTime: string, hostname: string, goVersion: string, cpuCount: number, goroutines: number, uptime: string, userCount: number, postCount: number, todayRegistrations: number, todayPosts: number, memory: { __typename?: 'ServerMemoryStats', alloc: string, totalAlloc: string, sys: string, heapAlloc: string, heapSys: string } };
 
 export type GeneralResponseInfoFragment = { __typename?: 'GeneralResponse', success: boolean, message?: string | null, code?: string | null };
+
+export type GenerateMechanismTreeQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+}>;
+
+
+export type GenerateMechanismTreeQueryData = { __typename?: 'Query', generateMechanismTree: { __typename?: 'MechanismNode', id: string, label: string, note?: string | null, children?: Array<{ __typename?: 'MechanismNode', id: string, label: string, note?: string | null, children?: Array<{ __typename?: 'MechanismNode', id: string, label: string, note?: string | null, children?: Array<{ __typename?: 'MechanismNode', id: string, label: string, note?: string | null }> | null }> | null }> | null } };
 
 export type EnhancedSearchQueryVariables = Exact<{
   input: SearchInput;
@@ -2099,6 +2120,23 @@ export function useReportCommentMutation(baseOptions?: ApolloReactHooks.Mutation
 export type ReportCommentMutationHookResult = ReturnType<typeof useReportCommentMutation>;
 export type ReportCommentMutationResult = Apollo.MutationResult<ReportCommentMutationData>;
 export type ReportCommentMutationOptions = Apollo.BaseMutationOptions<ReportCommentMutationData, ReportCommentMutationVariables>;
+export const GenerateMechanismTreeDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GenerateMechanismTree"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateMechanismTree"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"note"}},{"kind":"Field","name":{"kind":"Name","value":"children"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"note"}},{"kind":"Field","name":{"kind":"Name","value":"children"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"note"}},{"kind":"Field","name":{"kind":"Name","value":"children"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"note"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode;
+export function useGenerateMechanismTreeQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GenerateMechanismTreeQueryData, GenerateMechanismTreeQueryVariables> & ({ variables: GenerateMechanismTreeQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GenerateMechanismTreeQueryData, GenerateMechanismTreeQueryVariables>(GenerateMechanismTreeDocument, options);
+      }
+export function useGenerateMechanismTreeLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GenerateMechanismTreeQueryData, GenerateMechanismTreeQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GenerateMechanismTreeQueryData, GenerateMechanismTreeQueryVariables>(GenerateMechanismTreeDocument, options);
+        }
+export function useGenerateMechanismTreeSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<GenerateMechanismTreeQueryData, GenerateMechanismTreeQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GenerateMechanismTreeQueryData, GenerateMechanismTreeQueryVariables>(GenerateMechanismTreeDocument, options);
+        }
+export type GenerateMechanismTreeQueryHookResult = ReturnType<typeof useGenerateMechanismTreeQuery>;
+export type GenerateMechanismTreeLazyQueryHookResult = ReturnType<typeof useGenerateMechanismTreeLazyQuery>;
+export type GenerateMechanismTreeSuspenseQueryHookResult = ReturnType<typeof useGenerateMechanismTreeSuspenseQuery>;
+export type GenerateMechanismTreeQueryResult = Apollo.QueryResult<GenerateMechanismTreeQueryData, GenerateMechanismTreeQueryVariables>;
 export const EnhancedSearchDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EnhancedSearch"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"enhancedSearch"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"posts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"took"}},{"kind":"Field","name":{"kind":"Name","value":"suggestions"}},{"kind":"Field","name":{"kind":"Name","value":"facets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"categories"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"excerpt"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"categories"}},{"kind":"Field","name":{"kind":"Name","value":"coverImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"publishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"isLiked"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BlogPostStats"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BlogPostStats"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BlogPostStats"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"viewCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"shareCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"lastViewedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode;
 export function useEnhancedSearchQuery(baseOptions: ApolloReactHooks.QueryHookOptions<EnhancedSearchQueryData, EnhancedSearchQueryVariables> & ({ variables: EnhancedSearchQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}

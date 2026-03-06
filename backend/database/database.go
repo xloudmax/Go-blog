@@ -47,8 +47,12 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to get sql.DB: %w", err)
 	}
 
-	// SQLite 推荐配置：限制为单以避免"database is locked"错误
-	// 在高并发写入场景下特别重要
+	// 强制开启 WAL 模式 (Write-Ahead Logging) 提升并发读写性能
+	db.Exec("PRAGMA journal_mode=WAL;")
+	db.Exec("PRAGMA synchronous=NORMAL;")
+	db.Exec("PRAGMA busy_timeout=5000;")
+
+	// SQLite 推荐配置
 	sqlDB.SetMaxOpenConns(1)
 	sqlDB.SetMaxIdleConns(1)
 	sqlDB.SetConnMaxLifetime(time.Hour)

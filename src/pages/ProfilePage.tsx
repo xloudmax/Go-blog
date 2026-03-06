@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   Card,
   Form,
@@ -10,14 +10,19 @@ import {
   Space,
   Row,
   Col,
-  Spin
+  Spin,
+  Switch
 } from 'antd';
+import { ThemeContext } from '@/components/ThemeProvider';
 import {
   SaveOutlined,
-  EditOutlined
+  EditOutlined,
+  SettingOutlined,
+  MoonOutlined,
+  SunOutlined
 } from '@ant-design/icons';
 
-import { useAppUser } from '@/hooks/appStateHooks';
+import { useAppUser } from '@/hooks/useAppState';
 import { useUpdateProfileMutation } from '@/generated/graphql';
 import type { UpdateProfileInput } from '@/generated/graphql';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -28,6 +33,8 @@ const { TextArea } = Input;
 
 const ProfilePage: React.FC = () => {
   const { user, refreshUser } = useAppUser();
+  const { theme, toggle } = useContext(ThemeContext);
+  const isDarkMode = theme === 'dark';
   const [form] = Form.useForm();
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(user?.avatar || undefined);
 
@@ -175,6 +182,24 @@ const ProfilePage: React.FC = () => {
                   showUploadButton={true}
                 />
               </div>
+
+               {/* 移动端/设置区域 */}
+               <div className="mt-8">
+                  <Title level={4}>
+                      <SettingOutlined /> 设置
+                  </Title>
+                  <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between">
+                      <span className="text-slate-700 dark:text-slate-200 font-medium">
+                          深色模式
+                      </span>
+                      <Switch 
+                          checked={isDarkMode}
+                          onChange={toggle}
+                          checkedChildren={<MoonOutlined />}
+                          unCheckedChildren={<SunOutlined />}
+                      />
+                  </div>
+               </div>
             </Col>
           </Row>
 

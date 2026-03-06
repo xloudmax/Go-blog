@@ -12,6 +12,7 @@ import MobileBottomBar from '@/components/MobileBottomBar'
 import PageLoading from '@/components/PageLoading'
 import { MeshGradientBackground } from '@/components/MeshGradientBackground'
 import BackToTop from '@/components/BackToTop'
+import TauriTitleBar from '@/components/TauriTitleBar'
 
 // Lazy load pages for code splitting
 const HomePage = lazy(() => import('@/pages/HomePage'));
@@ -25,6 +26,8 @@ const SearchPage = lazy(() => import('@/pages/SearchPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const TagsPage = lazy(() => import('@/pages/TagsPage'));
 const NotificationPage = lazy(() => import('@/pages/NotificationPage'));
+const InsightPage = lazy(() => import('@/pages/InsightPage'));
+const LiquidGlassTestPage = lazy(() => import('@/pages/LiquidGlassTestPage'));
 
 const { Content, Footer } = Layout;
 const { Text } = Typography;
@@ -42,6 +45,7 @@ export default function AppLayout() {
 
     return (
         <>
+            <TauriTitleBar />
             {/* Global Animated Background */}
             <MeshGradientBackground />
             
@@ -73,9 +77,11 @@ export default function AppLayout() {
                             <Routes>
                                 <Route path="/home" element={<HomePage />} />
                                 <Route path="/search" element={<SearchPage />} />
+                                <Route path="/insight" element={<InsightPage />} />
                                 <Route path="/tags" element={<TagsPage />} />
                                 <Route path="/notifications" element={<NotificationPage />} />
                                 <Route path="/profile" element={<ProfilePage />} />
+                                <Route path="/liquid-glass" element={<LiquidGlassTestPage />} />
                                 <Route path="/post/:slug" element={<PostDetailPage />} />
                                 <Route path="/login" element={<LoginPage />} />
                                 <Route path="/register" element={<RegisterPage />} />

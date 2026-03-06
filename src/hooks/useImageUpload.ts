@@ -97,7 +97,7 @@ export function useImageUpload(options: UseImageUploadOptions = {}): UseImageUpl
       formData.append('0', file);
 
       // 获取 GraphQL endpoint
-      const graphqlUrl = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:11451/"}graphql`;
+      const graphqlUrl = `${import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:12345/"}graphql`;
 
       // 获取认证头
       const token = localStorage.getItem('token');

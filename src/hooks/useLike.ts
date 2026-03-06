@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
 import { notification } from 'antd';
 import { LIKE_POST_MUTATION, UNLIKE_POST_MUTATION, POST_QUERY } from '@/api/graphql';
-import { useAppUser } from './appStateHooks';
+import { useAppUser } from './useAppState';
 import type { PostQueryData } from '@/generated/graphql';
 
 export interface UseLikeProps {

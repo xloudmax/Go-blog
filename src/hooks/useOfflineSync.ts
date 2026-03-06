@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { notification } from 'antd';
-import { useAppUser } from './appStateHooks';
+import { useAppUser } from './useAppState';
 import { useBlogActions } from '../api/graphql/blog';
 import offlineStorage from '@/utils/offlineStorage';
 

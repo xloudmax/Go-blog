@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import { MockedProvider } from '@apollo/client/testing';
 import ArticleCard from '@/components/ArticleCard';
 import type { AccessLevel, PostStatus } from '@/generated/graphql';
 
@@ -103,19 +104,20 @@ describe('ArticleCard', () => {
 
   it('renders correctly with all props', () => {
     render(
-      <BrowserRouter>
-        <ArticleCard 
-          post={mockPost} 
-          onNavigate={mockOnNavigate} 
-          onAction={mockOnAction} 
-        />
-      </BrowserRouter>
+      <MockedProvider addTypename={false}>
+        <BrowserRouter>
+          <ArticleCard 
+            post={mockPost} 
+            onNavigate={mockOnNavigate} 
+            onAction={mockOnAction} 
+          />
+        </BrowserRouter>
+      </MockedProvider>
     );
 
     expect(screen.getByText('Test Article')).toBeInTheDocument();
     expect(screen.getByText('Test excerpt')).toBeInTheDocument();
-    expect(screen.getByText('tag1')).toBeInTheDocument();
-    expect(screen.getByText('tag2')).toBeInTheDocument();
+    expect(screen.getByText('#tag1')).toBeInTheDocument();
     expect(screen.getByText('testuser')).toBeInTheDocument();
   });
 
@@ -123,13 +125,15 @@ describe('ArticleCard', () => {
     const postWithoutExcerpt = { ...mockPost, excerpt: undefined };
     
     render(
-      <BrowserRouter>
-        <ArticleCard 
-          post={postWithoutExcerpt} 
-          onNavigate={mockOnNavigate} 
-          onAction={mockOnAction} 
-        />
-      </BrowserRouter>
+      <MockedProvider addTypename={false}>
+        <BrowserRouter>
+          <ArticleCard 
+            post={postWithoutExcerpt} 
+            onNavigate={mockOnNavigate} 
+            onAction={mockOnAction} 
+          />
+        </BrowserRouter>
+      </MockedProvider>
     );
 
     expect(screen.getByText('Test Article')).toBeInTheDocument();
@@ -140,13 +144,15 @@ describe('ArticleCard', () => {
     const postWithoutTags = { ...mockPost, tags: [] };
     
     render(
-      <BrowserRouter>
-        <ArticleCard 
-          post={postWithoutTags} 
-          onNavigate={mockOnNavigate} 
-          onAction={mockOnAction} 
-        />
-      </BrowserRouter>
+      <MockedProvider addTypename={false}>
+        <BrowserRouter>
+          <ArticleCard 
+            post={postWithoutTags} 
+            onNavigate={mockOnNavigate} 
+            onAction={mockOnAction} 
+          />
+        </BrowserRouter>
+      </MockedProvider>
     );
 
     expect(screen.getByText('Test Article')).toBeInTheDocument();

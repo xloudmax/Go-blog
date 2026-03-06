@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"mime"
+	"net/http"
 	"os"
 	"path/filepath"
 	"repair-platform/config"
@@ -26,7 +26,7 @@ import (
 )
 
 // SetupRoutes 设置应用程序的路由和中间件（全面迁移到GraphQL）
-func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *services.NotionService) {
+func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *services.NotionService, aiService *services.AIService) {
 	logger := middleware.GetLogger()
 	logger.Infow("开始注册路由")
 
@@ -50,7 +50,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *
 	middleware.CleanupExpiredVisits(10 * time.Minute)
 
 	// 设置 GraphQL 路由（唯一接口）
-	setupGraphQLRoutes(r, db, cfg, notionService)
+	setupGraphQLRoutes(r, db, cfg, notionService, aiService)
 
 	// 设置上传路由
 	setupUploadRoutes(r, db, cfg)
@@ -62,12 +62,12 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *
 }
 
 // setupGraphQLRoutes 设置 GraphQL 路由（唯一接口）
-func setupGraphQLRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *services.NotionService) {
+func setupGraphQLRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *services.NotionService, aiService *services.AIService) {
 	logger := middleware.GetLogger()
 	logger.Infow("设置 GraphQL 路由")
 
 	// 创建 GraphQL resolver
-	resolver := graph.NewResolver(db, notionService)
+	resolver := graph.NewResolver(db, notionService, aiService)
 
 	// 创建 GraphQL 服务器
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
@@ -226,14 +226,11 @@ func setupUploadRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 }
 
 // generateFileName 生成唯一文件名
-func generateFileName(originalName string) string {
+func generateFileName(ext string) string {
 	// 生成随机字符串
 	bytes := make([]byte, 16)
 	rand.Read(bytes)
 	randomStr := hex.EncodeToString(bytes)
-
-	// 获取文件扩展名
-	ext := filepath.Ext(originalName)
 
 	// 返回时间戳 + 随机字符串 + 扩展名
 	return fmt.Sprintf("%d_%s%s", time.Now().Unix(), randomStr, ext)
@@ -283,48 +280,32 @@ func allowedExtsList(m map[string]bool) []string {
 	return res
 }
 
-// validateMimeType 验证MIME类型
-func validateMimeType(file io.Reader) error {
+// validateMimeType 验证MIME类型并返回安全扩展名
+func validateMimeType(file io.Reader) (string, error) {
 	// 读取文件头部来检测MIME类型
 	buffer := make([]byte, 512)
 	n, err := file.Read(buffer)
 	if err != nil && err != io.EOF {
-		return fmt.Errorf("读取文件失败: %v", err)
+		return "", fmt.Errorf("读取文件失败: %v", err)
 	}
 
-	// 检测MIME类型
-	mimeType := mime.TypeByExtension("") // 通过文件内容检测
-	if n > 0 {
-		// 使用 http.DetectContentType 检测
-		detectedType := ""
-		if n >= 8 {
-			// 简单的图片文件头检测
-			if buffer[0] == 0xFF && buffer[1] == 0xD8 {
-				detectedType = "image/jpeg"
-			} else if buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47 {
-				detectedType = "image/png"
-			} else if buffer[0] == 0x47 && buffer[1] == 0x49 && buffer[2] == 0x46 {
-				detectedType = "image/gif"
-			} else if string(buffer[0:4]) == "RIFF" && string(buffer[8:12]) == "WEBP" {
-				detectedType = "image/webp"
-			}
-		}
-		mimeType = detectedType
+	// 使用 http.DetectContentType 检测
+	contentType := http.DetectContentType(buffer[:n])
+
+	// 映射 MIME 类型到安全扩展名
+	allowedTypes := map[string]string{
+		"image/jpeg": ".jpg",
+		"image/png":  ".png",
+		"image/gif":  ".gif",
+		"image/webp": ".webp",
 	}
 
-	allowedTypes := map[string]bool{
-		"image/jpeg": true,
-		"image/jpg":  true,
-		"image/png":  true,
-		"image/gif":  true,
-		"image/webp": true,
+	ext, allowed := allowedTypes[contentType]
+	if !allowed {
+		return "", fmt.Errorf("不支持的文件类型: %s", contentType)
 	}
 
-	if !allowedTypes[mimeType] {
-		return fmt.Errorf("不支持的文件类型: %s", mimeType)
-	}
-
-	return nil
+	return ext, nil
 }
 
 // handleAvatarUpload 处理头像上传
@@ -367,7 +348,8 @@ func handleAvatarUpload(c *gin.Context, db *gorm.DB, cfg *config.Config) {
 	}
 
 	// 验证MIME类型
-	if err := validateMimeType(file); err != nil {
+	safeExt, err := validateMimeType(file)
+	if err != nil {
 		logger.Warnw("MIME类型验证失败", "filename", header.Filename, "error", err)
 		c.JSON(400, gin.H{
 			"success": false,
@@ -380,8 +362,8 @@ func handleAvatarUpload(c *gin.Context, db *gorm.DB, cfg *config.Config) {
 	// 重置文件指针
 	file.Seek(0, 0)
 
-	// 生成新文件名
-	filename := generateFileName(header.Filename)
+	// 生成新文件名 (使用安全扩展名)
+	filename := generateFileName(safeExt)
 	filePath := filepath.Join(cfg.BasePath, "avatars", filename)
 
 	// 创建目标文件

@@ -1973,6 +1973,11 @@ func (r *mutationResolver) ClearAllNotifications(ctx context.Context) (*GeneralR
 	}, nil
 }
 
+// GenerateMechanismTree is the resolver for the generateMechanismTree field.
+func (r *queryResolver) GenerateMechanismTree(ctx context.Context, query string) (*models.MechanismNode, error) {
+	return r.Resolver.AIService.GenerateMechanismTree(ctx, query)
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*User, error) {
 	// 获取当前用户信息
@@ -3133,6 +3138,83 @@ func (r *queryResolver) UnreadNotificationCount(ctx context.Context) (int, error
 	return int(count), nil
 }
 
+// Posts is the resolver for the posts field.
+func (r *userResolver) Posts(ctx context.Context, obj *User, limit *int, offset *int) ([]*BlogPost, error) {
+	// 解析用户ID
+	userID, err := strconv.ParseUint(obj.ID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id: %v", err)
+	}
+
+	// 设置默认值
+	defLimit := 10
+	defOffset := 0
+	if limit == nil {
+		limit = &defLimit
+	}
+	if offset == nil {
+		offset = &defOffset
+	}
+
+	// 获取当前用户信息（用于权限检查）
+	var currentUser *models.User
+	if user, err := getUserFromContext(ctx, r.Resolver.DB); err == nil {
+		currentUser = user
+	}
+
+	// 构建查询
+	dbQuery := r.Resolver.DB.Model(&models.BlogPost{}).
+		Where("author_id = ?", uint(userID))
+
+	// 权限过滤
+	if currentUser == nil || (currentUser.ID != uint(userID) && currentUser.Role != "ADMIN") {
+		dbQuery = dbQuery.Where("status = 'PUBLISHED' AND access_level = 'PUBLIC'")
+	}
+
+	// 获取结果
+	var posts []models.BlogPost
+	err = dbQuery.Order("created_at DESC").
+		Offset(*offset).
+		Limit(*limit).
+		Find(&posts).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user posts: %w", err)
+	}
+
+	// 转换结果
+	result := make([]*BlogPost, len(posts))
+	for i, post := range posts {
+		result[i] = convertToGraphQLBlogPostWithUser(&post, currentUser)
+	}
+
+	return result, nil
+}
+
+// PostsCount is the resolver for the postsCount field.
+func (r *userResolver) PostsCount(ctx context.Context, obj *User) (int, error) {
+	// 解析用户ID
+	userID, err := strconv.ParseUint(obj.ID, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid user id: %v", err)
+	}
+
+	// 使用 DataLoader
+	loader := GetDataLoaderFromContext(ctx)
+	if loader == nil {
+		// Fallback to direct DB query
+		var count int64
+		err := r.Resolver.DB.Model(&models.BlogPost{}).
+			Where("author_id = ? AND status = 'PUBLISHED' AND access_level = 'PUBLIC'", uint(userID)).
+			Count(&count).Error
+		if err != nil {
+			return 0, err
+		}
+		return int(count), nil
+	}
+
+	return loader.LoadPostsCount(ctx, uint(userID))
+}
+
 // BlogPost returns BlogPostResolver implementation.
 func (r *Resolver) BlogPost() BlogPostResolver { return &blogPostResolver{r} }
 
@@ -3142,6 +3224,10 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// User returns UserResolver implementation.
+func (r *Resolver) User() UserResolver { return &userResolver{r} }
+
 type blogPostResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type userResolver struct{ *Resolver }

@@ -16,8 +16,9 @@ import (
 
 // DataLoader 包含所有的 Loaders
 type DataLoader struct {
-	UserLoader  *dataloader.Loader[uint, *models.User]
-	StatsLoader *dataloader.Loader[uint, *models.BlogPostStats]
+	UserLoader       *dataloader.Loader[uint, *models.User]
+	StatsLoader      *dataloader.Loader[uint, *models.BlogPostStats]
+	PostsCountLoader *dataloader.Loader[uint, int]
 }
 
 // NewDataLoader 创建新的数据加载器实例
@@ -98,14 +99,48 @@ func NewDataLoader(db *gorm.DB) *DataLoader {
 		return results
 	}
 
+	// 文章计数加载器
+	batchPostsCount := func(ctx context.Context, keys []uint) []*dataloader.Result[int] {
+		var results []*dataloader.Result[int] = make([]*dataloader.Result[int], len(keys))
+
+		type PostCount struct {
+			AuthorID uint
+			Count    int64
+		}
+		var counts []PostCount
+		if err := db.Model(&models.BlogPost{}).
+			Select("author_id, count(*) as count").
+			Where("author_id IN ?", keys).
+			Group("author_id").
+			Scan(&counts).Error; err != nil {
+			for i := range results {
+				results[i] = &dataloader.Result[int]{Error: err}
+			}
+			return results
+		}
+
+		countMap := make(map[uint]int)
+		for _, c := range counts {
+			countMap[c.AuthorID] = int(c.Count)
+		}
+
+		for i, key := range keys {
+			results[i] = &dataloader.Result[int]{Data: countMap[key]}
+		}
+
+		return results
+	}
+
 	// 配置 Loader 选项
 	// 设置 Wait 时间为 2ms，足以收集同一事件循环中的请求
 	userLoader := dataloader.NewBatchedLoader(batchUsers, dataloader.WithWait[uint, *models.User](2*time.Millisecond))
 	statsLoader := dataloader.NewBatchedLoader(batchStats, dataloader.WithWait[uint, *models.BlogPostStats](2*time.Millisecond))
+	postsCountLoader := dataloader.NewBatchedLoader(batchPostsCount, dataloader.WithWait[uint, int](2*time.Millisecond))
 
 	return &DataLoader{
-		UserLoader:  userLoader,
-		StatsLoader: statsLoader,
+		UserLoader:       userLoader,
+		StatsLoader:      statsLoader,
+		PostsCountLoader: postsCountLoader,
 	}
 }
 
@@ -125,6 +160,16 @@ func (dl *DataLoader) LoadStats(ctx context.Context, postID uint) (*models.BlogP
 	result, err := thunk()
 	if err != nil {
 		return nil, err
+	}
+	return result, nil
+}
+
+// LoadPostsCount 加载文章计数
+func (dl *DataLoader) LoadPostsCount(ctx context.Context, userID uint) (int, error) {
+	thunk := dl.PostsCountLoader.Load(ctx, userID)
+	result, err := thunk()
+	if err != nil {
+		return 0, err
 	}
 	return result, nil
 }

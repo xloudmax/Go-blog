@@ -4,6 +4,7 @@ import {
   HomeOutlined,
   SearchOutlined,
   AppstoreOutlined,
+  DeploymentUnitOutlined,
   UserOutlined
 } from '@ant-design/icons';
 import { ThemeContext } from './ThemeProvider';
@@ -23,6 +24,7 @@ const MobileBottomBar: React.FC = () => {
   const navItems = [
     { key: 'home', icon: <HomeOutlined />, label: '首页', path: '/home' },
     { key: 'search', icon: <SearchOutlined />, label: '搜索', path: '/search' },
+    { key: 'insight', icon: <DeploymentUnitOutlined />, label: 'Insight', path: '/insight' },
     { key: 'tags', icon: <AppstoreOutlined />, label: '分类', path: '/tags' },
     { 
       key: 'profile', 

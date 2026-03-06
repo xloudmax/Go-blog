@@ -11,6 +11,7 @@ import (
 	"repair-platform/middleware"
 	"repair-platform/models"
 	"repair-platform/routes"
+	"repair-platform/services"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -65,7 +66,7 @@ func SetupTestEnvironment(t *testing.T) *TestHelper {
 
 	// 创建 Gin 路由
 	router := gin.New()
-	routes.SetupRoutes(router, db, cfg, nil)
+	routes.SetupRoutes(router, db, cfg, nil, services.NewAIService())
 
 	return &TestHelper{
 		DB:     db,

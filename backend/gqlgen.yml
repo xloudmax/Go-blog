@@ -16,9 +16,17 @@ resolver:
   package: graph                # resolver.go 声明的 package
 
 models:
+  User:
+    fields:
+      posts:
+        resolver: true
+      postsCount:
+        resolver: true
   BlogPost:
     fields:
       author:
         resolver: true
       stats:
         resolver: true
+  MechanismNode:
+    model: repair-platform/models.MechanismNode

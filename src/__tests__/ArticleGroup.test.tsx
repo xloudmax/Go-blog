@@ -4,6 +4,15 @@ import { BrowserRouter } from 'react-router-dom';
 import ArticleListContainer from '@/components/ArticleListContainer';
 import type { AccessLevel, PostStatus } from '@/generated/graphql';
 
+// Mock IntersectionObserver for framer-motion
+const mockIntersectionObserver = vi.fn();
+mockIntersectionObserver.mockReturnValue({
+  observe: () => null,
+  unobserve: () => null,
+  disconnect: () => null
+});
+window.IntersectionObserver = mockIntersectionObserver;
+
 // Mock Ant Design components
 vi.mock('antd', async () => {
   const actual = await vi.importActual('antd');
@@ -23,6 +32,15 @@ vi.mock('antd', async () => {
         <span>{message}</span>
         <span>{description}</span>
       </div>
+    ),
+    Popover: ({ children, content }: any) => (
+      <div data-testid="popover">
+        <div data-testid="popover-trigger">{children}</div>
+        <div data-testid="popover-content">{content}</div>
+      </div>
+    ),
+    ConfigProvider: ({ children }: any) => (
+      <div data-testid="config-provider">{children}</div>
     ),
   };
 });
@@ -145,7 +163,7 @@ describe('ArticleListContainer', () => {
         <ArticleListContainer
           posts={mockPosts}
           loading={false}
-          error={null}
+          error={undefined}
           onAction={mockOnAction}
         />
       </BrowserRouter>
@@ -160,7 +178,7 @@ describe('ArticleListContainer', () => {
         <ArticleListContainer
           posts={[]}
           loading={true}
-          error={null}
+          error={undefined}
           onAction={mockOnAction}
         />
       </BrowserRouter>
@@ -192,7 +210,7 @@ describe('ArticleListContainer', () => {
         <ArticleListContainer
           posts={[]}
           loading={false}
-          error={null}
+          error={undefined}
           onAction={mockOnAction}
         />
       </BrowserRouter>

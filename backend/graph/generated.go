@@ -8,6 +8,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"repair-platform/models"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -42,6 +43,7 @@ type ResolverRoot interface {
 	BlogPost() BlogPostResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	User() UserResolver
 }
 
 type DirectiveRoot struct {
@@ -158,6 +160,13 @@ type ComplexityRoot struct {
 		UsedBy      func(childComplexity int) int
 	}
 
+	MechanismNode struct {
+		Children func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Label    func(childComplexity int) int
+		Note     func(childComplexity int) int
+	}
+
 	Mutation struct {
 		AdminCreateUser            func(childComplexity int, input AdminCreateUserInput) int
 		AdminDeleteUser            func(childComplexity int, id string) int
@@ -237,6 +246,7 @@ type ComplexityRoot struct {
 		Comment                 func(childComplexity int, id string) int
 		Comments                func(childComplexity int, blogPostID *string, limit *int, offset *int, filter *CommentFilterInput, sort *CommentSortInput) int
 		EnhancedSearch          func(childComplexity int, input SearchInput) int
+		GenerateMechanismTree   func(childComplexity int, query string) int
 		GetCategories           func(childComplexity int, limit *int, offset *int, search *string) int
 		GetNotionPages          func(childComplexity int) int
 		GetPopularPosts         func(childComplexity int, limit *int) int
@@ -396,6 +406,7 @@ type MutationResolver interface {
 	ClearAllNotifications(ctx context.Context) (*GeneralResponse, error)
 }
 type QueryResolver interface {
+	GenerateMechanismTree(ctx context.Context, query string) (*models.MechanismNode, error)
 	Me(ctx context.Context) (*User, error)
 	User(ctx context.Context, id string) (*User, error)
 	Users(ctx context.Context, limit *int, offset *int, search *string, role *UserRole, isVerified *bool) ([]*User, error)
@@ -420,6 +431,10 @@ type QueryResolver interface {
 	GetNotionPages(ctx context.Context) ([]*NotionPage, error)
 	Notifications(ctx context.Context, limit *int, offset *int) ([]*Notification, error)
 	UnreadNotificationCount(ctx context.Context) (int, error)
+}
+type UserResolver interface {
+	Posts(ctx context.Context, obj *User, limit *int, offset *int) ([]*BlogPost, error)
+	PostsCount(ctx context.Context, obj *User) (int, error)
 }
 
 type executableSchema struct {
@@ -913,6 +928,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.InviteCode.UsedBy(childComplexity), true
+
+	case "MechanismNode.children":
+		if e.complexity.MechanismNode.Children == nil {
+			break
+		}
+
+		return e.complexity.MechanismNode.Children(childComplexity), true
+	case "MechanismNode.id":
+		if e.complexity.MechanismNode.ID == nil {
+			break
+		}
+
+		return e.complexity.MechanismNode.ID(childComplexity), true
+	case "MechanismNode.label":
+		if e.complexity.MechanismNode.Label == nil {
+			break
+		}
+
+		return e.complexity.MechanismNode.Label(childComplexity), true
+	case "MechanismNode.note":
+		if e.complexity.MechanismNode.Note == nil {
+			break
+		}
+
+		return e.complexity.MechanismNode.Note(childComplexity), true
 
 	case "Mutation.adminCreateUser":
 		if e.complexity.Mutation.AdminCreateUser == nil {
@@ -1529,6 +1569,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.EnhancedSearch(childComplexity, args["input"].(SearchInput)), true
+	case "Query.generateMechanismTree":
+		if e.complexity.Query.GenerateMechanismTree == nil {
+			break
+		}
+
+		args, err := ec.field_Query_generateMechanismTree_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GenerateMechanismTree(childComplexity, args["query"].(string)), true
 	case "Query.getCategories":
 		if e.complexity.Query.GetCategories == nil {
 			break
@@ -2753,6 +2804,17 @@ func (ec *executionContext) field_Query_enhancedSearch_args(ctx context.Context,
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_generateMechanismTree_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "query", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["query"] = arg0
 	return args, nil
 }
 
@@ -5725,6 +5787,132 @@ func (ec *executionContext) fieldContext_InviteCode_createdAt(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MechanismNode_id(ctx context.Context, field graphql.CollectedField, obj *models.MechanismNode) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MechanismNode_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MechanismNode_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MechanismNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MechanismNode_label(ctx context.Context, field graphql.CollectedField, obj *models.MechanismNode) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MechanismNode_label,
+		func(ctx context.Context) (any, error) {
+			return obj.Label, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MechanismNode_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MechanismNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MechanismNode_note(ctx context.Context, field graphql.CollectedField, obj *models.MechanismNode) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MechanismNode_note,
+		func(ctx context.Context) (any, error) {
+			return obj.Note, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MechanismNode_note(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MechanismNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MechanismNode_children(ctx context.Context, field graphql.CollectedField, obj *models.MechanismNode) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MechanismNode_children,
+		func(ctx context.Context) (any, error) {
+			return obj.Children, nil
+		},
+		nil,
+		ec.marshalOMechanismNode2ᚕᚖrepairᚑplatformᚋmodelsᚐMechanismNodeᚄ,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MechanismNode_children(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MechanismNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MechanismNode_id(ctx, field)
+			case "label":
+				return ec.fieldContext_MechanismNode_label(ctx, field)
+			case "note":
+				return ec.fieldContext_MechanismNode_note(ctx, field)
+			case "children":
+				return ec.fieldContext_MechanismNode_children(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MechanismNode", field.Name)
 		},
 	}
 	return fc, nil
@@ -8953,6 +9141,57 @@ func (ec *executionContext) fieldContext_PopularQuery_lastSearched(_ context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_generateMechanismTree(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_generateMechanismTree,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().GenerateMechanismTree(ctx, fc.Args["query"].(string))
+		},
+		nil,
+		ec.marshalNMechanismNode2ᚖrepairᚑplatformᚋmodelsᚐMechanismNode,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_generateMechanismTree(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MechanismNode_id(ctx, field)
+			case "label":
+				return ec.fieldContext_MechanismNode_label(ctx, field)
+			case "note":
+				return ec.fieldContext_MechanismNode_note(ctx, field)
+			case "children":
+				return ec.fieldContext_MechanismNode_children(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MechanismNode", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_generateMechanismTree_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11985,7 +12224,8 @@ func (ec *executionContext) _User_posts(ctx context.Context, field graphql.Colle
 		field,
 		ec.fieldContext_User_posts,
 		func(ctx context.Context) (any, error) {
-			return obj.Posts, nil
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.User().Posts(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostᚄ,
@@ -11998,8 +12238,8 @@ func (ec *executionContext) fieldContext_User_posts(ctx context.Context, field g
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -12067,7 +12307,7 @@ func (ec *executionContext) _User_postsCount(ctx context.Context, field graphql.
 		field,
 		ec.fieldContext_User_postsCount,
 		func(ctx context.Context) (any, error) {
-			return obj.PostsCount, nil
+			return ec.resolvers.User().PostsCount(ctx, obj)
 		},
 		nil,
 		ec.marshalNInt2int,
@@ -12080,8 +12320,8 @@ func (ec *executionContext) fieldContext_User_postsCount(_ context.Context, fiel
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -15352,6 +15592,54 @@ func (ec *executionContext) _InviteCode(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var mechanismNodeImplementors = []string{"MechanismNode"}
+
+func (ec *executionContext) _MechanismNode(ctx context.Context, sel ast.SelectionSet, obj *models.MechanismNode) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mechanismNodeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MechanismNode")
+		case "id":
+			out.Values[i] = ec._MechanismNode_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "label":
+			out.Values[i] = ec._MechanismNode_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "note":
+			out.Values[i] = ec._MechanismNode_note(ctx, field, obj)
+		case "children":
+			out.Values[i] = ec._MechanismNode_children(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -15913,6 +16201,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "generateMechanismTree":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_generateMechanismTree(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "me":
 			field := field
 
@@ -16965,32 +17275,32 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "username":
 			out.Values[i] = ec._User_username(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "email":
 			out.Values[i] = ec._User_email(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "role":
 			out.Values[i] = ec._User_role(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "isVerified":
 			out.Values[i] = ec._User_isVerified(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "isActive":
 			out.Values[i] = ec._User_isActive(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "avatar":
 			out.Values[i] = ec._User_avatar(ctx, field, obj)
@@ -17003,23 +17313,85 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		case "createdAt":
 			out.Values[i] = ec._User_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._User_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "posts":
-			out.Values[i] = ec._User_posts(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_posts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "postsCount":
-			out.Values[i] = ec._User_postsCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_postsCount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17875,6 +18247,20 @@ func (ec *executionContext) marshalNInviteCode2ᚖrepairᚑplatformᚋgraphᚐIn
 func (ec *executionContext) unmarshalNLoginInput2repairᚑplatformᚋgraphᚐLoginInput(ctx context.Context, v any) (LoginInput, error) {
 	res, err := ec.unmarshalInputLoginInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMechanismNode2repairᚑplatformᚋmodelsᚐMechanismNode(ctx context.Context, sel ast.SelectionSet, v models.MechanismNode) graphql.Marshaler {
+	return ec._MechanismNode(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMechanismNode2ᚖrepairᚑplatformᚋmodelsᚐMechanismNode(ctx context.Context, sel ast.SelectionSet, v *models.MechanismNode) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MechanismNode(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNNotification2repairᚑplatformᚋgraphᚐNotification(ctx context.Context, sel ast.SelectionSet, v Notification) graphql.Marshaler {
@@ -18865,6 +19251,53 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOMechanismNode2ᚕᚖrepairᚑplatformᚋmodelsᚐMechanismNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.MechanismNode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMechanismNode2ᚖrepairᚑplatformᚋmodelsᚐMechanismNode(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOPostFilterInput2ᚖrepairᚑplatformᚋgraphᚐPostFilterInput(ctx context.Context, v any) (*PostFilterInput, error) {

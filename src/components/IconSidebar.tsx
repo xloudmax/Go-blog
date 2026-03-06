@@ -11,6 +11,8 @@ import {
   BookOutlined,
   LogoutOutlined,
   BellOutlined,
+  DeploymentUnitOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 import { useAppUser } from '@/hooks';
 import { useUnreadNotificationCount } from '@/api/graphql/notification';
@@ -58,6 +60,18 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
       icon: <SearchOutlined />,
       label: '搜索',
       path: '/search',
+    },
+    {
+      key: 'insight',
+      icon: <DeploymentUnitOutlined />,
+      label: '知识洞察',
+      path: '/insight',
+    },
+    {
+      key: 'liquid-glass',
+      icon: <ExperimentOutlined />,
+      label: '液态玻璃测试',
+      path: '/liquid-glass',
     },
     ...(isAuthenticated ? [{
       key: 'notifications',

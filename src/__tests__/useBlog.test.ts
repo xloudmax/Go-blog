@@ -38,7 +38,7 @@ describe('useBlog Hook Tests', () => {
       const { result } = renderHook(() => useBlogList());
 
       // Initial limits/offsets
-      expect(result.current.limit).toBe(10);
+      expect(result.current.limit).toBe(15);
       expect(result.current.offset).toBe(0);
       
       // Note: The hook state for filter/sort isn't directly exposed as 'filter'/'sort' but via setters.
@@ -96,17 +96,17 @@ describe('useBlog Hook Tests', () => {
         data: { posts: [] },
       });
 
-      const { result } = renderHook(() => useBlogList(10));
+      const { result } = renderHook(() => useBlogList(15));
 
       act(() => {
         result.current.goToPage(2);
       });
 
-      expect(result.current.offset).toBe(10);
+      expect(result.current.offset).toBe(15);
       
       expect(usePostsQuery).toHaveBeenLastCalledWith(expect.objectContaining({
         variables: expect.objectContaining({
-          offset: 10
+          offset: 15
         })
       }));
     });
@@ -119,9 +119,9 @@ describe('useBlog Hook Tests', () => {
         data: null,
       });
 
-      const { result } = renderHook(() => useBlogSearch());
+      const { result } = renderHook(() => useBlogSearch(15));
 
-      expect(result.current.limit).toBe(10);
+      expect(result.current.limit).toBe(15);
       expect(result.current.offset).toBe(0);
       expect(result.current.loading).toBeUndefined(); // or whatever default
     });
@@ -133,7 +133,7 @@ describe('useBlog Hook Tests', () => {
         loading: false,
       });
 
-      const { result } = renderHook(() => useBlogSearch());
+      const { result } = renderHook(() => useBlogSearch(15));
 
       act(() => {
         result.current.search('test query');

@@ -69,6 +69,7 @@ echo "DEBUG: Removing destination .env"
 rm -f $BACKEND_DIR/.env
 echo "DEBUG: Copying .env.production to destination"
 cp .env.production $BACKEND_DIR/.env
+chmod 600 $BACKEND_DIR/.env
 ls -l $BACKEND_DIR/.env
 echo "DEBUG: Content of destination .env:"
 cat $BACKEND_DIR/.env

@@ -311,6 +311,9 @@ type EnhancedSearchResult {
 # --------------------
 
 type Query {
+  # 生成机制树 (Insight)
+  generateMechanismTree(query: String!): MechanismNode!
+
   # 用户查询
   me: User # 获取当前登录用户（需要认证）
   user(id: ID!): User # 获取指定用户（需要认证）
@@ -666,3 +669,18 @@ extend type Mutation {
   # 清空所有通知
   clearAllNotifications: GeneralResponse!
 }
+
+# --------------------
+# MECHANISM TREE (INSIGHT)
+# --------------------
+
+type MechanismNode {
+  id: String!
+  label: String!
+  note: String
+  children: [MechanismNode!]
+}
+
+
+
+

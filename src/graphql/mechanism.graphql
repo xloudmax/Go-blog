@@ -1,0 +1,22 @@
+query GenerateMechanismTree($query: String!) {
+  generateMechanismTree(query: $query) {
+    id
+    label
+    note
+    children {
+      id
+      label
+      note
+      children {
+        id
+        label
+        note
+        children {
+          id
+          label
+          note
+        }
+      }
+    }
+  }
+}

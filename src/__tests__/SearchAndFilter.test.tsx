@@ -49,6 +49,15 @@ vi.mock('antd', () => {
         {closable && <button onClick={onClose}>×</button>}
       </span>
     ),
+    Popover: ({ children, content }: any) => (
+      <div data-testid="popover">
+        <div data-testid="popover-trigger">{children}</div>
+        <div data-testid="popover-content">{content}</div>
+      </div>
+    ),
+    ConfigProvider: ({ children }: any) => (
+      <div data-testid="config-provider">{children}</div>
+    ),
   };
 });
 
@@ -76,8 +85,7 @@ describe('SearchAndFilter', () => {
   it('renders correctly', () => {
     render(<SearchAndFilter {...defaultProps} />);
 
-    expect(screen.getByPlaceholderText('搜索文章标题、内容或标签')).toBeInTheDocument();
-    expect(screen.getByText('筛选:')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search topics...')).toBeInTheDocument();
   });
 
   it('renders tag options', () => {

@@ -19,7 +19,6 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -70,6 +69,9 @@ func main() {
 	}
 	logger.Infow("数据库连接已初始化")
 
+	// 强制确保管理员账号存在 (用于测试和桌面端首次启动)
+	ensureAdminAccount(db)
+
 	// 初始化 Services
 	logger.Infow("初始化服务")
 	notionService := services.NewNotionService(db)
@@ -79,9 +81,12 @@ func main() {
 		logger.Infow("Notion服务已初始化")
 	}
 
+	aiService := services.NewAIService()
+	logger.Infow("AI服务已初始化")
+
 	// 配置路由
 	logger.Infow("配置路由和中间件")
-	routes.SetupRoutes(r, db, cfg, notionService)
+	routes.SetupRoutes(r, db, cfg, notionService, aiService)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
@@ -95,26 +100,73 @@ func main() {
 	waitForShutdown(server, db)
 }
 
+func ensureAdminAccount(db *gorm.DB) {
+	var admin models.User
+	now := time.Now()
+	// 查找 admin
+	err := db.Where("username = ?", "admin").First(&admin).Error
+	
+	// 无论是否存在，都执行强制同步逻辑
+	targetAdmin := models.User{
+		Username:        "admin",
+		Email:           "admin@c404.cc",
+		Role:            "ADMIN",
+		IsAdmin:         true,
+		IsVerified:      true,
+		IsActive:        true,
+		EmailVerifiedAt: &now,
+	}
+	targetAdmin.SetPassword("admin123456")
+
+	if err != nil {
+		// 不存在则创建
+		db.Create(&targetAdmin)
+		log.Println("Default admin account created: admin / admin123456")
+	} else {
+		// 存在则更新关键字段，确保好使
+		db.Model(&admin).Updates(map[string]interface{}{
+			"password":          targetAdmin.Password,
+			"role":              "ADMIN",
+			"is_admin":          true,
+			"is_verified":       true,
+			"is_active":         true,
+			"email_verified_at": &now,
+		})
+		log.Println("Existing admin account credentials synchronized.")
+	}
+}
+
 func initLogger(cfg *config.Config) {
 	middleware.InitLogger(cfg)
 }
 
 func setupCORS(r *gin.Engine, cfg *config.Config) {
-	corsConfig := cors.Config{
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
-		MaxAge:           24 * time.Hour,
-	}
+	r.Use(func(c *gin.Context) {
+		origin := c.Request.Header.Get("Origin")
+		
+		// 极致兼容模式：如果请求带了 Origin，我们就原样回显
+		// 这在开发环境下最稳健，且完美支持带 Cookie/Authorization 的请求
+		if origin != "" {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			// 如果没带 Origin，通常是同源请求或非浏览器请求，回传 * 也是安全的
+			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		}
 
-	// 开发环境允许所有来源
-	if cfg.IsDevelopment() {
-		corsConfig.AllowAllOrigins = true
-	} else {
-		corsConfig.AllowOrigins = cfg.AllowedOrigins
-	}
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE, PATCH")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Accept, Origin, Cache-Control, X-Requested-With, apollo-require-preflight, x-apollo-operation-name, x-apollo-operation-id")
+		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Authorization")
+		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
 
-	r.Use(cors.New(corsConfig))
+		// 拦截所有 OPTIONS 请求并直接返回成功
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
 }
 
 func startServer(server *http.Server, cfg *config.Config) {

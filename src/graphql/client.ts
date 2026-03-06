@@ -6,6 +6,7 @@ import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 import { cacheConfig } from './cache-config';
 import errorHandler from '@/services/errorHandler';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 // 加载Apollo Client错误信息（开发环境）
 if (import.meta.env.DEV || process.env.NODE_ENV !== "production") {
@@ -13,24 +14,37 @@ if (import.meta.env.DEV || process.env.NODE_ENV !== "production") {
   loadErrorMessages();
 }
 
+// 内存中缓存 token 提高性能
+let cachedToken: string | null = localStorage.getItem('token');
+
+// 初始化从钥匙串抓取 token
+tokenStorage.get().then(t => {
+  if (t) cachedToken = t;
+});
+
 // 创建HTTP链接
 const uploadLink = createUploadLink({
-  uri: `${import.meta.env.VITE_API_BASE_URL || "http://localhost:11451/"}graphql`,
+  uri: `${import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:12345/"}graphql`,
 });
 
 // 认证链接 - 自动添加JWT token到请求头
-const authLink = setContext((_, { headers }) => {
-  let token = localStorage.getItem('token');
+const authLink = setContext(async (_, { headers }) => {
+  // 每次请求前动态获取最新 token (如果缓存为空则尝试获取)
+  if (!cachedToken) {
+    cachedToken = await tokenStorage.get();
+  }
+  
+  let token = cachedToken;
   
   // 验证 token 是否有效
   if (!token || token === 'undefined' || token === 'null' || token.trim() === '') {
     token = null;
   }
   
-  // 基本的JWT格式验证（应该有3个部分，用.分隔）
+  // 基本的JWT格式验证
   if (token && token.split('.').length !== 3) {
-    // Invalid JWT token format, removing from storage
-    localStorage.removeItem('token');
+    await tokenStorage.remove();
+    cachedToken = null;
     token = null;
   }
   
@@ -67,7 +81,7 @@ const getNewToken = async () => {
   `;
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:11451/"}graphql`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:12345/"}graphql`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -85,13 +99,16 @@ const getNewToken = async () => {
     }
 
     const { token, refreshToken: newRefreshToken } = data.refreshToken;
-    localStorage.setItem('token', token);
+    
+    // 更新钥匙串和内存缓存
+    await tokenStorage.set(token);
+    cachedToken = token;
     localStorage.setItem('refreshToken', newRefreshToken);
     
     return token;
   } catch (error) {
-    // console.error('Error refreshing token:', error);
-    localStorage.removeItem('token');
+    await tokenStorage.remove();
+    cachedToken = null;
     localStorage.removeItem('refreshToken');
     throw error;
   }
@@ -101,8 +118,6 @@ const getNewToken = async () => {
 const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
   if (graphQLErrors) {
     for (const err of graphQLErrors) {
-      // 检查是否是未授权错误 (UNAUTHENTICATED)
-      // 后端返回的可能是 extensions.code = "UNAUTHENTICATED" 或者 message 包含 "Unauthorized"
       const isUnauthenticated = 
         err.extensions?.code === 'UNAUTHENTICATED' || 
         err.message.includes('未授权') ||
@@ -121,23 +136,19 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
               .catch(() => {
                 isRefreshing = false;
                 pendingRequests = [];
-                // 刷新失败，重定向到登录页或清理状态
-                // window.location.href = '/login'; // 可以选择重定向
                 return false;
               })
           ).flatMap(success => {
             if (success) {
-              // 重试原来的请求
               const oldHeaders = operation.getContext().headers;
               operation.setContext({
                 headers: {
                   ...oldHeaders,
-                  authorization: `Bearer ${localStorage.getItem('token')}`,
+                  authorization: `Bearer ${cachedToken}`,
                 },
               });
               return forward(operation);
             } else {
-              // 如果刷新失败，返回原来的错误
               return new Observable(observer => {
                 observer.error(err);
                 observer.complete();
@@ -145,7 +156,6 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
             }
           });
         } else {
-          // 如果正在刷新，将请求加入队列
           return fromPromise(
             new Promise(resolve => {
               pendingRequests.push(() => resolve(true));
@@ -155,7 +165,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
               operation.setContext({
                 headers: {
                   ...oldHeaders,
-                  authorization: `Bearer ${localStorage.getItem('token')}`,
+                  authorization: `Bearer ${cachedToken}`,
                 },
               });
               return forward(operation);
@@ -164,7 +174,6 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
       }
     }
 
-    // 转换GraphQLFormattedError为GraphQLError格式
     const errors = graphQLErrors.map(error => ({
       ...error,
       nodes: [],
@@ -172,7 +181,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
       positions: [],
       originalError: undefined,
       extensions: error.extensions || {}
-    })) as unknown as any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    })) as unknown as any[];
     errorHandler.handleGraphQLErrors(errors);
   }
 

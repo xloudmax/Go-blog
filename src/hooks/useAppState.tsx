@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useContext, ReactNode } from 'react';
 import { useCurrentUser, useAuth } from '@/api/graphql';
 import { AppContext, AppState, AppActions } from '@/context/AppContext';
@@ -127,4 +126,30 @@ export const useAppState = () => {
     throw new Error('useAppState must be used within AppStateProvider');
   }
   return context;
+};
+
+// 便捷的状态和操作hooks (原本在 appStateHooks.ts)
+export const useAppUser = () => {
+  const { state, actions } = useAppState();
+  return {
+    user: state.currentUser,
+    isAuthenticated: state.isAuthenticated,
+    isAdmin: state.isAdmin,
+    login: actions.login,
+    logout: actions.logout,
+    refreshUser: actions.refreshUser,
+  };
+};
+
+export const useAppUI = () => {
+  const { state, actions } = useAppState();
+  return {
+    sidebarOpen: state.sidebarOpen,
+    toggleSidebar: actions.toggleSidebar,
+    setSidebarOpen: actions.setSidebarOpen,
+    isLoading: state.isLoading,
+    error: state.error,
+    setError: actions.setError,
+    clearError: actions.clearError,
+  };
 };

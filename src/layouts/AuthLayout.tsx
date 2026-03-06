@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Card, Typography } from 'antd';
 import { useTheme } from '../components/ThemeProvider';
-
+import TauriTitleBar from '@/components/TauriTitleBar';
 
 const { Title, Text } = Typography;
 
@@ -19,6 +19,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitl
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative transition-all duration-1000 overflow-hidden">
+      <TauriTitleBar />
         {/* Animated Canvas Background */}
 
       {/* Entry animation styles */}

@@ -116,7 +116,7 @@ func (s *FileService) UploadImage(file graphql.Upload, userID uint) (*ImageUploa
 	// 构建访问URL
 	baseURL := os.Getenv("BASE_URL")
 	if baseURL == "" {
-		baseURL = "http://localhost:11451"
+		baseURL = "http://localhost:12345"
 	}
 	imageURL := fmt.Sprintf("%s/uploads/images/%s", baseURL, filename)
 

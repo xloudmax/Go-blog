@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { LiquidSurface, LiquidGlassProfile } from '../components/LiquidSurface';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidMagnifier } from '../components/LiquidMagnifier';
+import { LiquidSwitch } from '../components/LiquidSwitch';
 
 /* ──────────────────── Height functions (mirrored from engine) ──────────────────── */
 const cubicBezierTolerance = 1e-7;
@@ -368,9 +369,7 @@ export default function LiquidGlassTestPage() {
 
   // ─── Switch ───
   const [swChecked, setSwChecked] = useState(false);
-  const [swBezel, setSwBezel] = useState(0.50);
-  const [swIor, setSwIor] = useState(1.5);
-  const [swScale, setSwScale] = useState(6);
+  const [swScale, setSwScale] = useState(50);
   const [swSpec, setSwSpec] = useState(0.20);
 
   // ─── Slider ───
@@ -581,26 +580,17 @@ export default function LiquidGlassTestPage() {
         {/* ═══════════ SWITCH ═══════════ */}
         <DemoSection
           title="Switch"
-          description='Uses a "lip" bezel — convex rim with concave center — making the thumb appear indented.'
+          description='Apple iOS replica with 146x92 lens refracting the green container.'
           controls={<>
-            <ParamSlider label="Bezel" value={swBezel} onChange={setSwBezel} />
-            <ParamSlider label="Thickness" value={swIor} onChange={setSwIor} min={1} max={3} step={0.1} />
-            <ParamSlider label="Scale" value={swScale} onChange={setSwScale} min={0} max={50} step={1} />
+            <ParamSlider label="Scale" value={swScale} onChange={setSwScale} min={0} max={100} step={1} />
             <ParamSlider label="Specular" value={swSpec} onChange={setSwSpec} />
           </>}
         >
-          <div className="flex items-center gap-4">
-            <span className="text-lg font-bold w-10 text-right transition-colors" style={{ color: swChecked ? '#4ade80' : '#94a3b8' }}>
+          <div className="flex items-center gap-6">
+            <span className="text-xl font-bold w-12 text-right transition-colors" style={{ color: swChecked ? '#4ade80' : '#94a3b8' }}>
               {swChecked ? 'ON' : 'OFF'}
             </span>
-            <LiquidSurface profile="lip" fidelity="high" scale={swScale} bezelRatio={swBezel} ior={swIor}
-              borderRadius={20} width={80} height={40} specular={swSpec}
-              interactiveLighting={swSpec > 0} highlightColor={`rgba(255,255,255,${swSpec * 0.5})`}
-              className="cursor-pointer" onClick={() => setSwChecked(v => !v)}
-              style={{ background: swChecked ? 'rgba(74,222,128,0.35)' : 'rgba(255,255,255,0.04)' }}>
-              <div className="absolute w-8 h-8 rounded-full bg-white transition-all duration-300 shadow-md top-1/2 -translate-y-1/2"
-                style={{ left: swChecked ? '44px' : '4px', boxShadow: 'inset 0 -2px 5px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.3)' }} />
-            </LiquidSurface>
+            <LiquidSwitch checked={swChecked} onCheckedChange={setSwChecked} scale={swScale} />
           </div>
         </DemoSection>
 

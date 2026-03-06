@@ -24,11 +24,14 @@ import {
     FileTextOutlined,
     HistoryOutlined,
     CloudUploadOutlined,
-    PlusOutlined
+    PlusOutlined,
+    ImportOutlined,
+    ExportOutlined
 } from '@ant-design/icons';
 import { useQuery } from '@apollo/client';
 import MarkdownEditor from '@/components/MarkdownEditor'
 import { useBlogActions, POST_QUERY } from '@/api/graphql/blog'
+import { localFile } from '@/utils/localFile'
 
 
 const { Title, Text, Paragraph } = Typography;
@@ -204,7 +207,35 @@ export default function EditorPage() {
         }
     }
 
+    // --- 本地文件处理逻辑 ---
+    
+    const handleImportLocal = async () => {
+        const result = await localFile.importMarkdown();
+        if (result) {
+            setNewFileTitle(result.title);
+            setMarkdownContent(result.content);
+            notification.success({
+                message: '导入成功',
+                description: `已从本地加载: ${result.title}`,
+            });
+        }
+    };
 
+    const handleExportLocal = async () => {
+        if (!markdownContent.trim()) {
+            message.warning('没有内容可导出');
+            return;
+        }
+        const success = await localFile.exportMarkdown(newFileTitle, markdownContent);
+        if (success) {
+            notification.success({
+                message: '导出成功',
+                description: '文章已保存到本地',
+            });
+        }
+    };
+
+    // --- ---
 
     // 关闭预览
     const closePreview = () => {
@@ -324,48 +355,54 @@ export default function EditorPage() {
             {/* 操作按钮栏 */}
             <Card className="mb-5 optimized-card">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Space>
-                        <Button 
-                            icon={<FileTextOutlined />} 
-                            onClick={() => {
-                                // 插入标题
-                                const titleTemplate = '# 标题\n\n';
-                                setMarkdownContent(titleTemplate + markdownContent);
-                            }}
-                        >
-                            标题
-                        </Button>
-                        <Button 
-                            icon={<FileTextOutlined />} 
-                            onClick={() => {
-                                // 插入代码块
-                                const codeTemplate = '\n```\n// 在此处编写代码\n```\n';
-                                setMarkdownContent(markdownContent + codeTemplate);
-                            }}
-                        >
-                            代码块
-                        </Button>
-                        <Button 
-                            icon={<FileTextOutlined />} 
-                            onClick={() => {
-                                // 插入链接
-                                const linkTemplate = '[链接文本](https://)';
-                                setMarkdownContent(markdownContent + linkTemplate);
-                            }}
-                        >
-                            链接
-                        </Button>
-                        <Button 
-                            icon={<FileTextOutlined />} 
-                            onClick={() => {
-                                // 插入图片
-                                const imageTemplate = '![图片描述](https://)';
-                                setMarkdownContent(markdownContent + imageTemplate);
-                            }}
-                        >
-                            图片
-                        </Button>
+                    <Space size="middle">
+                        <Space>
+                            <Button 
+                                icon={<FileTextOutlined />} 
+                                onClick={() => {
+                                    // 插入标题
+                                    const titleTemplate = '# 标题\n\n';
+                                    setMarkdownContent(titleTemplate + markdownContent);
+                                }}
+                            >
+                                标题
+                            </Button>
+                            <Button 
+                                icon={<FileTextOutlined />} 
+                                onClick={() => {
+                                    // 插入代码块
+                                    const codeTemplate = '\n```\n// 在此处编写代码\n```\n';
+                                    setMarkdownContent(markdownContent + codeTemplate);
+                                }}
+                            >
+                                代码块
+                            </Button>
+                        </Space>
+                        
+                        <Divider type="vertical" className="h-8" />
+                        
+                        {/* 本地文件集成按钮组 */}
+                        <Space>
+                            <Tooltip title="从电脑选择 Markdown 文件导入">
+                                <Button 
+                                    icon={<ImportOutlined />} 
+                                    onClick={handleImportLocal}
+                                    className="border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+                                >
+                                    导入本地
+                                </Button>
+                            </Tooltip>
+                            <Tooltip title="将当前草稿保存到本地磁盘">
+                                <Button 
+                                    icon={<ExportOutlined />} 
+                                    onClick={handleExportLocal}
+                                >
+                                    存为本地
+                                </Button>
+                            </Tooltip>
+                        </Space>
                     </Space>
+
                     <Space>
                         <Button 
                             icon={<HistoryOutlined />} 
@@ -379,9 +416,11 @@ export default function EditorPage() {
                         </Button>
                             <Button 
                                 icon={<CloudUploadOutlined />} 
+                                type="primary"
                                 onClick={() => handleSave(markdownContent, 'PUBLISHED')}
+                                className="bg-indigo-600"
                             >
-                                发布
+                                发布文章
                             </Button>
                     </Space>
                 </div>

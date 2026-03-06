@@ -125,9 +125,9 @@ export const useBlogList = (initialLimit = 15) => {
 
 
 // 博客搜索hook
-export const useBlogSearch = () => {
+export const useBlogSearch = (initialLimit = 15) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(initialLimit);
   const [offset, setOffset] = useState(0);
 
   const { data, loading, error } = useSearchPostsQuery({

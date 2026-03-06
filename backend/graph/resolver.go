@@ -14,13 +14,15 @@ type Resolver struct {
 	DB            *gorm.DB
 	SearchService *services.SearchService
 	NotionService *services.NotionService
+	AIService     *services.AIService
 }
 
 // NewResolver 创建一个新的resolver实例
-func NewResolver(db *gorm.DB, notionService *services.NotionService) *Resolver {
+func NewResolver(db *gorm.DB, notionService *services.NotionService, aiService *services.AIService) *Resolver {
 	return &Resolver{
 		DB:            db,
 		SearchService: services.NewSearchService(db),
 		NotionService: notionService,
+		AIService:     aiService,
 	}
 }

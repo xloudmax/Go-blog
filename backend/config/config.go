@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -52,18 +53,40 @@ type Config struct {
 	// 缓存配置
 	CacheEnabled bool
 	CacheTTL     string
+
+	// AI 服务配置
+	AIServiceURL     string
+	AIServiceTimeout string
 }
 
 // LoadConfig 加载应用配置
 func LoadConfig() *Config {
+	// 检测是否运行在 Tauri 环境
+	isTauri := os.Getenv("TAURI_ENV_PLATFORM") != "" || os.Getenv("TAURI_PLATFORM") != ""
+	
+	defaultDB := "blog_platform.db"
+	defaultUploads := "uploads"
+
+	if isTauri {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			// 在用户目录下创建专用的应用数据目录
+			appDir := filepath.Join(home, ".c404-blog")
+			os.MkdirAll(appDir, 0755)
+			defaultDB = filepath.Join(appDir, "blog.db")
+			defaultUploads = filepath.Join(appDir, "uploads")
+			os.MkdirAll(defaultUploads, 0755)
+		}
+	}
+
 	cfg := &Config{
 		// 基础配置
 		Environment: getEnv("GIN_MODE", "development"),
-		Port:        getEnv("PORT", "11451"),
+		Port:        getEnv("PORT", "12345"),
 		LogLevel:    getEnv("LOG_LEVEL", "info"),
 
 		// 数据库配置
-		DatabaseURL: getEnv("DATABASE_URL", "blog_platform.db"),
+		DatabaseURL: getEnv("DATABASE_URL", defaultDB),
 
 		// JWT 配置
 		JWTSecret:      getEnv("JWT_SECRET", ""),
@@ -82,9 +105,9 @@ func LoadConfig() *Config {
 		AllowedOrigins: getEnvAsSlice("ALLOWED_ORIGINS", "http://localhost:5173", ","),
 
 		// 文件上传配置
-		BasePath:         getEnv("BASE_PATH", "uploads"),
+		BasePath:         getEnv("BASE_PATH", defaultUploads),
 		MaxFileSize:      getEnvAsInt64("MAX_FILE_SIZE", 10485760), // 10MB
-		AllowedFileTypes: getEnvAsSlice("ALLOWED_FILE_TYPES", ".md,.txt,.json", ","),
+		AllowedFileTypes: getEnvAsSlice("ALLOWED_FILE_TYPES", ".md,.txt,.json,.jpg,.jpeg,.png,.gif,.webp", ","),
 
 		// 限流配置
 		RateLimitEnabled:  getEnvAsBool("RATE_LIMIT_ENABLED", true),
@@ -93,7 +116,11 @@ func LoadConfig() *Config {
 
 		// 缓存配置
 		CacheEnabled: getEnvAsBool("CACHE_ENABLED", true),
-		CacheTTL:     getEnv("CACHE_TTL", "900s"),
+		CacheTTL:     getEnv("CacheTTL", "900s"),
+
+		// AI 服务配置
+		AIServiceURL:     getEnv("AI_SERVICE_URL", "http://localhost:8000"),
+		AIServiceTimeout: getEnv("AI_SERVICE_TIMEOUT", "30s"),
 	}
 
 	// 安全检查：生产环境下必须配置 JWT_SECRET
@@ -109,8 +136,6 @@ func LoadConfig() *Config {
 
 	return cfg
 }
-
-// GetGinMode 获取 Gin 运行模式（映射到 Gin 支持的模式）
 
 // GetGinMode 获取 Gin 运行模式（映射到 Gin 支持的模式）
 func (c *Config) GetGinMode() string {
@@ -149,7 +174,6 @@ func (c *Config) IsTest() bool {
 
 // ShouldSkipEmailVerification 是否跳过邮箱验证
 func (c *Config) ShouldSkipEmailVerification() bool {
-	// 测试环境和开发环境跳过邮箱验证
 	return c.IsTest() || c.IsDevelopment() || !c.EmailEnabled
 }
 
@@ -158,11 +182,9 @@ func (c *Config) GetDatabaseConfig() map[string]interface{} {
 	config := make(map[string]interface{})
 
 	if c.IsTest() {
-		// 测试环境使用内存数据库
 		config["dsn"] = ":memory:"
 		config["driver"] = "sqlite"
 	} else {
-		// 开发和生产环境使用文件数据库
 		config["dsn"] = c.DatabaseURL
 		config["driver"] = "sqlite"
 	}
@@ -183,7 +205,7 @@ func (c *Config) GetLogConfig() map[string]interface{} {
 	}
 
 	if c.IsTest() {
-		config["level"] = "error" // 测试环境减少日志输出
+		config["level"] = "error"
 	}
 
 	return config
@@ -199,7 +221,6 @@ func (c *Config) GetCORSConfig() map[string]interface{} {
 	config["allow_credentials"] = true
 
 	if c.IsDevelopment() {
-		// 开发环境允许所有来源
 		config["allowed_origins"] = []string{"*"}
 	}
 
@@ -211,15 +232,12 @@ func (c *Config) GetRateLimitConfig() map[string]interface{} {
 	config := make(map[string]interface{})
 
 	if c.IsTest() {
-		// 测试环境禁用限流
 		config["enabled"] = false
 	} else if c.IsDevelopment() {
-		// 开发环境宽松限流
 		config["enabled"] = true
 		config["requests_per_minute"] = 1000
 		config["requests_per_hour"] = 10000
 	} else {
-		// 生产环境严格限流
 		config["enabled"] = true
 		config["requests_per_minute"] = 60
 		config["requests_per_hour"] = 1000
