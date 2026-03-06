@@ -11,6 +11,7 @@ export interface LiquidSurfaceProps extends HTMLAttributes<HTMLDivElement> {
   height?: number | string;
   borderRadius?: number | string;
   bezelRatio?: number;
+  ior?: number;
   interactiveLighting?: boolean;
   highlightColor?: string;
   containerClassName?: string;
@@ -28,6 +29,7 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
   height = "100%",
   borderRadius = "24px",
   bezelRatio = 0.4,
+  ior = 1.5,
   interactiveLighting = false,
   highlightColor = "rgba(255, 255, 255, 0.4)",
   containerClassName = "",
@@ -139,7 +141,7 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
     // Optimization 1: Cache Check
     const radStr2 = String(borderRadius).replace(/px$/, '');
     const rad2 = Number(radStr2) || 0;
-    const cacheKey = `${w}x${h}_${profile}_${rad2}_${bezelRatio}`;
+    const cacheKey = `${w}x${h}_${profile}_${rad2}_${bezelRatio}_${ior}`;
     if (displacementMapCache.has(cacheKey)) {
         const cachedUrl = displacementMapCache.get(cacheKey)!;
         setDisplacementMapUrl(cachedUrl);
@@ -247,7 +249,7 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
             const y2 = getHeight(Math.min(1, normalizedT + delta));
             const derivative = (y2 - y1) / (2 * delta); 
             
-            const magnitude = derivative * maxDisplacementPx;
+            const magnitude = derivative * maxDisplacementPx * (ior / 1.5);
 
             // SDF Gradient (Angle of Refraction)
             const deltaSDF = 0.01;
@@ -295,7 +297,7 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
     setDisplacementMapUrl(dataUrl);
     onMapGenerated?.(dataUrl);
     
-  }, [profile, fidelity, dimensions, borderRadius, scale, bezelRatio, onMapGenerated]);
+  }, [profile, fidelity, dimensions, borderRadius, scale, bezelRatio, ior, onMapGenerated]);
 
 
   useEffect(() => {
