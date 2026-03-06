@@ -153,7 +153,45 @@ export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
 
   useEffect(() => { generateMaps(); }, [generateMaps]);
 
+  // --- Spring Physics for Press/Drag Animation ---
+  const [springScale, setSpringScale] = useState(1);
+  const targetScale = isDragging ? 1.05 : 1.0; 
+  const physicsState = useRef({ position: 1, velocity: 0 });
+
+  useEffect(() => {
+    let animationFrameId: number;
+    let lastTime = performance.now();
+
+    const stiffness = 0.04;
+    const damping = 0.35; // Slight underdamping for bouncy drag start/stop
+
+    const step = (time: number) => {
+      const dt = Math.min((time - lastTime) / 16, 2); 
+      lastTime = time;
+
+      const state = physicsState.current;
+      const force = (targetScale - state.position) * stiffness;
+      state.velocity = (state.velocity + force) * (1 - damping);
+      state.position += state.velocity * dt;
+
+      setSpringScale(state.position);
+
+      if (Math.abs(state.velocity) > 0.0001 || Math.abs(targetScale - state.position) > 0.0001) {
+        animationFrameId = requestAnimationFrame(step);
+      } else {
+        state.position = targetScale;
+        state.velocity = 0;
+        setSpringScale(targetScale);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [targetScale]);
+
   // ─── Drag handlers ───
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 }); // For specular highlight tracking
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -161,6 +199,16 @@ export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
     if (rect) {
       dragOffset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
     }
+    
+    // Update local mouse pos for highlight
+    const lensRect = lensRef.current?.getBoundingClientRect();
+    if (lensRect) {
+      setMousePos({ 
+        x: ((e.clientX - lensRect.left) / lensRect.width) * 100, 
+        y: ((e.clientY - lensRect.top) / lensRect.height) * 100 
+      });
+    }
+
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, [pos]);
 
@@ -172,14 +220,25 @@ export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
     const newX = Math.max(0, Math.min(parentRect.width - width, e.clientX - dragOffset.current.x));
     const newY = Math.max(0, Math.min(parentRect.height - height, e.clientY - dragOffset.current.y));
     setPos({ x: newX, y: newY });
+
+    // Update highlight
+    const lensRect = lensRef.current?.getBoundingClientRect();
+    if (lensRect) {
+      setMousePos({ 
+        x: ((e.clientX - lensRect.left) / lensRect.width) * 100, 
+        y: ((e.clientY - lensRect.top) / lensRect.height) * 100 
+      });
+    }
   }, [isDragging, width, height]);
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false);
   }, []);
 
-  // Specular highlight (CSS for simplicity in draggable context)
-  const specularOpacity = specular * 0.6;
+  // Specular highlight tracks finger/mouse when dragging, returns to center when resting
+  const specularOpacity = specular * (isDragging ? 0.8 : 0.4);
+  const lightX = isDragging ? mousePos.x : 30;
+  const lightY = isDragging ? mousePos.y : 20;
 
   return (
     <>
@@ -198,10 +257,10 @@ export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
           border: '1px solid rgba(255,255,255,0.3)',
           borderTop: '1px solid rgba(255,255,255,0.5)',
           boxShadow: isDragging
-            ? '0 15px 50px rgba(0,0,0,0.4), inset 0 2px 10px rgba(255,255,255,0.2)'
+            ? '0 25px 50px rgba(0,0,0,0.5), inset 0 2px 15px rgba(255,255,255,0.3)'
             : '0 8px 30px rgba(0,0,0,0.25), inset 0 2px 10px rgba(255,255,255,0.15)',
-          transform: isDragging ? 'scale(1.05)' : 'scale(1)',
-          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s ease',
+          transform: `scale(${springScale})`, // Physics driven scale
+          transition: 'box-shadow 0.2s ease, filter 0.1s ease', // Only animate non-transform properties
           zIndex: isDragging ? 100 : 10,
         }}
         onPointerDown={handlePointerDown}
@@ -209,10 +268,11 @@ export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
         onPointerUp={handlePointerUp}
       >
         {/* Specular highlight */}
-        <div className="absolute inset-0 rounded-[inherit] pointer-events-none"
+        <div className="absolute inset-0 rounded-[inherit] pointer-events-none transition-opacity duration-200"
           style={{
-            background: `radial-gradient(ellipse 60% 40% at 30% 20%, rgba(255,255,255,${specularOpacity}), transparent 70%)`,
+            background: `radial-gradient(ellipse 80% 60% at ${lightX}% ${lightY}%, rgba(255,255,255,${specularOpacity}), transparent 70%)`,
             mixBlendMode: 'screen',
+            transition: 'background 0.1s ease', // Smooth out mouse tracking slightly
           }}
         />
         {/* Drag handle indicator */}
