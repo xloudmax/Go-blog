@@ -428,7 +428,8 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
   let filterStyle = "blur(20px)"; // Default fallback
   if (isSupported) {
       if (isVisible) {
-          filterStyle = `url(#liquid-glass-filter-${filterId}) blur(10px)`;
+          // Blur is now handled INSIDE the SVG filter for better compositing
+          filterStyle = `url(#liquid-glass-filter-${filterId})`;
       } else {
           // Optimization 3: Heavily degrade filter when out of view
           filterStyle = `blur(10px)`; 
@@ -490,24 +491,67 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
               height="140%"
               colorInterpolationFilters="sRGB"
             >
+              {/* 1. Background Blur (replaces CSS blur for better pipeline integration) */}
+              <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blurredBg" />
+
+              {/* 2. Color tint & slight desaturation for the glass material feel */}
+              {/* Desaturate by ~20%, add slight warm tint (R+ G+) */}
+              <feColorMatrix 
+                in="blurredBg" 
+                type="matrix" 
+                values="0.8  0.1  0.1  0  0.03
+                        0.1  0.8  0.1  0  0.02
+                        0.1  0.1  0.8  0  0.00
+                        0    0    0    1  0" 
+                result="tintedBg" 
+              />
+
+              {/* 3. Refraction using Displacement Map */}
               <feImage href={displacementMapUrl} result="displacementMap" preserveAspectRatio="none" />
               <feDisplacementMap
-                in="SourceGraphic"
+                in="tintedBg"
                 in2="displacementMap"
                 scale={pressFilterScale}
                 xChannelSelector="R"
                 yChannelSelector="G"
                 result="refracted"
               />
-              <feMerge>
-                <feMergeNode in="refracted" />
-              </feMerge>
-              {specularMapUrl && (
+
+              {/* 4. Specular Highlight Addition */}
+              {specularMapUrl ? (
                 <>
                   <feImage href={specularMapUrl} result="specularMap" preserveAspectRatio="none" />
-                  <feBlend in="refracted" in2="specularMap" mode="screen" result="withSpecular" />
+                  <feBlend in="refracted" in2="specularMap" mode="screen" result="glassWithHighlight" />
                 </>
+              ) : (
+                <feMerge result="glassWithHighlight">
+                  <feMergeNode in="refracted" />
+                </feMerge>
               )}
+
+              {/* 5. Edge Masking / Feathering */}
+              {/* We extract the alpha channel of the displacement map to mask the final effect */}
+              {/* The displacement map already has alpha=0 where sdf > 0 */}
+              <feColorMatrix 
+                in="displacementMap" 
+                type="matrix" 
+                values="0 0 0 0 0
+                        0 0 0 0 0
+                        0 0 0 0 0
+                        0 0 0 0.8 0" 
+                result="edgeMask" 
+              />
+              <feComposite 
+                in="glassWithHighlight" 
+                in2="edgeMask" 
+                operator="in" 
+                result="finalGlass" 
+              />
+
+              {/* Also composite back original graphic with lower opacity just for mixing */}
+              <feMerge>
+                <feMergeNode in="finalGlass" />
+              </feMerge>
             </filter>
           </defs>
         </svg>
