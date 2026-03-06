@@ -244,7 +244,7 @@ export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
     <>
       <div
         ref={lensRef}
-        className={`absolute cursor-grab active:cursor-grabbing select-none ${className}`}
+        className={`absolute cursor-grab active:cursor-grabbing select-none ring-1 ring-black/10 dark:ring-white/10 ${className}`}
         style={{
           left: pos.x,
           top: pos.y,
@@ -254,11 +254,9 @@ export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
           backdropFilter: refractionMapUrl ? `url(#magnifier-refraction-${filterId}) url(#magnifier-zoom-${filterId}) blur(0.5px)` : 'blur(10px)',
           WebkitBackdropFilter: refractionMapUrl ? `url(#magnifier-refraction-${filterId}) url(#magnifier-zoom-${filterId}) blur(0.5px)` : 'blur(10px)',
           background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.3)',
-          borderTop: '1px solid rgba(255,255,255,0.5)',
           boxShadow: isDragging
-            ? '0 25px 50px rgba(0,0,0,0.5), inset 0 2px 15px rgba(255,255,255,0.3)'
-            : '0 8px 30px rgba(0,0,0,0.25), inset 0 2px 10px rgba(255,255,255,0.15)',
+            ? 'rgba(0, 0, 0, 0.3) 0px 15px 30px, rgba(0, 0, 0, 0.2) 0px 2px 24px inset, rgba(255, 255, 255, 0.3) 0px -2px 24px inset'
+            : 'rgba(0, 0, 0, 0.16) 0px 4px 9px, rgba(0, 0, 0, 0.2) 0px 2px 24px inset, rgba(255, 255, 255, 0.2) 0px -2px 24px inset',
           transform: `scale(${springScale})`, // Physics driven scale
           transition: 'box-shadow 0.2s ease, filter 0.1s ease', // Only animate non-transform properties
           zIndex: isDragging ? 100 : 10,
