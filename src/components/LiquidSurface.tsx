@@ -14,6 +14,7 @@ export interface LiquidSurfaceProps extends HTMLAttributes<HTMLDivElement> {
   ior?: number;
   interactiveLighting?: boolean;
   highlightColor?: string;
+  specular?: number;
   containerClassName?: string;
   onMapGenerated?: (url: string) => void;
 }
@@ -32,6 +33,7 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
   ior = 1.5,
   interactiveLighting = false,
   highlightColor = "rgba(255, 255, 255, 0.4)",
+  specular = 1.0,
   containerClassName = "",
   className = "",
   children,
@@ -52,6 +54,7 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
   
   // High fidelity mapped Image URL
   const [displacementMapUrl, setDisplacementMapUrl] = useState<string>("");
+  const [specularMapUrl, setSpecularMapUrl] = useState<string>("");
 
   // Optimization 3: Visibility Tracking (IntersectionObserver)
   const [isVisible, setIsVisible] = useState(true);
@@ -216,19 +219,19 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
 
     // Max displacement bounds
     const maxDisplacementPx = scale / resDivider; 
+
+    // SDF rounded-rect box dimensions (constant per frame)
+    const radStr = String(borderRadius).replace(/px$/, '');
+    const rad = Number(radStr) || 0;
+    const mappedRad = Math.max(0, rad / resDivider);
+    const boxW = Math.max(0, w / 2 - mappedRad);
+    const boxH = Math.max(0, h / 2 - mappedRad);
     
     for (let py = 0; py < h; py++) {
       for (let px = 0; px < w; px++) {
           
         const x = px - w / 2;
         const y = py - h / 2;
-
-        const radStr = String(borderRadius).replace(/px$/, '');
-        const rad = Number(radStr) || 0;
-        const mappedRad = Math.max(0, rad / resDivider);
-        
-        const boxW = Math.max(0, w / 2 - mappedRad);
-        const boxH = Math.max(0, h / 2 - mappedRad);
         
         const qx = Math.abs(x) - boxW;
         const qy = Math.abs(y) - boxH;
@@ -292,12 +295,83 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
     ctx.putImageData(imgData, 0, 0);
     const dataUrl = canvas.toDataURL("image/png");
     
+    // Generate specular highlight map (same dimensions)
+    if (specular > 0) {
+      const specCanvas = document.createElement("canvas");
+      specCanvas.width = w;
+      specCanvas.height = h;
+      const specCtx = specCanvas.getContext("2d");
+      if (specCtx) {
+        const specData = specCtx.createImageData(w, h);
+        const sd = specData.data;
+        
+        // Light direction (top-left, normalized)
+        const lightDirX = -0.5;
+        const lightDirY = -0.7;
+        const lightLen = Math.sqrt(lightDirX * lightDirX + lightDirY * lightDirY);
+        const ldx = lightDirX / lightLen;
+        const ldy = lightDirY / lightLen;
+        
+        for (let py2 = 0; py2 < h; py2++) {
+          for (let px2 = 0; px2 < w; px2++) {
+            const x2 = px2 - w / 2;
+            const y2 = py2 - h / 2;
+            
+            // Recompute SDF for this pixel
+            const qx3 = Math.abs(x2) - boxW;
+            const qy3 = Math.abs(y2) - boxH;
+            const lengthQ3 = Math.sqrt(Math.max(0, qx3) ** 2 + Math.max(0, qy3) ** 2);
+            const sdf3 = lengthQ3 + Math.min(Math.max(qx3, qy3), 0.0) - mappedRad;
+            const distIn = -sdf3;
+            
+            let brightness = 0;
+            
+            if (distIn > 0 && distIn <= bezelThickness) {
+              const t = distIn / bezelThickness;
+              
+              // SDF gradient as normal direction
+              const ds = 0.5;
+              const qxA = Math.abs(x2 + ds) - boxW;
+              const qyA = Math.abs(y2) - boxH;
+              const dA = Math.sqrt(Math.max(0, qxA) ** 2 + Math.max(0, qyA) ** 2) + Math.min(Math.max(qxA, qyA), 0.0) - mappedRad;
+              const qxB = Math.abs(x2) - boxW;
+              const qyB = Math.abs(y2 + ds) - boxH;
+              const dB = Math.sqrt(Math.max(0, qxB) ** 2 + Math.max(0, qyB) ** 2) + Math.min(Math.max(qxB, qyB), 0.0) - mappedRad;
+              
+              let nx = (dA - sdf3) / ds;
+              let ny = (dB - sdf3) / ds;
+              const nLen = Math.sqrt(nx * nx + ny * ny);
+              if (nLen > 0) { nx /= nLen; ny /= nLen; }
+              
+              // Dot product with light direction (rim light)
+              const dot = Math.max(0, -(nx * ldx + ny * ldy));
+              
+              // Rim falloff: stronger at edges, fading inward
+              const rimFactor = 1 - smootherStep(t);
+              brightness = dot * rimFactor * specular * 255;
+            }
+            
+            const si = (py2 * w + px2) * 4;
+            const bVal = Math.max(0, Math.min(255, brightness));
+            sd[si] = bVal;
+            sd[si + 1] = bVal;
+            sd[si + 2] = bVal;
+            sd[si + 3] = (sdf3 <= 0) ? 255 : 0;
+          }
+        }
+        specCtx.putImageData(specData, 0, 0);
+        setSpecularMapUrl(specCanvas.toDataURL("image/png"));
+      }
+    } else {
+      setSpecularMapUrl("");
+    }
+    
     // Save to Cache
     displacementMapCache.set(cacheKey, dataUrl);
     setDisplacementMapUrl(dataUrl);
     onMapGenerated?.(dataUrl);
     
-  }, [profile, fidelity, dimensions, borderRadius, scale, bezelRatio, ior, onMapGenerated]);
+  }, [profile, fidelity, dimensions, borderRadius, scale, bezelRatio, ior, specular, onMapGenerated]);
 
 
   useEffect(() => {
@@ -428,6 +502,12 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
               <feMerge>
                 <feMergeNode in="refracted" />
               </feMerge>
+              {specularMapUrl && (
+                <>
+                  <feImage href={specularMapUrl} result="specularMap" preserveAspectRatio="none" />
+                  <feBlend in="refracted" in2="specularMap" mode="screen" result="withSpecular" />
+                </>
+              )}
             </filter>
           </defs>
         </svg>
