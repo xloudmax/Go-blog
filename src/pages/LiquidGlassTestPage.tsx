@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { LiquidSurface, LiquidGlassProfile } from '../components/LiquidSurface';
 import { LiquidSlider } from '../components/LiquidSlider';
+import { LiquidMagnifier } from '../components/LiquidMagnifier';
 
 /* ──────────────────── Height functions (mirrored from engine) ──────────────────── */
 const cubicBezierTolerance = 1e-7;
@@ -481,6 +482,35 @@ export default function LiquidGlassTestPage() {
                 </LiquidSurface>
               </div>
             </PanelCard>
+          </div>
+        </section>
+
+        {/* ═══════════ MAGNIFYING GLASS ═══════════ */}
+        <section className="w-full">
+          <div className="mb-3">
+            <h2 className="text-lg font-bold text-white/90">Magnifying Glass</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Drag the lens across the scene — dual displacement maps for bezel refraction + center zoom.</p>
+          </div>
+          <div className="relative flex items-center justify-center rounded-xl overflow-hidden border border-white/10"
+            style={{
+              height: 300,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23667'/%3E%3Cstop offset='100%25' stop-color='%23334'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='200' height='200'/%3E%3Ctext x='10' y='40' fill='%23aab' font-size='14' font-family='monospace'%3ELiquid Glass%3C/text%3E%3Ctext x='10' y='80' fill='%2388a' font-size='11' font-family='monospace'%3ESDF Displacement%3C/text%3E%3Ctext x='10' y='120' fill='%2366a' font-size='11' font-family='monospace'%3ERefraction Engine%3C/text%3E%3Ccircle cx='160' cy='50' r='20' fill='%23f4a' opacity='0.3'/%3E%3Ccircle cx='140' cy='150' r='30' fill='%234af' opacity='0.2'/%3E%3C/svg%3E")`,
+              backgroundSize: '200px 200px',
+            }}>
+            <div className="absolute w-40 h-40 bg-purple-500/30 rounded-full blur-3xl top-4 right-12 pointer-events-none" />
+            <div className="absolute w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl bottom-0 left-8 pointer-events-none" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-[80px] font-black italic opacity-[0.05] text-white select-none pointer-events-none">LENS</span>
+            </div>
+            <LiquidMagnifier
+              width={180}
+              height={120}
+              borderRadius={60}
+              bezelRatio={0.50}
+              scale={9}
+              ior={1.5}
+              specular={1.0}
+            />
           </div>
         </section>
 
