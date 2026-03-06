@@ -412,6 +412,47 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
     };
   }, [isPressed]);
 
+  // --- Spring Physics for Press Animation ---
+  const [springScale, setSpringScale] = useState(1);
+  const targetScale = isPressed ? 0.94 : 1; 
+  // Use refs to track physics state across frames without triggering effect re-runs
+  const physicsState = useRef({ position: 1, velocity: 0 });
+
+  // Simplified critically damped spring
+  // F = -k*x - c*v
+  useEffect(() => {
+    let animationFrameId: number;
+    let lastTime = performance.now();
+
+    const stiffness = 0.04;
+    const damping = 0.35; // Slight underdamping for that nice Apple bounce
+
+    const step = (time: number) => {
+      // 16ms constraint for stability
+      const dt = Math.min((time - lastTime) / 16, 2); 
+      lastTime = time;
+
+      const state = physicsState.current;
+      const force = (targetScale - state.position) * stiffness;
+      state.velocity = (state.velocity + force) * (1 - damping);
+      state.position += state.velocity * dt;
+
+      setSpringScale(state.position);
+
+      // Stop animating if we're very close to target and hardly moving
+      if (Math.abs(state.velocity) > 0.0001 || Math.abs(targetScale - state.position) > 0.0001) {
+        animationFrameId = requestAnimationFrame(step);
+      } else {
+        state.position = targetScale;
+        state.velocity = 0;
+        setSpringScale(targetScale);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [targetScale]);
+
   const highlightOverlay = interactiveLighting && isVisible ? (
     <div 
       className="absolute inset-0 pointer-events-none transition-opacity duration-300 rounded-[inherit]"
@@ -436,11 +477,12 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
       }
   }
 
-  // Press animation values
-  const pressScale = isPressed ? 0.96 : 1;
-  const pressFilterScale = isPressed ? scale * 1.3 : scale; // Boost refraction when pressed
-  const pressShadow = isPressed
-    ? "inset 0 2px 20px rgba(0, 0, 0, 0.25), inset 0 -2px 8px rgba(255, 255, 255, 0.15), 0 4px 20px rgba(0, 0, 0, 0.3)"
+  // Press animation values using Spring Physics instead of static CSS
+  const pressFilterScale = scale * (1 + (1 - springScale) * 5); // Refraction increases dramatically as you press
+  const isPressing = springScale < 0.99;
+  
+  const pressShadow = isPressing
+    ? "inset 0 4px 30px rgba(0, 0, 0, 0.4), inset 0 -2px 8px rgba(255, 255, 255, 0.15), 0 2px 10px rgba(0, 0, 0, 0.3)"
     : (isSupported && isVisible)
       ? "inset 0 4px 15px rgba(255, 255, 255, 0.3), inset 0 -4px 10px rgba(0, 0, 0, 0.1), 0 10px 40px rgba(0, 0, 0, 0.15)"
       : "0 10px 40px rgba(0, 0, 0, 0.1)";
@@ -462,13 +504,13 @@ export const LiquidSurface: React.FC<LiquidSurfaceProps> = ({
           backdropFilter: filterStyle,
           WebkitBackdropFilter: filterStyle,
           background: isSupported && isVisible
-            ? (isPressed ? "rgba(255, 255, 255, 0.02)" : "rgba(255, 255, 255, 0.05)")
+            ? (isPressing ? "rgba(255, 255, 255, 0.02)" : "rgba(255, 255, 255, 0.05)")
             : "rgba(255, 255, 255, 0.15)",
-          border: isPressed ? "1px solid rgba(255, 255, 255, 0.15)" : "1px solid rgba(255, 255, 255, 0.3)",
-          borderTop: isPressed ? "1px solid rgba(255, 255, 255, 0.25)" : "1px solid rgba(255, 255, 255, 0.6)",
+          border: isPressing ? "1px solid rgba(255, 255, 255, 0.15)" : "1px solid rgba(255, 255, 255, 0.3)",
+          borderTop: isPressing ? "1px solid rgba(255, 255, 255, 0.25)" : "1px solid rgba(255, 255, 255, 0.6)",
           boxShadow: pressShadow,
-          transform: `scale(${pressScale})`,
-          transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border 0.2s ease, background 0.2s ease',
+          transform: `scale(${springScale})`,
+          transition: 'box-shadow 0.1s ease, border 0.1s ease, background 0.1s ease', // Only animate non-transform props
           willChange: isVisible ? "transform, filter" : "auto",
           ...style
         }}
