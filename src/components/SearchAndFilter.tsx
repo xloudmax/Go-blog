@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Select, Button, Popover, ConfigProvider } from 'antd';
-import { SearchOutlined, FilterOutlined } from '@ant-design/icons';
+import { FilterOutlined } from '@ant-design/icons';
+import { LiquidSearchBox } from './LiquidSearchBox';
 import type { PostFilter } from '@/types';
 
 const { Option } = Select;
@@ -22,7 +23,6 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   className = ''
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
 
   // Derive selected tags from props
   const selectedTags = activeFilters?.tags || [];
@@ -41,34 +41,18 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   };
 
   return (
-    <div className={`flex flex-col ${className}`}>
-      {/* Search Bar Container */}
-      <div 
-        className={`flex items-center backdrop-blur-xl rounded-full !pl-4 pr-4 py-2 transition-all duration-300 ${isFocused ? 'bg-white/40 shadow-xl' : 'bg-white/25 shadow-lg hover:bg-white/30'}`}
-        style={{
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-        }}
+    <div className={`${className}`}>
+      <LiquidSearchBox
+        placeholder="Search topics..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onSearch={handleSearch}
+        blur={0}
+        height={52}
+        className="w-full"
+        inputClassName="text-base font-medium"
       >
-        <SearchOutlined className={`text-lg !mr-4 ${isFocused ? 'text-blue-500' : 'text-gray-400'}`} />
-        
-        <input
-          placeholder="Search topics..." 
-          className="flex-grow bg-transparent border-none outline-none text-lg font-medium text-gray-800 placeholder-gray-500 min-w-0"
-          value={searchQuery}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleSearch((e.target as HTMLInputElement).value);
-            }
-          }}
-        />
-
-        {/* Divider */}
-        <div className="h-6 w-px bg-gray-400/20 mx-3"></div>
-
-        {/* Filter Button */}
+        {/* Unified Filter Trigger inside Search Box */}
         <Popover
            placement="bottomRight"
            trigger="click"
@@ -131,12 +115,15 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         >
            <Button 
              type="text" 
-             className={`flex items-center rounded-full px-4 h-10 ${selectedTags.length > 0 || activeFilters.status ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-black/5 hover:text-black'}`}
+             className={`flex items-center justify-center rounded-full w-8 h-8 transition-all
+               ${selectedTags.length > 0 || activeFilters.status 
+                 ? 'text-blue-600 bg-blue-500/10' 
+                 : 'text-gray-400 hover:bg-black/5 hover:text-black'}`}
            >
-             <FilterOutlined className="text-lg" />
+             <FilterOutlined className="text-base" />
            </Button>
         </Popover>
-      </div>
+      </LiquidSearchBox>
     </div>
   );
 };

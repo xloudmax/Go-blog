@@ -37,7 +37,7 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({
   };
 
   return (
-    <div className={`mt-4 mb-8 flex flex-wrap gap-2 animate-fade-in items-center justify-center ${className}`}>
+    <div className={`flex flex-wrap gap-2 animate-fade-in items-center ${className}`}>
       {selectedTags.map(tag => (
         <Tag 
           key={tag} 

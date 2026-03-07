@@ -1,8 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { LiquidSurface, LiquidGlassProfile } from '../components/LiquidSurface';
+export type LiquidGlassProfile = 'convex' | 'concave' | 'lip' | 'circle' | 'convex-circle' | 'flat';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidMagnifier } from '../components/LiquidMagnifier';
 import { LiquidSwitch } from '../components/LiquidSwitch';
+import { LiquidHero } from '../components/LiquidHero';
+import { LiquidSearchBox } from '../components/LiquidSearchBox';
+
+import { LiquidGlass } from "../components/LiquidKit/glass";
+import { LiquidSlider as UILiquidSlider } from "../components/LiquidSlider";
+import { LiquidSwitch as UILiquidSwitch } from "../components/LiquidSwitch";
 
 /* ──────────────────── Height functions (mirrored from engine) ──────────────────── */
 const cubicBezierTolerance = 1e-7;
@@ -116,7 +122,7 @@ function SurfaceProfileGraph({ profile, bezelRatio }: { profile: LiquidGlassProf
     ctx.beginPath();
     for (let px = 0; px <= w - 2*pad; px++) {
       const t = px / (w - 2*pad);
-      const val = t <= bezelRatio ? fn(t / bezelRatio) : 1;
+      const val = t <= bezelRatio && fn ? fn(t / bezelRatio) : 1;
       const x = pad + px;
       const y = h - pad - val * (h - 2*pad);
       if (px === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
@@ -165,7 +171,7 @@ function RadiusSimulationCanvas({ profile, bezelRatio, ior }: { profile: LiquidG
     ctx.beginPath();
     for (let px = 0; px <= usableW; px++) {
       const t = px / usableW;
-      const surfH = t <= bezelRatio ? fn(t / bezelRatio) : 1;
+      const surfH = t <= bezelRatio && fn ? fn(t / bezelRatio) : 1;
       const x = pad + px;
       const y = glassBottom - surfH * glassHeight;
       if (px === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
@@ -180,13 +186,13 @@ function RadiusSimulationCanvas({ profile, bezelRatio, ior }: { profile: LiquidG
       const normalizedT = t <= bezelRatio ? t / bezelRatio : 1;
       
       // Height at point
-      const surfH = t <= bezelRatio ? fn(normalizedT) : 1;
+      const surfH = t <= bezelRatio && fn ? fn(normalizedT) : 1;
       const surfY = glassBottom - surfH * glassHeight;
       
       // Compute slope → refraction angle
       const delta = 0.001;
-      const y1 = fn(Math.max(0, normalizedT - delta));
-      const y2 = fn(Math.min(1, normalizedT + delta));
+      const y1 = fn ? fn(Math.max(0, normalizedT - delta)) : 1;
+      const y2 = fn ? fn(Math.min(1, normalizedT + delta)) : 1;
       const slope = (y2 - y1) / (2 * delta);
       const displacement = slope * (ior / 1.5) * 30; // visual scale
       
@@ -236,7 +242,9 @@ function RadiusDisplacementsCanvas({ profile, bezelRatio, ior }: { profile: Liqu
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
     
-    const displacements = computeRadiusDisplacements(getHeightFn(profile), bezelRatio, ior, 63);
+    const fn = getHeightFn(profile);
+    if (!fn) return;
+    const displacements = computeRadiusDisplacements(fn, bezelRatio, ior, 63);
     const pad = 20;
     const centerY = h / 2;
     
@@ -358,8 +366,6 @@ export default function LiquidGlassTestPage() {
   const [pgIor, setPgIor] = useState(1.5);
   const [pgRadius, setPgRadius] = useState(24);
   const [pgSpecular, setPgSpecular] = useState(1.0);
-  const [mapUrl, setMapUrl] = useState('');
-  const handleMapGenerated = useCallback((url: string) => setMapUrl(url), []);
 
   // ─── SearchBox ───
   const [sbBezel, setSbBezel] = useState(0.20);
@@ -427,19 +433,24 @@ export default function LiquidGlassTestPage() {
   }, [itunesTrack, isPlaying]);
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-slate-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0f0f1a] text-slate-900 dark:text-slate-200 transition-colors duration-300">
       {/* Header */}
-      <header className="text-center py-10 px-4">
-        <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+      <header className="text-center pt-8 pb-4 px-4">
+        <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400">
           Liquid Glass Playground
         </h1>
-        <p className="text-slate-400 mt-1.5 text-xs max-w-lg mx-auto">
+        <p className="text-slate-600 dark:text-slate-400 mt-1.5 text-xs max-w-lg mx-auto">
           Physics-based refraction with SDF displacement maps — 1:1 replica of the kube.io demo.
         </p>
-        <p className="text-pink-400/60 text-[10px] mt-1">Chrome/Edge only (SVG filters as backdrop-filter)</p>
+        <p className="text-pink-600/60 dark:text-pink-400/60 text-[10px] mt-1">Chrome/Edge only (SVG filters as backdrop-filter)</p>
       </header>
 
-      <div className="px-4 pb-16 max-w-5xl mx-auto space-y-10">
+      {/* Main Hero Component */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 mb-12">
+        <LiquidHero title="C404 LABS" subtitle="Liquid Glass Engine. Move mouse to tilt perspective." />
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20">
         {/* ═══════════ PLAYGROUND — 6 PANELS ═══════════ */}
         <section>
           <h2 className="text-lg font-bold text-white/90 mb-1">Playground</h2>
@@ -451,14 +462,14 @@ export default function LiquidGlassTestPage() {
             {/* Panel 1: Surface */}
             <PanelCard title="Surface">
               <div className="grid grid-cols-3 gap-1 mb-3">
-                {(['convex', 'convex-circle', 'concave', 'lip', 'flat'] as const).map(p => (
-                  <button key={p} onClick={() => setPgProfile(p)}
+                {(['convex', 'circle', 'concave', 'lip', 'flat'] as const).map(p => (
+                  <button key={p} onClick={() => setPgProfile(p as any)}
                     className={`py-1 px-1.5 rounded text-[10px] font-semibold transition-all ${
                       pgProfile === p
                         ? 'bg-blue-600 text-white shadow-[0_0_8px_rgba(37,99,235,0.4)]'
                         : 'bg-white/[0.06] text-slate-400 hover:bg-white/10'
                     }`}>
-                    {p === 'convex-circle' ? 'Circle' : p.charAt(0).toUpperCase() + p.slice(1)}
+                    {p === 'circle' ? 'Circle' : p.charAt(0).toUpperCase() + p.slice(1)}
                   </button>
                 ))}
               </div>
@@ -481,14 +492,7 @@ export default function LiquidGlassTestPage() {
               <RadiusSimulationCanvas profile={pgProfile} bezelRatio={pgBezel} ior={pgIor} />
             </PanelCard>
 
-            {/* Panel 4: Displacement Map */}
-            <PanelCard title="Displacement Map">
-              {mapUrl ? (
-                <img src={mapUrl} alt="Displacement Map" className="w-full rounded-lg border border-white/10" style={{ imageRendering: 'pixelated' }} />
-              ) : (
-                <div className="w-full h-32 flex items-center justify-center text-slate-500 text-xs">Generating...</div>
-              )}
-            </PanelCard>
+
 
             {/* Panel 5: Radius Displacements */}
             <PanelCard title="Radius Displacements">
@@ -503,24 +507,20 @@ export default function LiquidGlassTestPage() {
                 <div className="absolute text-[60px] font-black italic opacity-[0.06] text-white select-none pointer-events-none">
                   GLASS
                 </div>
-                <LiquidSurface
-                  profile={pgProfile}
-                  fidelity="high"
-                  scale={pgScale}
-                  bezelRatio={pgBezel}
-                  ior={pgIor}
-                  borderRadius={pgRadius}
-                  specular={pgSpecular}
-                  interactiveLighting
-                  highlightColor={`rgba(255,255,255,${pgSpecular * 0.5})`}
-                  width={200}
-                  height={200}
-                  onMapGenerated={handleMapGenerated}
+                <LiquidGlass
+                  glassThickness={pgScale}
+                  blur={0.3}
+                  bezelWidth={pgBezel * 100}
+                  refractiveIndex={pgIor}
+                  specularOpacity={pgSpecular}
+                  specularSaturation={2}
+                  style={{ borderRadius: pgRadius, width: 200, height: 200 }}
+                  className="border border-white/5"
                 >
                   <div className="w-full h-full flex items-center justify-center text-white/50 text-[10px] p-4 text-center">
                     Hover to illuminate
                   </div>
-                </LiquidSurface>
+                </LiquidGlass>
               </div>
             </PanelCard>
           </div>
@@ -566,15 +566,17 @@ export default function LiquidGlassTestPage() {
             <ParamSlider label="Specular" value={sbSpec} onChange={setSbSpec} />
           </>}
         >
-          <LiquidSurface profile="convex" fidelity="high" scale={sbScale} bezelRatio={sbBezel} ior={sbIor}
-            borderRadius={35} width={400} height={70} specular={sbSpec}
-            interactiveLighting={sbSpec > 0} highlightColor={`rgba(255,255,255,${sbSpec * 0.5})`}
-            className="flex items-center px-5">
-            <svg className="w-5 h-5 text-white/50 shrink-0 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span className="text-white/40 text-base font-medium select-none">Search</span>
-          </LiquidSurface>
+          <LiquidSearchBox
+            width={400}
+            height={60}
+            bezelWidth={sbBezel * 35}
+            scale={sbScale}
+            refractiveIndex={sbIor}
+            specularOpacity={sbSpec}
+            placeholder="Search with Liquid Glass..."
+            containerClassName="mx-auto"
+            className="border border-black/5 dark:border-white/10"
+          />
         </DemoSection>
 
         {/* ═══════════ SWITCH ═══════════ */}
@@ -639,10 +641,15 @@ export default function LiquidGlassTestPage() {
             <div className="absolute w-36 h-36 bg-cyan-500/20 rounded-full blur-3xl -bottom-8 -right-8 pointer-events-none" />
 
             <div className="relative z-10 p-4 w-full">
-              <LiquidSurface profile="convex" fidelity="high" scale={mpScale} bezelRatio={mpBezel} ior={mpIor}
-                borderRadius={24} width="100%" height={180} specular={mpSpec}
-                interactiveLighting={mpSpec > 0} highlightColor={`rgba(255,255,255,${mpSpec * 0.5})`}
-                className="p-5 flex items-center justify-between overflow-hidden">
+              <LiquidGlass 
+                glassThickness={mpScale} 
+                blur={0.3} 
+                bezelWidth={mpBezel * 90} 
+                refractiveIndex={mpIor}
+                specularOpacity={mpSpec}
+                specularSaturation={mpSpec > 0 ? 5 : 0}
+                style={{ borderRadius: 24, width: "100%", height: 180 }}
+                className="p-5 flex items-center justify-between overflow-hidden border border-white/10">
                 <div className="flex items-center gap-5 z-10">
                   {itunesTrack?.artwork ? (
                     <img src={itunesTrack.artwork} alt="Album" className="w-20 h-20 rounded-xl shadow-lg border border-white/20 shrink-0 object-cover" />
@@ -675,7 +682,7 @@ export default function LiquidGlassTestPage() {
                     <div className="w-0 h-0 border-t-[7px] border-t-transparent border-l-[12px] border-l-white/80 border-b-[7px] border-b-transparent ml-0.5" />
                   )}
                 </button>
-              </LiquidSurface>
+              </LiquidGlass>
             </div>
           </div>
 
@@ -685,6 +692,48 @@ export default function LiquidGlassTestPage() {
             <ParamSlider label="Thickness" value={mpIor} onChange={setMpIor} min={1} max={3} step={0.1} />
             <ParamSlider label="Scale" value={mpScale} onChange={setMpScale} min={0} max={50} step={1} />
             <ParamSlider label="Specular" value={mpSpec} onChange={setMpSpec} />
+          </div>
+        </section>
+
+        {/* ═══════════ UI KIT COMPONENTS ═══════════ */}
+        <section className="w-full lg:col-span-2 mt-4 pt-8 border-t border-white/10">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-emerald-400">Creatorem UI Kit Integrations</h2>
+            <p className="text-sm text-slate-400 mt-1">Showcasing the production-ready <code className="bg-white/10 px-1 rounded text-pink-300">@kit/ui</code> Liquid Glass components with ResizeObserver responsive support and spring physics.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PanelCard title="Liquid Glass Component" className="min-h-[220px] relative">
+              <div className="w-full h-full min-h-[160px] relative rounded-2xl overflow-hidden flex items-center justify-center">
+                <div className="absolute w-32 h-32 bg-purple-500/40 rounded-full blur-3xl top-0 left-0 pointer-events-none" />
+                <div className="absolute w-32 h-32 bg-emerald-500/40 rounded-full blur-3xl bottom-0 right-0 pointer-events-none" />
+                <div className="absolute font-black italic opacity-[0.05] text-white text-5xl pointer-events-none">KIT UI</div>
+                
+                <LiquidGlass 
+                  className="w-3/4 h-24 rounded-2xl flex items-center justify-center border border-white/20 shadow-2xl relative z-10" 
+                  glassThickness={40} 
+                  blur={0.2} 
+                  refractiveIndex={1.5} 
+                  specularOpacity={0.6}
+                  specularSaturation={5}
+                >
+                  <span className="text-white/80 font-medium drop-shadow-md">Auto-resizing Glass</span>
+                </LiquidGlass>
+              </div>
+            </PanelCard>
+            
+            <PanelCard title="Controls (Slider & Switch)" className="min-h-[220px] flex flex-col justify-center items-center">
+               <div className="flex flex-col gap-10 w-full items-center py-6">
+                 <div className="flex items-center gap-6">
+                   <span className="text-white/60 font-medium w-16 text-right">Switch</span>
+                   <UILiquidSwitch defaultChecked={true} />
+                 </div>
+                 <div className="flex flex-col gap-3 w-full max-w-[300px] items-center">
+                   <span className="text-white/60 font-medium text-center">Slider</span>
+                   <UILiquidSlider defaultValue={70} />
+                 </div>
+               </div>
+            </PanelCard>
           </div>
         </section>
 

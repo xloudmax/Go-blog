@@ -14,6 +14,7 @@ import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useAuth, useAppUser, useAppUI } from "../hooks";
 import { useTheme } from "../components/ThemeProvider";
 import { AuthLayout } from "../layouts/AuthLayout";
+import { LiquidButton } from "../components/LiquidButton";
 
 const { Text } = Typography;
 
@@ -318,23 +319,15 @@ export default function LoginPage() {
                     )}
 
                     <Form.Item>
-                        <Button
-                            type="primary"
+                        <LiquidButton
                             htmlType="submit"
                             loading={loading.login || loading.emailLogin}
-                            block
-                            className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
-                            style={{
-                                background: 'linear-gradient(to right, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8))', // Semi-transparent gradient
-                                backdropFilter: 'blur(8px)', // Glass blur
-                                border: '1px solid rgba(255, 255, 255, 0.2)', // Glass edge
-                                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)', // Glow
-                            }}
+                            className="w-full h-12 text-lg font-semibold"
                         >
                             {loading.login || loading.emailLogin
                                 ? (loginMode === 'password' ? '登录中...' : '发送中...')
                                 : (loginMode === 'password' ? '登录' : '发送验证码')}
-                        </Button>
+                        </LiquidButton>
                     </Form.Item>
 
                     {/* 忘记密码链接 */}
@@ -387,21 +380,13 @@ export default function LoginPage() {
                         </Form.Item>
 
                         <Form.Item>
-                            <Button
-                                type="primary"
+                            <LiquidButton
                                 htmlType="submit"
                                 loading={loading.verify}
-                                block
-                                className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
-                                style={{
-                                    background: 'linear-gradient(to right, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8))',
-                                    backdropFilter: 'blur(8px)',
-                                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                                    boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
-                                }}
+                                className="w-full h-12 text-lg font-semibold"
                             >
                                 {loading.verify ? '验证中...' : '验证并登录'}
-                            </Button>
+                            </LiquidButton>
                         </Form.Item>
 
                         <div className="flex flex-wrap justify-between gap-2 px-2 mt-6">

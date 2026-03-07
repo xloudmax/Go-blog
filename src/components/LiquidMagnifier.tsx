@@ -24,7 +24,7 @@ export interface LiquidMagnifierProps {
  * One map for bezel refraction, one for center zoom.
  * Must be placed inside a `position: relative` container.
  */
-export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
+export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = React.memo(({
   width = 200,
   height = 120,
   borderRadius = 60,
@@ -98,10 +98,10 @@ export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
           const derivative = (dy2-dy1) / (2*delta);
           const mag = derivative * maxDisp * (ior / 1.5);
 
-          // SDF gradient
+          // SDF gradient using central difference to avoid seams at the center
           const ds = 0.01;
-          const nx = (sdfRoundedRect(x+ds,y) - sdf) / ds;
-          const ny = (sdfRoundedRect(x,y+ds) - sdf) / ds;
+          const nx = (sdfRoundedRect(x + ds, y) - sdfRoundedRect(x - ds, y)) / (2 * ds);
+          const ny = (sdfRoundedRect(x, y + ds) - sdfRoundedRect(x, y - ds)) / (2 * ds);
           const nLen = Math.sqrt(nx*nx + ny*ny) || 1;
           const dx = -(nx/nLen) * mag;
           const dy = -(ny/nLen) * mag;
@@ -296,4 +296,4 @@ export const LiquidMagnifier: React.FC<LiquidMagnifierProps> = ({
       )}
     </>
   );
-};
+});

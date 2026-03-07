@@ -1,8 +1,6 @@
 import { useMemo, useRef, useEffect } from 'react';
-import {
-  Button,
-  Typography,
-} from 'antd';
+import { Typography } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import { useNavigate } from 'react-router-dom';
 
 import { useBlogList, useBlogDashboard } from '@/hooks';
@@ -98,43 +96,44 @@ export default function HomePage() {
     <div className="min-h-screen"> 
       {/* Background is handled globally by AppLayout transparent content */}
       
-      <div className="w-full max-w-[2400px] mx-auto py-8 px-2 md:px-6">
+      <div className="w-full max-w-[2400px] mx-auto pt-2 pb-8 px-2 md:px-6"> 
         
-        {/* APP STORE HEADER */}
-        <div className="!mb-5 animate-fade-in-up">
-           <div className="flex justify-between items-start mb-0">
-           <Text className="block text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider text-sm mb-0">
-             {dateParts[1] || 'Today'}
-           </Text>
-           <div className="flex items-center gap-4">
-              <SearchAndFilter
-                onSearch={handleSearch}
-                onFilter={handleFilter}
-                activeFilters={filter as PostFilter}
-                onClearFilters={clearFilters}
-                allTags={allTags}
-                className="w-96"
-              />
-              <ActiveFilters 
-                  activeFilters={filter as PostFilter}
-                  onFilterChange={handleFilter}
-                  onClearFilters={clearFilters}
-                  className="!mt-0 !mb-0 !justify-end"
-              />
-           </div>
-           </div>
-             <div className="flex justify-between items-end">
-               <Title level={1} className="!mb-0 !text-5xl font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+        {/* APP STORE HEADER - Unified & Responsive */}
+        <div className="mb-6 animate-fade-in-up">
+           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 border-b border-gray-100 dark:border-white/5 pb-4 md:pb-2">
+             <div className="flex flex-col">
+               <Text className="block text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider text-[10px] mb-1 whitespace-nowrap">
+                 {dateParts[1] || 'Today'}
+               </Text>
+               <Title level={1} className="!mt-0 !mb-0 !text-3xl md:!text-5xl font-extrabold tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
                  {dateParts[0] || '今日阅读'}
                </Title>
              </div>
+             
+             <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 sm:gap-6 w-full md:w-auto">
+                <SearchAndFilter
+                  onSearch={handleSearch}
+                  onFilter={handleFilter}
+                  activeFilters={filter as PostFilter}
+                  onClearFilters={clearFilters}
+                  allTags={allTags}
+                  className="w-full md:w-80 lg:w-96"
+                />
+                <ActiveFilters 
+                    activeFilters={filter as PostFilter}
+                    onFilterChange={handleFilter}
+                    onClearFilters={clearFilters}
+                    className="!mt-0 !mb-0 justify-start md:justify-end pb-1 overflow-x-auto no-scrollbar"
+                />
+             </div>
+           </div>
         </div>
 
         {/* HERO SECTION */}
         {isInitialLoading ? (
            <HeroSkeleton />
         ) : !error && posts.length > 0 && (
-          <div className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
              <HeroCarousel 
                 posts={posts.slice(0, 3)} 
                 onNavigate={(slug) => handlePostAction('view', { slug } as BlogPost)} 
@@ -156,11 +155,11 @@ export default function HomePage() {
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-16 glassy-card rounded-2xl">
-            <Text className="text-red-500">{error.message}</Text>
-            <div className="mt-4">
-              <Button onClick={() => refetch()}>重新加载</Button>
-            </div>
+          <div className="text-center py-8 glassy-card rounded-2xl animate-fade-in-up">
+            <Text className="text-red-500 block mb-4">{error.message}</Text>
+          <div className="flex justify-center mt-6">
+            <LiquidButton variant="primary" onClick={() => refetch()}>重新加载</LiquidButton>
+          </div>
           </div>
         ) : (
           <>

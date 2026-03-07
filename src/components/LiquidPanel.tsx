@@ -1,5 +1,5 @@
-import React, { HTMLAttributes } from "react";
-import { LiquidSurface } from "./LiquidSurface";
+import React, { HTMLAttributes, useRef } from "react";
+import { LiquidGlass } from "./LiquidKit/glass";
 
 export interface LiquidPanelProps extends HTMLAttributes<HTMLDivElement> {
   width?: number | string;
@@ -17,20 +17,43 @@ export const LiquidPanel: React.FC<LiquidPanelProps> = ({
   children,
   ...props
 }) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // LiquidGlass from the UI kit automatically observes dimensions if targetRef is provided
+  // or it works as a wrapper perfectly well.
+  const { 
+    onAnimationStart: _as, 
+    onDrag: _d, 
+    onDragStart: _ds, 
+    onDragEnd: _de, 
+    // @ts-ignore - these might not exist on all HTMLAttributes but sometimes appear in spread
+    onPan: _p, 
+    // @ts-ignore
+    onPanStart: _ps, 
+    // @ts-ignore
+    onPanEnd: _pe, 
+    ...safeProps 
+  } = props as any;
+
   return (
-    <LiquidSurface
-      profile="convex"
-      fidelity="high"
-      scale={scale}
-      width={width}
-      height={height}
-      borderRadius={borderRadius}
-      interactiveLighting={true}
-      highlightColor="rgba(255, 255, 255, 0.4)"
-      className={className}
-      {...props}
+    <LiquidGlass
+      ref={panelRef}
+      className={`relative overflow-hidden ${className}`}
+      style={{
+        width,
+        height,
+        borderRadius,
+        ...props.style
+      }}
+      blur={0.2}
+      glassThickness={scale}
+      refractiveIndex={1.5}
+      bezelWidth={20}
+      specularOpacity={0.4}
+      specularSaturation={4}
+      {...safeProps}
     >
         {children}
-    </LiquidSurface>
+    </LiquidGlass>
   );
 };

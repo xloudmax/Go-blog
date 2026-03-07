@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Tooltip } from 'antd';
+import { LiquidGlass } from './LiquidKit/glass';
 import {
   FileTextOutlined,
   SearchOutlined,
@@ -122,69 +123,68 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
   };
 
   // 渲染菜单项的通用组件
-  const renderMenuItem = (item: MenuItem) => (
-    <Tooltip key={item.key} title={item.label} placement="right">
-      <div
-        onClick={() => handleItemClick(item)}
-        className="w-11 h-11 flex items-center justify-center cursor-pointer transition-all duration-200"
-        style={{
-          color: isActive(item.path)
-            ? isDarkMode ? '#ffffff' : '#111827'
-            : isDarkMode ? '#6b7280' : '#9ca3af',
-          position: 'relative',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = isDarkMode ? '#ffffff' : '#111827';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = isActive(item.path)
-            ? isDarkMode ? '#ffffff' : '#111827'
-            : isDarkMode ? '#6b7280' : '#9ca3af';
-        }}
-      >
-        <span style={{ fontSize: '24px' }}>{item.icon}</span>
-        {/* 通知红点徽章 */}
-        {item.key === 'notifications' && unreadCount > 0 && (
-          <span
-            style={{
-              position: 'absolute',
-              top: '6px',
-              right: '6px',
-              backgroundColor: '#ff4d4f',
-              color: '#ffffff',
-              borderRadius: '10px',
-              padding: '0 5px',
-              fontSize: '10px',
-              fontWeight: 'bold',
-              minWidth: '18px',
-              height: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: '1',
-            }}
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </div>
-    </Tooltip>
-  );
+  const renderMenuItem = (item: MenuItem) => {
+    const active = isActive(item.path);
+    return (
+      <Tooltip key={item.key} title={item.label} placement="right">
+        <div
+          onClick={() => handleItemClick(item)}
+          className={`w-11 h-11 flex items-center justify-center cursor-pointer transition-all duration-200 rounded-xl
+            ${active 
+              ? (isDarkMode ? 'text-white bg-white/10' : 'text-gray-900 bg-black/5') 
+              : (isDarkMode ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-gray-900 hover:bg-black/5')
+            }`}
+          style={{ position: 'relative' }}
+        >
+          <span style={{ fontSize: '24px' }}>{item.icon}</span>
+          {/* 通知红点徽章 */}
+          {item.key === 'notifications' && unreadCount > 0 && (
+            <span
+              style={{
+                position: 'absolute',
+                top: '6px',
+                right: '6px',
+                backgroundColor: '#ff4d4f',
+                color: '#ffffff',
+                borderRadius: '10px',
+                padding: '0 5px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                minWidth: '18px',
+                height: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: '1',
+              }}
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </div>
+      </Tooltip>
+    );
+  };
 
   return (
-    <div
-      className="fixed left-0 top-0 h-screen z-50"
-      style={{
-        width: '72px',
-        backgroundColor: isDarkMode ? 'rgba(26, 26, 26, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRight: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`,
-        display: 'grid',
-        gridTemplateRows: 'auto 1fr auto',
-        padding: '1rem 0',
-      }}
-    >
+    <div className="fixed left-0 top-0 h-screen z-50 pointer-events-none">
+      <LiquidGlass
+        blur={0.4}
+        glassThickness={60}
+        refractiveIndex={1.25}
+        bezelWidth={10}
+        specularOpacity={0.3}
+        style={{
+          width: '72px',
+          height: '100%',
+          display: 'grid',
+          gridTemplateRows: 'auto 1fr auto',
+          padding: '1.5rem 0',
+          pointerEvents: 'auto',
+          backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.01)',
+        }}
+        className={`border-r shadow-2xl ${isDarkMode ? 'border-white/10' : 'border-black/5'}`}
+      >
       {/* 顶部：Logo */}
       <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '1rem' }}>
         <div className="cursor-pointer" onClick={() => navigate('/')}>
@@ -309,6 +309,7 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
           </Tooltip>
         )}
       </div>
+      </LiquidGlass>
     </div>
   );
 };

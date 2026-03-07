@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import {
-  Input,
   Select,
   Tag,
   Card,
@@ -14,13 +13,17 @@ import {
   Col,
   Collapse,
   DatePicker,
-  Slider
+  Slider,
+  Drawer,
+  Empty
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
   SearchOutlined,
   FilterOutlined,
   EyeOutlined,
-  LikeOutlined
+  LikeOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import {
@@ -29,17 +32,24 @@ import {
 } from '@/hooks';
 import type { SearchFilters, SearchSortBy } from '@/types';
 import dayjs from 'dayjs';
+import { ThemeContext } from '@/components/ThemeProvider';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
+import { LiquidSearchBox } from '@/components/LiquidSearchBox';
+
 const SearchPage: React.FC = () => {
+  const { theme } = useContext(ThemeContext);
+  const isDarkMode = theme === 'dark';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<SearchFilters>({});
   const [sortBy, setSortBy] = useState<SearchSortBy>('RELEVANCE');
   const [limit] = useState(10);
   const [offset, setOffset] = useState(0);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   // 使用增强搜索功能
   const { results: enhancedResults, loading: enhancedLoading, search: performEnhancedSearch, error: enhancedError } = useEnhancedSearchHook();
@@ -57,12 +67,13 @@ const SearchPage: React.FC = () => {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 处理搜索 - 只在用户点击搜索按钮时触发
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = useCallback(async (query: string) => {
+    const currentQuery = query || searchQuery;
+    if (!currentQuery.trim()) return;
 
     try {
       await performEnhancedSearch({
-        query: searchQuery,
+        query: currentQuery,
         limit,
         offset,
         filters,
@@ -71,25 +82,24 @@ const SearchPage: React.FC = () => {
 
       // 添加到搜索历史
       setSearchHistory(prevHistory => {
-        const newHistory = [searchQuery, ...prevHistory.filter(h => h !== searchQuery)].slice(0, 10);
+        const newHistory = [currentQuery, ...prevHistory.filter(h => h !== currentQuery)].slice(0, 10);
         localStorage.setItem('blog_search_history', JSON.stringify(newHistory));
         return newHistory;
       });
+      
+      // 搜索后可以自动关闭抽屉
+      setIsFilterDrawerOpen(false);
     } catch{ /* empty */ }
   }, [searchQuery, limit, offset, filters, sortBy, performEnhancedSearch]);
 
-  // 处理搜索输入变化 - 只更新状态，不自动搜索
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
-
-    // 清除之前的计时器（如果有的话）
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
   }, []);
 
-  // 处理过滤器变化
   const handleFilterChange = (filterType: keyof SearchFilters, value: unknown) => {
     setFilters(prev => ({
       ...prev,
@@ -97,7 +107,6 @@ const SearchPage: React.FC = () => {
     }));
   };
 
-  // 处理日期范围变化
   const handleDateRangeChange = (dates: unknown, dateStrings: [string, string]) => {
     if (dates) {
       handleFilterChange('dateFrom', dateStrings[0]);
@@ -108,31 +117,26 @@ const SearchPage: React.FC = () => {
     }
   };
 
-  // 重置过滤器
   const resetFilters = () => {
     setFilters({});
     setSortBy('RELEVANCE');
   };
 
-  // 处理热门搜索词点击
   const handleTrendingSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    // 不自动搜索，等用户点击搜索按钮
-  }, []);
+    handleSearch(query);
+  }, [handleSearch]);
 
-  // 处理搜索历史点击
   const handleHistorySearch = useCallback((query: string) => {
     setSearchQuery(query);
-    // 不自动搜索，等用户点击搜索按钮
-  }, []);
+    handleSearch(query);
+  }, [handleSearch]);
 
-  // 清除搜索历史
   const clearSearchHistory = useCallback(() => {
     setSearchHistory([]);
     localStorage.removeItem('blog_search_history');
   }, []);
 
-  // 组件卸载时清除计时器
   useEffect(() => {
     const timeout = searchTimeoutRef.current;
     return () => {
@@ -142,283 +146,343 @@ const SearchPage: React.FC = () => {
     };
   }, []);
 
+  const renderFilterContent = () => (
+    <div className="flex flex-col gap-6">
+      <Collapse 
+        defaultActiveKey={['1', '2', '3']} 
+        ghost
+        expandIconPosition="end"
+        items={[{
+          key: '1',
+          label: <Text className="font-bold">排序方式</Text>,
+          children: (
+            <Select
+              value={sortBy}
+              onChange={setSortBy}
+              className="w-full"
+            >
+              <Option value="RELEVANCE">相关性优先</Option>
+              <Option value="CREATED_AT">最新创建</Option>
+              <Option value="UPDATED_AT">最近更新</Option>
+              <Option value="VIEW_COUNT">热度优先 (浏览)</Option>
+              <Option value="LIKE_COUNT">热度优先 (点赞)</Option>
+            </Select>
+          )
+        }, {
+          key: '2',
+          label: <Text className="font-bold">日期范围</Text>,
+          children: (
+            <RangePicker
+              className="w-full"
+              onChange={handleDateRangeChange}
+              placeholder={['开始日期', '结束日期']}
+            />
+          )
+        }, {
+          key: '3',
+          label: <Text className="font-bold">浏览量筛选</Text>,
+          children: (
+            <div className="px-2">
+              <Slider
+                min={0}
+                max={1000}
+                step={10}
+                value={filters.minViews as number}
+                onChange={(value) => handleFilterChange('minViews', value)}
+                tooltip={{ formatter: (value) => `${value} 次浏览` }}
+              />
+              <div className="flex justify-between text-[10px] text-gray-400">
+                <span>0</span>
+                <span>1000+</span>
+              </div>
+            </div>
+          )
+        }, {
+          key: '4',
+          label: <Text className="font-bold">点赞数筛选</Text>,
+          children: (
+            <div className="px-2">
+              <Slider
+                min={0}
+                max={100}
+                step={1}
+                value={filters.minLikes as number}
+                onChange={(value) => handleFilterChange('minLikes', value)}
+                tooltip={{ formatter: (value) => `${value} 个点赞` }}
+              />
+              <div className="flex justify-between text-[10px] text-gray-400">
+                <span>0</span>
+                <span>100+</span>
+              </div>
+            </div>
+          )
+        }]}
+      />
+      
+      <Button 
+        type="primary" 
+        danger 
+        ghost
+        icon={<CloseOutlined />}
+        onClick={resetFilters}
+        className="w-full rounded-full"
+      >
+        重置所有筛选
+      </Button>
+    </div>
+  );
+
   return (
-    <div 
-      className="min-h-screen" 
-      style={{ 
-        padding: '0 12px', 
-        boxSizing: 'border-box',
-        backgroundColor: 'transparent'
-      }}
-    >
-      <div className="w-full max-w-[2400px] mx-auto py-8">
-        {/* 标准页面标题 */}
-        <div className="mb-6">
-          <Title level={2} className="mb-4">
-            <SearchOutlined /> 搜索博客
-          </Title>
+    <div className="min-h-screen pb-32">
+      <div className="w-full max-w-[2400px] mx-auto py-4 md:py-8 px-4 md:px-6">
+        
+        {/* HEADER AREA */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div>
+            <Title level={2} className="!mb-1 !text-2xl md:!text-3xl flex items-center gap-3">
+              <SearchOutlined className="text-blue-500 opacity-80" /> 全局搜索
+            </Title>
+            <Text type="secondary" className="text-[11px] md:text-xs opacity-70">
+              探索 xloudmax 的数字大脑：寻找你感兴趣的任何内容
+            </Text>
+          </div>
+          
+          <Button 
+            className="lg:hidden rounded-full flex items-center gap-2 h-10 px-5 shadow-sm border-gray-200 dark:border-white/10 dark:bg-white/5 backdrop-blur-md"
+            icon={<FilterOutlined />}
+            onClick={() => setIsFilterDrawerOpen(true)}
+          >
+            筛选选项
+          </Button>
         </div>
       
-      {/* 搜索框 */}
-      <div className="mb-6">
-        <div className="flex gap-2 w-full">
-          <Input
-            size="large"
-            placeholder="输入关键词搜索博客文章..."
+        {/* MAIN SEARCH BOX */}
+        <div className="mb-8 lg:mb-12 sticky top-4 z-20">
+          <LiquidSearchBox
+            placeholder="输入关键词，开启液态化搜索体验..."
             value={searchQuery}
             onChange={handleSearchChange}
-            onPressEnter={handleSearch}
-            suffix={<SearchOutlined />}
-            className="flex-1"
+            onSearch={() => handleSearch(searchQuery)}
+            blur={10}
+            height={60}
+            className="w-full shadow-lg"
+            inputClassName="text-base md:text-xl font-semibold"
           />
-
         </div>
-      </div>
       
-      <Row gutter={24}>
-        {/* 左侧过滤器 */}
-        <Col xs={24} lg={6}>
-          <Card title={<><FilterOutlined /> 过滤器</>} className="mb-6 mx-8">
-            <Collapse 
-              defaultActiveKey={['1', '2', '3']} 
-              ghost
-              items={[{
-                key: '1',
-                label: '排序',
-                children: (
-                  <Select
-                    value={sortBy}
-                    onChange={setSortBy}
-                    className="w-full"
-                  >
-                    <Option value="RELEVANCE">相关性</Option>
-                    <Option value="CREATED_AT">创建时间</Option>
-                    <Option value="UPDATED_AT">更新时间</Option>
-                    <Option value="VIEW_COUNT">浏览量</Option>
-                    <Option value="LIKE_COUNT">点赞数</Option>
-                  </Select>
-                )
-              }, {
-                key: '2',
-                label: '日期范围',
-                children: (
-                  <RangePicker
-                    className="w-full"
-                    onChange={handleDateRangeChange}
-                    placeholder={['开始日期', '结束日期']}
-                  />
-                )
-              }, {
-                key: '3',
-                label: '最小浏览量',
-                children: (
-                  <Slider
-                    min={0}
-                    max={1000}
-                    step={10}
-                    onChange={(value) => handleFilterChange('minViews', value)}
-                    tooltip={{ formatter: (value) => `${value} 次浏览` }}
-                  />
-                )
-              }, {
-                key: '4',
-                label: '最小点赞数',
-                children: (
-                  <Slider
-                    min={0}
-                    max={100}
-                    step={1}
-                    onChange={(value) => handleFilterChange('minLikes', value)}
-                    tooltip={{ formatter: (value) => `${value} 个点赞` }}
-                  />
-                )
-              }]}
-            />
-            
-            <Button 
-              type="primary" 
-              danger 
-              onClick={resetFilters}
-              className="w-full mt-4"
-            >
-              重置过滤器
-            </Button>
-          </Card>
-          
-          {/* 搜索历史 */}
-          {searchHistory.length > 0 && (
-            <Card title="搜索历史" className="mb-6 mx-8">
-              <Space wrap>
-                {searchHistory.map((history, index) => (
-                  <Tag
-                    key={index}
-                    color="blue"
-                    onClick={() => handleHistorySearch(history)}
-                    className="cursor-pointer"
-                  >
-                    {history}
-                  </Tag>
-                ))}
-              </Space>
-              <Button
-                type="link"
-                size="small"
-                onClick={clearSearchHistory}
-                className="mt-2"
-              >
-                清除历史
-              </Button>
-            </Card>
-          )}
-          
-          {/* 热门搜索 */}
-          {!trendingLoading && trendingSearches && trendingSearches.length > 0 && (
-            <Card title="热门搜索" className="mx-8">
-              <Space wrap>
-                {trendingSearches.map((term, index) => (
-                  <Tag
-                    key={index}
-                    color={index < 3 ? 'red' : 'orange'}
-                    onClick={() => handleTrendingSearch(term)}
-                    className="cursor-pointer"
-                  >
-                    {term}
-                  </Tag>
-                ))}
-              </Space>
-            </Card>
-          )}
-        </Col>
-        
-        {/* 右侧搜索结果 */}
-        <Col xs={24} lg={18}>
-          {enhancedError && (
-            <Alert
-              message="搜索出错"
-              description={enhancedError.message}
-              type="error"
-              showIcon
-              className="mb-6"
-            />
-          )}
+        <Row gutter={[24, 24]}>
+          {/* DESKTOP SIDEBAR */}
+          <Col xs={0} lg={6}>
+             <Card title={<Space><FilterOutlined className="text-blue-500" /> 高级筛选</Space>} className="glassy-card border-0 rounded-2xl shadow-sm mb-6">
+                {renderFilterContent()}
+             </Card>
 
-          {enhancedLoading ? (
-            <div className="text-center py-12">
-              <Spin size="large" />
-              <Text className="block mt-2">正在搜索...</Text>
-            </div>
-          ) : enhancedResults ? (
-            <>
-              <div className="mb-4 flex justify-between items-center">
-                <Text>
-                  找到 {enhancedResults.total} 篇文章，耗时 {enhancedResults.took}
-                </Text>
-                {enhancedResults.suggestions && enhancedResults.suggestions.length > 0 && (
-                  <div>
-                    <Text type="secondary">建议: </Text>
-                    {enhancedResults.suggestions.map((suggestion, index) => (
-                      <Tag
-                        key={index}
-                        color="orange"
-                        onClick={() => handleTrendingSearch(suggestion)}
-                        className="cursor-pointer ml-1"
-                      >
-                        {suggestion}
-                      </Tag>
-                    ))}
-                  </div>
-                )}
+             {/* HISTORY & TRENDING */}
+             <div className="space-y-6">
+               {searchHistory.length > 0 && (
+                 <Card title="最近搜索" extra={<Button type="link" size="small" onClick={clearSearchHistory} className="text-[10px] text-gray-400">清除</Button>} className="glassy-card border-0 rounded-2xl shadow-sm">
+                   <div className="flex flex-wrap gap-2">
+                     {searchHistory.map((history, index) => (
+                       <Tag key={index} color="blue" onClick={() => handleHistorySearch(history)} className="cursor-pointer m-0 px-3 py-1 rounded-full border-blue-100 hover:border-blue-300 transition-colors">
+                         {history}
+                       </Tag>
+                     ))}
+                   </div>
+                 </Card>
+               )}
+
+               {!trendingLoading && (
+                 <Card title="热门趋势" className="glassy-card border-0 rounded-2xl shadow-sm">
+                   <div className="flex flex-wrap gap-2">
+                     {(trendingSearches || []).map((term, index) => (
+                       <Tag key={index} color={index < 3 ? 'red' : 'orange'} onClick={() => handleTrendingSearch(term)} className="cursor-pointer m-0 px-3 py-1 rounded-full border-transparent hover:opacity-80 transition-opacity">
+                         {term}
+                       </Tag>
+                     ))}
+                   </div>
+                 </Card>
+               )}
+             </div>
+          </Col>
+          
+          {/* SEARCH RESULTS */}
+          <Col xs={24} lg={18}>
+            {enhancedError && (
+              <Alert message="搜索服务暂不可用" description={enhancedError.message} type="error" showIcon className="mb-6 rounded-xl" />
+            )}
+
+            {enhancedLoading ? (
+              <div className="flex flex-col items-center justify-center py-32 space-y-4">
+                <Spin size="large" />
+                <Text type="secondary" className="animate-pulse">正在深度挖掘相关内容...</Text>
               </div>
+            ) : enhancedResults && enhancedResults.total > 0 ? (
+              <div className="space-y-6">
+                <div className="px-1 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                  <Text className="text-gray-400 text-xs">
+                    共找到 <span className="text-gray-800 dark:text-gray-200 font-bold">{enhancedResults.total}</span> 篇匹配结果，耗时 {enhancedResults.took}
+                  </Text>
+                  
+                  {enhancedResults.suggestions && enhancedResults.suggestions.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Text type="secondary" className="text-xs">你是不是在找: </Text>
+                      {enhancedResults.suggestions.map((suggestion, index) => (
+                        <Tag key={index} color="orange" onClick={() => handleTrendingSearch(suggestion)} className="cursor-pointer rounded-full text-[10px]">
+                          {suggestion}
+                        </Tag>
+                      ))}
+                      <div className="flex justify-center mt-6">
+                        <LiquidButton variant="primary" onClick={() => handleSearch(searchQuery)}>重新加载</LiquidButton>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-              {/* 搜索结果列表 */}
-              <List
-                dataSource={enhancedResults.posts}
-                renderItem={(post: Record<string, unknown>) => (
-                  <List.Item>
-                    <Card className="w-full mx-8">
-                      <div className="flex">
-                        {post.coverImageUrl ? (
-                          <img
-                            src={post.coverImageUrl as string}
-                            alt={post.title as string}
-                            className="w-32 h-24 object-cover rounded mr-4"
-                          />
-                        ) : null}
-                        <div className="flex-1">
-                          <Link to={`/post/${post.slug}`}>
-                            <Title level={4} className="mb-2 hover:text-blue-600">
-                              {post.title as string}
-                            </Title>
-                          </Link>
-
-                          {post.excerpt ? (
-                            <Text type="secondary" className="block mb-2">
-                              {post.excerpt as string}
-                            </Text>
+                <List
+                  dataSource={enhancedResults.posts}
+                  grid={{ gutter: 24, xs: 1, sm: 1, md: 1, lg: 1, xl: 1, xxl: 1 }}
+                  renderItem={(post: Record<string, unknown>) => (
+                    <List.Item className="!mb-6">
+                      <Card className="glassy-card border-0 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 group">
+                        <div className="flex flex-col md:flex-row gap-6">
+                          {post.coverImageUrl ? (
+                            <div className="w-full md:w-48 lg:w-64 h-48 md:h-auto overflow-hidden rounded-xl">
+                              <img
+                                src={post.coverImageUrl as string}
+                                alt={post.title as string}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                            </div>
                           ) : null}
+                          <div className="flex-1 flex flex-col justify-between py-1">
+                            <div>
+                              <Link to={`/post/${post.slug}`}>
+                                <Title level={3} className="!mb-3 !text-xl md:!text-2xl font-bold group-hover:text-blue-600 transition-colors">
+                                  {post.title as string}
+                                </Title>
+                              </Link>
 
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {(post.tags as string[])?.map((tag: string, index: number) => (
-                              <Tag key={index} color="blue">
-                                {tag}
-                              </Tag>
-                            ))}
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <Space>
-                              <Text type="secondary">
-                                作者: {(post.author as Record<string, unknown>)?.username as string}
-                              </Text>
-                              {post.publishedAt ? (
-                                <Text type="secondary">
-                                  发布于: {dayjs(post.publishedAt as string).format('YYYY-MM-DD')}
+                              {post.excerpt ? (
+                                <Text type="secondary" className="line-clamp-2 md:line-clamp-3 mb-4 text-sm md:text-base leading-relaxed">
+                                  {post.excerpt as string}
                                 </Text>
                               ) : null}
-                            </Space>
 
-                            <Space>
-                              <Text type="secondary">
-                                <EyeOutlined /> {String((post.stats as Record<string, unknown>)?.viewCount ?? 0)}
-                              </Text>
-                              <Text type="secondary">
-                                <LikeOutlined /> {String((post.stats as Record<string, unknown>)?.likeCount ?? 0)}
-                              </Text>
-                            </Space>
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {(post.tags as string[])?.map((tag: string, index: number) => (
+                                  <Tag key={index} className="rounded-full bg-gray-100 dark:bg-white/5 border-0 px-3 py-0.5 text-xs text-gray-500">
+                                    #{tag}
+                                  </Tag>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between border-t border-gray-50 dark:border-white/5 pt-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 font-bold text-xs">
+                                  {String((post.author as Record<string, unknown>)?.username as string).charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex flex-col">
+                                  <Text className="text-xs font-medium">{String((post.author as any)?.username || 'Unknown')}</Text>
+                                  {post.publishedAt && <Text className="text-[10px] text-gray-400">{dayjs(post.publishedAt as string).format('MMM D, YYYY')}</Text>}
+                                </div>
+                              </div>
+
+                              <Space size={16} className="text-gray-400">
+                                <span className="flex items-center gap-1.5 text-xs">
+                                  <EyeOutlined /> {String((post.stats as Record<string, unknown>)?.viewCount ?? 0)}
+                                </span>
+                                <span className="flex items-center gap-1.5 text-xs">
+                                  <LikeOutlined /> {String((post.stats as Record<string, unknown>)?.likeCount ?? 0)}
+                                </span>
+                              </Space>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Card>
-                  </List.Item>
-                )}
-                pagination={{
-                  current: Math.floor(offset / limit) + 1,
-                  pageSize: limit,
-                  total: enhancedResults.total,
-                  onChange: (page) => {
-                    const newOffset = (page - 1) * limit;
-                    setOffset(newOffset);
-                    if (searchQuery.trim()) {
-                      performEnhancedSearch({
-                        query: searchQuery,
-                        limit,
-                        offset: newOffset,
-                        filters,
-                        sortBy
-                      });
-                    }
-                  },
-                }}
-              />
-            </>
-          ) : (
-            <div className="text-center py-12">
-              <Text type="secondary">请输入关键词开始搜索</Text>
-            </div>
-          )}
-        </Col>
-      </Row>
+                      </Card>
+                    </List.Item>
+                  )}
+                  pagination={{
+                    current: Math.floor(offset / limit) + 1,
+                    pageSize: limit,
+                    total: enhancedResults.total,
+                    className: "pt-8 !text-center",
+                    onChange: (page) => {
+                      const newOffset = (page - 1) * limit;
+                      setOffset(newOffset);
+                      if (searchQuery.trim()) {
+                        performEnhancedSearch({ query: searchQuery, limit, offset: newOffset, filters, sortBy });
+                      }
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="py-32 flex flex-col items-center justify-center bg-gray-50/50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-white/10">
+                <Empty 
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={
+                    <div className="space-y-4">
+                      <Text type="secondary" className="text-lg block">找不到匹配的文章</Text>
+                      <Button type="primary" shape="round" onClick={resetFilters}>清除所有筛选再试</Button>
+                    </div>
+                  }
+                />
+              </div>
+            )}
+          </Col>
+        </Row>
       </div>
+
+      {/* MOBILE FILTER DRAWER */}
+      <Drawer
+        title={<span className="font-bold text-lg dark:text-white">高级筛选</span>}
+        placement="bottom"
+        height="75vh"
+        onClose={() => setIsFilterDrawerOpen(false)}
+        open={isFilterDrawerOpen}
+        className="rounded-t-[32px] overflow-hidden"
+        styles={{ 
+          mask: { backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0,0,0,0.3)' },
+          content: { 
+            background: isDarkMode ? 'rgba(30, 30, 30, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+            backdropFilter: 'blur(20px)',
+            borderTop: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`,
+          },
+          body: { padding: '24px 20px' } 
+        }}
+      >
+        {renderFilterContent()}
+        
+        <div className="mt-12 space-y-8">
+           {searchHistory.length > 0 && (
+              <div>
+                <Title level={5} className="mb-4">最近搜索词</Title>
+                <div className="flex flex-wrap gap-2">
+                  {searchHistory.map((history, index) => (
+                    <Tag key={index} color="blue" onClick={() => handleHistorySearch(history)} className="cursor-pointer px-4 py-1.5 rounded-full">
+                      {history}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+           )}
+           
+           {!trendingLoading && (
+              <div>
+                <Title level={5} className="mb-4">热门趋势</Title>
+                <div className="flex flex-wrap gap-2">
+                  {(trendingSearches || []).map((term, index) => (
+                    <Tag key={index} color={index < 3 ? 'red' : 'orange'} onClick={() => handleTrendingSearch(term)} className="cursor-pointer px-4 py-1.5 rounded-full">
+                      {term}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+           )}
+        </div>
+      </Drawer>
     </div>
   );
 };

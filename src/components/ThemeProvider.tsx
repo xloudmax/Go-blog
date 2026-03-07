@@ -30,6 +30,13 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
             return saved
         }
 
+        // 如果没有保存的主题，先尝试跟随系统
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                return 'dark'
+            }
+        }
+
         const hasHtmlDarkClass = document.documentElement.classList.contains('dark')
         if (hasHtmlDarkClass) {
             return 'dark'
@@ -40,9 +47,28 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
     const [theme, setTheme] = useState<Theme>(() => getInitialTheme());
 
+    // 昼夜监听：监听系统主题变化
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        const handleChange = (e: MediaQueryListEvent) => {
+            // 如果本地没有手动设置过主题，则跟随系统
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        };
+
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }, []);
+
     // 当 theme 改变时，写入 localStorage 并同步到 DOM
     useEffect(() => {
-        localStorage.setItem('theme', theme);
+        // 如果是从 toggle 触发的，theme 已经更新。这里我们确保同步到 DOM
+        const isManual = localStorage.getItem('theme') !== null;
+        if (isManual) {
+            localStorage.setItem('theme', theme);
+        }
 
         // 移除所有主题相关类
         document.documentElement.classList.remove('light', 'dark');
@@ -71,8 +97,13 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
     // 切换主题
     const toggle = () => {
-        setTheme(currentTheme => (currentTheme === 'light' ? 'dark' : 'light'))
-    }
+        setTheme(currentTheme => {
+            const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+            // 手动切换后，强制持久化标记
+            localStorage.setItem('theme', nextTheme);
+            return nextTheme;
+        });
+    };
 
     return (
         <ThemeContext.Provider value={{ theme, toggle }}>

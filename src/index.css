@@ -9,6 +9,7 @@
 @import './styles/simple-theme.css';
 
 @import "tailwindcss";
+@variant dark (&:where(.dark, .dark *));
 
 @layer base {
   * {

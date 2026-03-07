@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tabs, Card, Tag, Empty, Spin, Input, Space, Typography } from 'antd';
-import { SearchOutlined, TagOutlined, FolderOutlined } from '@ant-design/icons';
+import { Tabs, Card, Tag, Empty, Spin, Space, Typography } from 'antd';
+import { TagOutlined, FolderOutlined } from '@ant-design/icons';
 import { useGetTagsQuery, useGetCategoriesQuery } from '@/generated/graphql';
+import { LiquidSearchBox } from '@/components/LiquidSearchBox';
 
 const { Title, Text } = Typography;
 
@@ -156,14 +157,16 @@ export default function TagsPage() {
 
       {/* 搜索框 */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <Input
+        <LiquidSearchBox
           placeholder={activeTab === 'tags' ? '搜索标签...' : '搜索分类...'}
-          prefix={<SearchOutlined />}
-          size="large"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          allowClear
-          style={{ maxWidth: '500px' }}
+          blur={0}
+          width={500}
+          height={50}
+          bezelWidth={15}
+          scale={20}
+          inputClassName=""
         />
       </div>
 

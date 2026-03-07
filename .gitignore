@@ -44,3 +44,6 @@ backend/.env.*
 # Production
 .env.production
 .env.local
+
+# Tauri
+src-tauri/target/

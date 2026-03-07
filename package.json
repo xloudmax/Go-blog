@@ -28,6 +28,7 @@
 		"antd": "^5.27.1",
 		"apollo-upload-client": "^18.0.1",
 		"canvas-confetti": "^1.9.4",
+		"clsx": "^2.1.1",
 		"dagre": "^0.8.5",
 		"dayjs": "^1.11.18",
 		"eslint-plugin-react-hooks": "^5.2.0",
@@ -54,6 +55,7 @@
 		"rehype-slug": "^6.0.0",
 		"remark-gfm": "^4.0.1",
 		"remark-math": "^6.0.0",
+		"tailwind-merge": "^3.5.0",
 		"typescript-eslint": "^8.41.0"
 	},
 	"packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd",

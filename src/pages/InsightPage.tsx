@@ -1,15 +1,15 @@
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import { useGenerateMechanismTreeLazyQuery } from '../generated/graphql';
 import { MechanismTree } from '../components/MechanismTree';
 import { Spin, Alert, message, Typography, Button } from 'antd';
-import { SearchOutlined, DeploymentUnitOutlined } from '@ant-design/icons';
-import { ThemeContext } from '@/components/ThemeProvider';
+import { DeploymentUnitOutlined } from '@ant-design/icons';
+// import { ThemeContext } from '@/components/ThemeProvider';
+import { LiquidSearchBox } from '../components/LiquidSearchBox';
 
 const { Title, Text } = Typography;
 
 const InsightPage = () => {
-  const { theme } = useContext(ThemeContext);
-  const isDarkMode = theme === 'dark';
+  // const { theme } = useContext(ThemeContext);
   const [query, setQuery] = useState('');
   const [generateTree, { data, loading, error }] = useGenerateMechanismTreeLazyQuery({
     fetchPolicy: 'network-only',
@@ -35,41 +35,47 @@ const InsightPage = () => {
     <div className="w-full max-w-[2400px] mx-auto py-8 px-2 md:px-6 animate-fade-in-up">
       
       {/* HEADER SECTION */}
-      <div className="mb-10">
+      <div className="mb-8 md:mb-10">
         <div className="flex justify-between items-start">
-          <Text className="block text-indigo-500 font-bold uppercase tracking-[0.2em] text-xs mb-1">
+          <Text className="block text-indigo-500 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs mb-1">
             INTELLIGENCE ENGINE
           </Text>
         </div>
         <div className="flex justify-between items-end">
-          <Title level={1} className="!mb-0 !text-5xl font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+          <Title level={1} className="!mb-0 !text-3xl md:!text-5xl font-extrabold tracking-tight leading-tight md:leading-none" style={{ fontFamily: 'var(--font-display)' }}>
             知识洞察
           </Title>
         </div>
-        <Text className="text-gray-500 dark:text-gray-400 mt-3 block text-lg font-medium max-w-2xl">
+        <Text className="text-gray-500 dark:text-gray-400 mt-3 block text-base md:text-lg font-medium max-w-2xl leading-relaxed">
           利用先进 AI 模型，将复杂概念拆解为可交互的知识机制树。
         </Text>
       </div>
 
       {/* SEARCH BAR */}
-      <div className="mb-12">
-        <div className="relative group max-w-3xl">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-          <div className="relative flex items-center glassy-card rounded-2xl p-1.5 overflow-hidden">
-            <SearchOutlined className="text-gray-400 text-xl ml-5 shrink-0" />
-            <input 
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="输入一个主题开始探索..." 
-              className="flex-1 bg-transparent border-none outline-none ring-0 px-4 py-4 text-xl text-white placeholder-gray-600 font-light w-full min-w-0"
-              disabled={loading}
-            />
+      <div className="mb-10 md:mb-12">
+        <div className="relative max-w-3xl flex flex-col md:block gap-4">
+          <LiquidSearchBox
+            value={query}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSearch()}
+            placeholder={window.innerWidth < 640 ? "输入主题..." : "输入一个主题开始探索..."}
+            containerClassName="w-full"
+            height={window.innerWidth < 640 ? 64 : 72}
+            width="100%"
+            scale={4}
+            bezelWidth={7}
+            refractiveIndex={1.5}
+            specularOpacity={0.6}
+            blur={0}
+            disabled={loading}
+            inputClassName="px-6 md:px-10 text-base md:text-lg"
+            className="flex items-center"
+          />
+          <div className="static md:absolute md:right-2 md:top-1/2 md:-translate-y-1/2 flex gap-2 w-full md:w-auto">
             <Button
               onClick={handleSearch}
               loading={loading}
-              className="h-14 px-8 rounded-xl bg-white hover:bg-gray-100 border-none text-black font-bold text-lg shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+              className="h-14 md:h-14 w-full md:w-auto px-8 rounded-xl bg-slate-900 dark:bg-white/90 hover:bg-black dark:hover:bg-white border-none text-white dark:text-black font-bold text-lg shadow-lg hover:scale-[1.01] active:scale-95 transition-all z-20"
             >
               立即生成
             </Button>
@@ -78,7 +84,7 @@ const InsightPage = () => {
 
         {/* SUGGESTIONS */}
         {!data && !loading && (
-          <div className="mt-6 flex flex-wrap gap-2 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <div className="mt-6 flex flex-wrap gap-2 md:gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             {suggestions.map(s => (
               <Button 
                 key={s}
@@ -87,7 +93,7 @@ const InsightPage = () => {
                   setQuery(s);
                   generateTree({ variables: { query: s } });
                 }}
-                className="!h-auto !px-4 !py-1.5 !rounded-full !bg-white/5 hover:!bg-white/10 !border !border-white/5 !text-gray-500 hover:!text-white text-xs backdrop-blur-sm transition-all"
+                className="!h-auto !px-4 md:!px-5 !py-2 md:!py-1.5 !rounded-full !bg-white/5 hover:!bg-white/10 !border !border-white/5 !text-gray-500 hover:!text-white text-[11px] md:text-xs backdrop-blur-sm transition-all shadow-sm"
               >
                 {s}
               </Button>
