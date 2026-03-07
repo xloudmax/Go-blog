@@ -16,9 +16,9 @@ export interface LiquidSearchBoxProps extends Omit<InputHTMLAttributes<HTMLInput
 }
 
 export const LiquidSearchBox: React.FC<LiquidSearchBoxProps> = React.memo(({
-  containerClassName = "",
+  containerClassName = "w-full",
   inputClassName = "",
-  width = 400,
+  width,
   height = 70,
   scale = 20, // Reduced from 30
   bezelWidth = 12, // Reduced from 25
@@ -41,11 +41,11 @@ export const LiquidSearchBox: React.FC<LiquidSearchBoxProps> = React.memo(({
         specularOpacity={specularOpacity}
         specularSaturation={specularOpacity > 0 ? 5 : 0}
         style={{
-          width,
+          ...(width !== undefined ? { width } : {}),
           height,
           borderRadius
         }}
-        className={`flex items-center box-border px-5 gap-2 ${className}`}
+        className={`flex items-center box-border px-5 gap-2 w-full ${className}`}
       >
         <input
           type="text"
