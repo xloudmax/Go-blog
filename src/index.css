@@ -56,6 +56,11 @@
   .page-enter-active {
     animation: fadeIn 0.4s ease-out forwards;
   }
+
+  /* 适配 iOS 安全区域，防止通知遮挡灵动岛/状态栏 */
+  .ant-notification, .ant-message {
+    margin-top: env(safe-area-inset-top, 0) !important;
+  }
 }
 
 @layer utilities {

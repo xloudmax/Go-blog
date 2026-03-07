@@ -63,13 +63,13 @@ export default function AppLayout() {
             <Layout style={{
                 minHeight: '100vh',
                 marginLeft: isMobile ? 0 : '72px',
-                marginBottom: isMobile ? '64px' : 0, // Padding for bottom bar
+                marginBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom))' : 0, // Padding for bottom bar + safe area
                 backgroundColor: 'transparent',
                 transition: 'all 0.3s ease'
             }}>
                 <Content style={{
                     backgroundColor: 'transparent',
-                    padding: isMobile ? '1rem 1rem 0' : '2rem 1.5rem 0',
+                    padding: isMobile ? 'calc(1rem + env(safe-area-inset-top)) 1rem 0' : 'calc(2rem + env(safe-area-inset-top)) 1.5rem 0',
                     transition: 'all 0.3s ease'
                 }}>
                     <Suspense fallback={<PageLoading />}>
