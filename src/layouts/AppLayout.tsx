@@ -13,6 +13,8 @@ import PageLoading from '@/components/PageLoading'
 import { MeshGradientBackground } from '@/components/MeshGradientBackground'
 import BackToTop from '@/components/BackToTop'
 import TauriTitleBar from '@/components/TauriTitleBar'
+import { SunOutlined, MoonOutlined } from '@ant-design/icons';
+import { LiquidButton } from '@/components/LiquidButton';
 
 // Lazy load pages for code splitting
 const HomePage = lazy(() => import('@/pages/HomePage'));
@@ -59,6 +61,22 @@ export default function AppLayout() {
 
             {/* 移动端底部导航 - Mobile Only */}
             {isMobile && <MobileBottomBar />}
+
+            {/* 移动端右上角主题切换 - Mobile Only */}
+            {isMobile && (
+                <div className="fixed z-50 pointer-events-auto" style={{
+                    top: 'calc(0.5rem + env(safe-area-inset-top))',
+                    right: '1rem'
+                }}>
+                    <LiquidButton
+                        variant="ghost"
+                        onClick={toggle}
+                        className="!w-10 !h-10 !rounded-full !p-0 flex items-center justify-center backdrop-blur-md shadow-sm border border-black/5 dark:border-white/10"
+                    >
+                        {appTheme === 'dark' ? <SunOutlined className="text-lg text-yellow-400" /> : <MoonOutlined className="text-lg text-gray-600" />}
+                    </LiquidButton>
+                </div>
+            )}
 
             <Layout style={{
                 minHeight: '100vh',
