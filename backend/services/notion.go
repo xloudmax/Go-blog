@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
-	"os"
+	"repair-platform/config"
 	"repair-platform/models"
 	"strings"
 	"time"
@@ -17,8 +17,8 @@ type NotionService struct {
 	db     *gorm.DB
 }
 
-func NewNotionService(db *gorm.DB) *NotionService {
-	apiKey := os.Getenv("NOTION_API_KEY")
+func NewNotionService(db *gorm.DB, cfg *config.Config) *NotionService {
+	apiKey := cfg.NotionAPIKey
 	if apiKey == "" {
 		return nil
 	}

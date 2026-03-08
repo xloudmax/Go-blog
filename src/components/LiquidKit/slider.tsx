@@ -214,6 +214,7 @@ export const LiquidSlider: React.FC<LiquidSliderProps> = React.memo(({
     }, [disabled, pointerDown]);
 
     const handleGlobalPointerUp = useCallback(() => {
+        if (pointerDown.get() < 0.5) return;
         pointerDown.set(0);
         setTimeout(() => {
             isDragging.current = false;

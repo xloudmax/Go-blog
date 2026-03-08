@@ -1,7 +1,8 @@
 // src/components/VersionHistory.tsx
 // 版本历史管理组件
 import React, { useEffect, useState } from 'react';
-import { Modal, List, Typography, Button, Spin, Space, Tag } from 'antd';
+import { Modal, List, Typography, Spin, Space, Tag } from 'antd';
+import { LiquidButton } from './LiquidButton';
 import { usePostVersionsQuery, PostVersionsQueryData } from '../generated/graphql';
 
 const { Text } = Typography;
@@ -94,17 +95,17 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
       open={visible}
       onCancel={onCancel}
       footer={[
-        <Button key="cancel" onClick={onCancel}>
+        <LiquidButton key="cancel" onClick={onCancel} variant="secondary">
           取消
-        </Button>,
-        <Button 
+        </LiquidButton>,
+        <LiquidButton 
           key="restore" 
-          type="primary" 
+          variant="primary" 
           onClick={handleRestore}
           disabled={!selectedVersion}
         >
           恢复到此版本
-        </Button>
+        </LiquidButton>
       ]}
       width={800}
     >
@@ -116,7 +117,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
         <div className="text-center py-8">
           <Text type="danger">加载版本历史失败: {error.message}</Text>
           <br />
-          <Button onClick={() => refetch()} type="link">重新加载</Button>
+          <LiquidButton onClick={() => refetch()} variant="ghost">重新加载</LiquidButton>
         </div>
       ) : versions.length === 0 ? (
         <div className="text-center py-8">

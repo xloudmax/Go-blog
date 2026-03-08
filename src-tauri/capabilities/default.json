@@ -11,6 +11,8 @@
     "core:resources:default",
     "core:menu:default",
     "core:tray:default",
+    "os:default",
+    "shell:default",
     "shell:allow-execute",
     "global-shortcut:allow-register",
     "global-shortcut:allow-is-registered",

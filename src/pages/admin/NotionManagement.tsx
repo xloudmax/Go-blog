@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   Card,
   Table,
-  Button,
   Alert,
   Typography,
   Space,
@@ -11,6 +10,7 @@ import {
   message,
   Popconfirm
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
   CloudSyncOutlined,
   ReloadOutlined,
@@ -83,9 +83,9 @@ export default function NotionManagement() {
         type="error"
         showIcon
         action={
-          <Button size="small" onClick={() => refetch()}>
+          <LiquidButton variant="secondary" size="small" onClick={() => refetch()} className="!h-8 !px-3">
             重试
-          </Button>
+          </LiquidButton>
         }
       />
     );
@@ -132,17 +132,17 @@ export default function NotionManagement() {
       width: 150,
       align: 'right' as const,
       render: (_: unknown, record: NotionPage) => (
-        <Button
-          type="primary"
-          ghost
+        <LiquidButton
+          variant="secondary"
           size="small"
-          icon={<CloudSyncOutlined spin={syncingId === record.id} />}
           loading={syncingId === record.id}
           disabled={syncing && syncingId !== record.id}
           onClick={() => handleSyncPage(record.id)}
+          className="!h-8 !px-4 flex items-center gap-1 border-blue-200 text-blue-500 hover:border-blue-400"
         >
+          <CloudSyncOutlined spin={syncingId === record.id} />
           {syncingId === record.id ? '同步中' : '同步'}
-        </Button>
+        </LiquidButton>
       )
     }
   ];
@@ -168,13 +168,14 @@ export default function NotionManagement() {
         </div>
         <Space>
           <Tooltip title="刷新列表">
-            <Button 
-                icon={<ReloadOutlined spin={loadingPages} />} 
+            <LiquidButton 
+                variant="secondary"
                 onClick={() => refetch()} 
                 loading={loadingPages}
+                className="!h-10 !px-4 flex items-center justify-center gap-2"
             >
-              刷新列表
-            </Button>
+              <ReloadOutlined spin={loadingPages} /> 刷新列表
+            </LiquidButton>
           </Tooltip>
           <Popconfirm
             title="确定要同步所有页面吗？"
@@ -183,14 +184,15 @@ export default function NotionManagement() {
             okText="开始同步"
             cancelText="取消"
           >
-            <Button 
-                type="primary" 
-                icon={<CloudSyncOutlined spin={syncingId === 'all'} />}
+            <LiquidButton 
+                variant="primary"
                 loading={syncingId === 'all'}
                 disabled={syncing}
+                onClick={handleSyncAll}
+                className="!h-10 !px-6 flex items-center justify-center gap-2"
             >
-                全量同步
-            </Button>
+                <CloudSyncOutlined spin={syncingId === 'all'} /> 全量同步
+            </LiquidButton>
           </Popconfirm>
         </Space>
       </div>
@@ -222,7 +224,8 @@ export default function NotionManagement() {
                  description="未找到 Notion 页面" 
                  image={Empty.PRESENTED_IMAGE_SIMPLE} 
                >
-                 <Button type="link" onClick={() => refetch()}>重新加载</Button>
+                                   <LiquidButton variant="ghost" className="!h-8 !text-blue-500 hover:!text-blue-600" onClick={() => refetch()}>重新加载</LiquidButton>
+
                </Empty>
              )
            }}

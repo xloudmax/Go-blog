@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Upload, Avatar, Button, message, Spin } from 'antd';
+import { Upload, Avatar, message, Spin } from 'antd';
+import { LiquidButton } from './LiquidButton';
 import { UploadOutlined, UserOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useImageUpload } from '@/hooks/useImageUpload';
 
@@ -61,17 +62,20 @@ export default function AvatarUpload({
   };
 
   const uploadButton = (
-    <Button
-      type="dashed"
-      icon={uploading ? <LoadingOutlined /> : <UploadOutlined />}
+    <LiquidButton
+      variant="ghost"
       disabled={disabled || uploading}
       style={{ width: size, height: size }}
-      className="flex flex-col items-center justify-center"
+      className="flex flex-col items-center justify-center border-dashed border-gray-300 dark:border-gray-500 rounded-full"
+      onClick={() => {}} // Upload triggers it via wrapper
     >
-      <div className="text-xs mt-1">
-        {uploading ? '上传中...' : '上传头像'}
+      <div className="flex flex-col items-center">
+        {uploading ? <LoadingOutlined /> : <UploadOutlined />}
+        <div className="text-xs mt-1">
+          {uploading ? '上传中...' : '上传头像'}
+        </div>
       </div>
-    </Button>
+    </LiquidButton>
   );
 
   return (

@@ -4,7 +4,6 @@ import {useAppUser} from '@/hooks';
 // 导入Ant Design组件
 import {
     Card,
-    Button,
     Table,
     Modal,
     Input,
@@ -20,6 +19,7 @@ import {
     notification,
     Space
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
     PlusOutlined,
     ReloadOutlined,
@@ -317,9 +317,13 @@ export default function InviteCodeManagement() {
                             okText="确认"
                             cancelText="取消"
                         >
-                            <Button type="text" danger size="small" icon={<DeleteOutlined/>}>
-                                停用
-                            </Button>
+                            <LiquidButton 
+                                variant="danger" 
+                                size="small" 
+                                className="!h-8 !px-2 !bg-transparent !text-red-500 !border-none !shadow-none hover:!text-red-600 flex items-center gap-1"
+                            >
+                                <DeleteOutlined/> 停用
+                            </LiquidButton>
                         </Popconfirm>
                     );
                 }
@@ -398,13 +402,14 @@ export default function InviteCodeManagement() {
                     </Select>
 
                     {/* 刷新按钮 */}
-                    <Button
-                        icon={<ReloadOutlined/>}
+                    <LiquidButton
+                        variant="secondary"
                         onClick={() => refetch()}
                         disabled={loading}
+                        className="!rounded-full flex items-center justify-center gap-2"
                     >
-                        刷新
-                    </Button>
+                        <ReloadOutlined/> 刷新
+                    </LiquidButton>
                 </div>
 
                 <div style={{display: 'flex', gap: '12px'}}>
@@ -417,20 +422,20 @@ export default function InviteCodeManagement() {
                             okText="确认"
                             cancelText="取消"
                         >
-                            <Button type="primary" danger>
+                            <LiquidButton variant="danger" className="!rounded-full flex items-center justify-center gap-2">
                                 批量停用 ({selectedCodes.length})
-                            </Button>
+                            </LiquidButton>
                         </Popconfirm>
                     )}
 
                     {/* 创建邀请码按钮 */}
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined/>}
+                    <LiquidButton
+                        variant="primary"
                         onClick={() => setShowCreateModal(true)}
+                        className="!rounded-full flex items-center justify-center gap-2"
                     >
-                        创建邀请码
-                    </Button>
+                        <PlusOutlined/> 创建邀请码
+                    </LiquidButton>
                 </div>
             </div>
 
@@ -446,9 +451,9 @@ export default function InviteCodeManagement() {
                     type="error"
                     showIcon
                     action={
-                        <Button size="small" onClick={() => refetch()}>
+                        <LiquidButton variant="secondary" size="small" onClick={() => refetch()} className="!h-8 !px-3">
                             重试
-                        </Button>
+                        </LiquidButton>
                     }
                 />
             ) : (
@@ -467,9 +472,9 @@ export default function InviteCodeManagement() {
             {/* 加载更多 */}
             {inviteCodes.length > 0 && !loading && (
                 <div style={{textAlign: 'center', marginTop: '24px'}}>
-                    <Button onClick={() => loadMore()}>
+                    <LiquidButton variant="secondary" onClick={() => loadMore()} className="!rounded-full px-8">
                         加载更多
-                    </Button>
+                    </LiquidButton>
                 </div>
             )}
 
@@ -478,13 +483,21 @@ export default function InviteCodeManagement() {
                 title="创建新邀请码"
                 open={showCreateModal}
                 onCancel={() => setShowCreateModal(false)}
-                onOk={handleCreate}
-                okText="创建"
-                cancelText="取消"
-                confirmLoading={loading}
-                okButtonProps={{
-                    disabled: (newCodeData.maxUses || 0) < 1
-                }}
+                footer={[
+                    <LiquidButton key="cancel" variant="secondary" onClick={() => setShowCreateModal(false)} className="!h-10 !px-6">
+                        取消
+                    </LiquidButton>,
+                    <LiquidButton
+                        key="create"
+                        variant="primary"
+                        disabled={(newCodeData.maxUses || 0) < 1}
+                        loading={loading}
+                        onClick={handleCreate}
+                        className="!h-10 !px-8"
+                    >
+                        创建
+                    </LiquidButton>
+                ]}
             >
                 <div style={{padding: '12px 0'}}>
                     <div style={{marginBottom: '16px'}}>

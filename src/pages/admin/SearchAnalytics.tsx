@@ -5,7 +5,6 @@ import {
   Col,
   Statistic,
   Table,
-  Button,
   Alert,
   Typography,
   Space,
@@ -19,6 +18,7 @@ import {
   ClockCircleOutlined,
   FireOutlined
 } from '@ant-design/icons';
+import { LiquidButton } from '@/components/LiquidButton';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useAppUser } from '@/hooks';
 import { useAdminNavigation } from '@/hooks/useAdmin';
@@ -57,9 +57,9 @@ export default function SearchAnalytics() {
         type="error"
         showIcon
         action={
-          <Button size="small" onClick={handleRefresh}>
+          <LiquidButton variant="secondary" size="small" onClick={handleRefresh} className="!h-8 !px-3">
             重试
-          </Button>
+          </LiquidButton>
         }
       />
     );
@@ -133,13 +133,14 @@ export default function SearchAnalytics() {
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Title level={3} style={{ margin: 0 }}>搜索分析</Title>
         <Tooltip title="刷新数据">
-          <Button
-            icon={<ReloadOutlined spin={refreshing} />}
+          <LiquidButton
+            variant="secondary"
             onClick={handleRefresh}
             loading={refreshing}
+            className="!h-10 !px-4 flex items-center justify-center gap-2"
           >
-            刷新
-          </Button>
+            <ReloadOutlined spin={refreshing} /> 刷新
+          </LiquidButton>
         </Tooltip>
       </div>
 

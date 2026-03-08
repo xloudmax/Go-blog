@@ -13,7 +13,6 @@ import PageLoading from '@/components/PageLoading'
 import { MeshGradientBackground } from '@/components/MeshGradientBackground'
 import BackToTop from '@/components/BackToTop'
 import TauriTitleBar from '@/components/TauriTitleBar'
-import { LiquidSwitch } from '@/components/LiquidSwitch';
 
 // Lazy load pages for code splitting
 const HomePage = lazy(() => import('@/pages/HomePage'));
@@ -61,18 +60,6 @@ export default function AppLayout() {
             {/* 移动端底部导航 - Mobile Only */}
             {isMobile && <MobileBottomBar />}
 
-            {/* 移动端右上角主题切换 - Mobile Only */}
-            {isMobile && (
-                <div className="fixed z-50 pointer-events-auto origin-top-right scale-[0.4]" style={{
-                    top: 'calc(0.5rem + env(safe-area-inset-top))',
-                    right: '1rem'
-                }}>
-                    <LiquidSwitch
-                        checked={appTheme === 'dark'}
-                        onCheckedChange={toggle}
-                    />
-                </div>
-            )}
 
             <Layout style={{
                 minHeight: '100vh',
@@ -120,9 +107,11 @@ export default function AppLayout() {
                         </div>
                     </Suspense>
                 </Content>
-                <Footer className="text-center bg-gray-100 dark:bg-gray-800 py-4 pb-[env(safe-area-inset-bottom)]">
-                    <Text type="secondary" className="text-sm">Xloudmax © {new Date().getFullYear()}</Text>
-                </Footer>
+                {!isMobile && (
+                    <Footer className="text-center bg-gray-100 dark:bg-gray-800 py-4 pb-[env(safe-area-inset-bottom)]">
+                        <Text type="secondary" className="text-sm">Xloudmax © {new Date().getFullYear()}</Text>
+                    </Footer>
+                )}
             </Layout>
 
             {/* Global Back To Top */}

@@ -21,6 +21,9 @@ export JWT_SECRET="X5cIMqG0p7tqKlSPvx408x660KtbtXsdzwCYdjJWn09bJwY2Fpwya91sadot1
 # 管理员邀请码 (用于首次创建管理员账号)
 export ADMIN_INVITE_CODE="76e2f0f3a8ee99ce498376118af55293"
 
+# Notion 服务配置 (获取 API Key: https://www.notion.so/my-integrations)
+export NOTION_API_KEY=""
+
 # 邮件配置 (开发环境暂时禁用)
 export EMAIL_ENABLED="false"
 export SMTP_HOST="smtp.gmail.com"

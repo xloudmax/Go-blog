@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
   Table,
-  Button,
   Modal,
   Form,
   Input,
@@ -16,6 +15,7 @@ import {
   Badge,
   Spin
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -296,20 +296,22 @@ const PostManagement: React.FC = () => {
       render: (record: Post) => (
         <Space>
           <Tooltip title="查看">
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeOutlined />}
+            <LiquidButton
+              variant="ghost"
+              className="!h-8 !w-8 !p-0 flex items-center justify-center"
               onClick={() => window.open(`/post/${record.slug}`, '_blank')}
-            />
+            >
+              <EyeOutlined />
+            </LiquidButton>
           </Tooltip>
           <Tooltip title="编辑">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
+            <LiquidButton
+              variant="ghost"
+              className="!h-8 !w-8 !p-0 flex items-center justify-center"
               onClick={() => handleEdit(record)}
-            />
+            >
+              <EditOutlined />
+            </LiquidButton>
           </Tooltip>
           <Popconfirm
             title="确认删除"
@@ -320,13 +322,13 @@ const PostManagement: React.FC = () => {
             okType="danger"
           >
             <Tooltip title="删除">
-              <Button
-                type="text"
-                size="small"
-                icon={<DeleteOutlined />}
-                danger
+              <LiquidButton
+                variant="danger"
+                className="!h-8 !w-8 !p-0 !bg-transparent !border-none !shadow-none flex items-center justify-center"
                 loading={deleteLoading}
-              />
+              >
+                <DeleteOutlined />
+              </LiquidButton>
             </Tooltip>
           </Popconfirm>
         </Space>
@@ -369,17 +371,18 @@ const PostManagement: React.FC = () => {
         open={isEditModalOpen}
         onCancel={handleCloseEdit}
         footer={[
-          <Button key="cancel" onClick={handleCloseEdit}>
+          <LiquidButton key="cancel" variant="secondary" onClick={handleCloseEdit} className="!h-10 !px-6">
             取消
-          </Button>,
-          <Button
+          </LiquidButton>,
+          <LiquidButton
             key="save"
-            type="primary"
+            variant="primary"
             loading={updateLoading}
             onClick={handleSaveEdit}
+            className="!h-10 !px-8"
           >
             保存
-          </Button>
+          </LiquidButton>
         ]}
         width={800}
         destroyOnClose

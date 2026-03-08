@@ -57,6 +57,9 @@ type Config struct {
 	// AI 服务配置
 	AIServiceURL     string
 	AIServiceTimeout string
+
+	// Notion 服务配置
+	NotionAPIKey string
 }
 
 // LoadConfig 加载应用配置
@@ -82,7 +85,7 @@ func LoadConfig() *Config {
 	cfg := &Config{
 		// 基础配置
 		Environment: getEnv("GIN_MODE", "development"),
-		Port:        getEnv("PORT", "12345"),
+		Port:        getEnv("PORT", "11451"),
 		LogLevel:    getEnv("LOG_LEVEL", "info"),
 
 		// 数据库配置
@@ -121,6 +124,9 @@ func LoadConfig() *Config {
 		// AI 服务配置
 		AIServiceURL:     getEnv("AI_SERVICE_URL", "http://localhost:8000"),
 		AIServiceTimeout: getEnv("AI_SERVICE_TIMEOUT", "30s"),
+
+		// Notion 服务配置
+		NotionAPIKey: getEnv("NOTION_API_KEY", ""),
 	}
 
 	// 安全检查：生产环境下必须配置 JWT_SECRET

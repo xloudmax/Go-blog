@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
     Card, 
-    Button, 
     Input, 
     Alert, 
     Form, 
@@ -10,6 +9,7 @@ import {
     Divider,
     Steps
 } from 'antd';
+import { LiquidButton } from "../components/LiquidButton";
 import { MailOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from "../hooks";
 
@@ -153,15 +153,13 @@ export default function ForgotPasswordPage() {
                             </Form.Item>
 
                             <Form.Item>
-                                <Button
-                                    type="primary"
+                                <LiquidButton
                                     htmlType="submit"
                                     loading={loading.resetRequest}
-                                    size="large"
-                                    block
+                                    className="w-full h-12"
                                 >
                                     {loading.resetRequest ? '发送中...' : '发送重置邮件'}
-                                </Button>
+                                </LiquidButton>
                             </Form.Item>
                         </Form>
                     ) : (
@@ -207,15 +205,13 @@ export default function ForgotPasswordPage() {
                             </Form.Item>
 
                             <Form.Item>
-                                <Button
-                                    type="primary"
+                                <LiquidButton
                                     htmlType="submit"
                                     loading={loading.resetConfirm}
-                                    size="large"
-                                    block
+                                    className="w-full h-12"
                                 >
                                     {loading.resetConfirm ? '重置中...' : '重置密码'}
-                                </Button>
+                                </LiquidButton>
                             </Form.Item>
                         </Form>
                     )}

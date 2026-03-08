@@ -1,7 +1,6 @@
 // 导入Ant Design组件
 import {
   Card,
-  Button,
   Spin,
   Alert,
   Statistic,
@@ -11,6 +10,7 @@ import {
   Space,
   Tag
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
   UserOutlined,
   FileTextOutlined,
@@ -49,9 +49,9 @@ export default function AdminDashboard() {
         type="error"
         showIcon
         action={
-          <Button size="small" onClick={() => refetchDashboard()}>
+          <LiquidButton variant="secondary" size="small" onClick={() => refetchDashboard()} className="!h-8 !px-3">
             重试
-          </Button>
+          </LiquidButton>
         }
       />
     );

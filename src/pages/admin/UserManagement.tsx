@@ -1,6 +1,5 @@
 import {useState} from 'react';
 import {
-    Button,
     Input,
     Select,
     Table,
@@ -19,6 +18,7 @@ import {
     Space,
     Checkbox
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
     PlusOutlined,
     SearchOutlined,
@@ -319,19 +319,20 @@ export default function UserManagement() {
                                 ]
                             }}
                         >
-                            <Button className="optimized-button">批量操作 ({selectedUsers.length})</Button>
+                             <LiquidButton variant="secondary" className="!rounded-full flex items-center justify-center gap-2">
+                                批量操作 ({selectedUsers.length})
+                             </LiquidButton>
                         </Dropdown>
                     )}
 
                     {/* 创建用户按钮 */}
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined/>}
+                    <LiquidButton
+                        variant="primary"
                         onClick={() => setShowCreateModal(true)}
-                        className="optimized-button"
+                        className="!rounded-full flex items-center justify-center gap-2"
                     >
-                        创建用户
-                    </Button>
+                        <PlusOutlined/> 创建用户
+                    </LiquidButton>
                 </div>
             </div>
 
@@ -347,9 +348,9 @@ export default function UserManagement() {
                     type="error"
                     showIcon
                     action={
-                        <Button size="small" onClick={() => refetch()} className="optimized-button">
+                        <LiquidButton variant="secondary" size="small" onClick={() => refetch()} className="!h-8 !px-3">
                             重试
-                        </Button>
+                        </LiquidButton>
                     }
                 />
             ) : (
@@ -418,27 +419,26 @@ export default function UserManagement() {
                             title: '操作',
                             key: 'action',
                             render: (_, user: User) => (
-                                <div className="user-table-actions">
-                                    <Button
-                                        type="text"
+                                <div className="user-table-actions flex items-center gap-2">
+                                    <LiquidButton
+                                        variant="ghost"
                                         size="small"
                                         onClick={() => {
                                             setCurrentUser(user);
                                             setShowEditModal(true);
                                         }}
-                                        className="optimized-button"
+                                        className="!h-8 !px-2 text-blue-500 hover:text-blue-600"
                                     >
                                         编辑
-                                    </Button>
-                                    <Button
-                                        type="text"
+                                    </LiquidButton>
+                                    <LiquidButton
+                                        variant="danger"
                                         size="small"
-                                        danger
                                         onClick={() => handleDeleteUser(user.id, user.username)}
-                                        className="optimized-button"
+                                        className="!h-8 !px-2 !bg-transparent !text-red-500 !border-none !shadow-none hover:!text-red-600"
                                     >
                                         删除
-                                    </Button>
+                                    </LiquidButton>
                                 </div>
                             )
                         }
@@ -457,17 +457,21 @@ export default function UserManagement() {
                 title="创建新用户"
                 open={showCreateModal}
                 onCancel={() => setShowCreateModal(false)}
-                onOk={handleCreateUser}
-                okText="创建"
-                cancelText="取消"
-                confirmLoading={loading}
-                okButtonProps={{
-                    disabled: !newUserData.username || !newUserData.email || !newUserData.password,
-                    className: "optimized-button"
-                }}
-                cancelButtonProps={{
-                    className: "optimized-button"
-                }}
+                footer={[
+                    <LiquidButton key="cancel" variant="secondary" onClick={() => setShowCreateModal(false)} className="!h-10 !px-6">
+                        取消
+                    </LiquidButton>,
+                    <LiquidButton
+                        key="create"
+                        variant="primary"
+                        disabled={!newUserData.username || !newUserData.email || !newUserData.password}
+                        loading={loading}
+                        onClick={handleCreateUser}
+                        className="!h-10 !px-8"
+                    >
+                        创建
+                    </LiquidButton>
+                ]}
             >
                 <Form layout="vertical">
                     <Form.Item label="用户名" required>
@@ -527,12 +531,28 @@ export default function UserManagement() {
                     setShowEditModal(false);
                     setCurrentUser(null);
                 }}
-                onOk={handleUpdateUser}
-                okText="保存"
-                cancelText="取消"
-                confirmLoading={loading}
-                okButtonProps={{className: "optimized-button"}}
-                cancelButtonProps={{className: "optimized-button"}}
+                footer={[
+                    <LiquidButton 
+                        key="cancel" 
+                        variant="secondary" 
+                        onClick={() => {
+                            setShowEditModal(false);
+                            setCurrentUser(null);
+                        }} 
+                        className="!h-10 !px-6"
+                    >
+                        取消
+                    </LiquidButton>,
+                    <LiquidButton
+                        key="save"
+                        variant="primary"
+                        loading={loading}
+                        onClick={handleUpdateUser}
+                        className="!h-10 !px-8"
+                    >
+                        保存
+                    </LiquidButton>
+                ]}
             >
                 {currentUser && (
                     <Form layout="vertical">

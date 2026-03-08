@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, Card, Empty, Button, Typography, Tag, Space, Popconfirm, message } from 'antd';
+import { List, Card, Empty, Typography, Tag, Space, Popconfirm, message } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
+import { PageHeader } from '@/components/PageHeader';
+import { PageContainer } from '@/components/PageContainer';
 import {
   BellOutlined,
   CheckOutlined,
@@ -24,7 +27,7 @@ import 'dayjs/locale/zh-cn';
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function NotificationPage() {
   const navigate = useNavigate();
@@ -138,40 +141,37 @@ export default function NotificationPage() {
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 1rem' }}>
-      {/* 页面标题和操作按钮 */}
-      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <Title level={2} style={{ marginBottom: '0.5rem' }}>
-            <BellOutlined style={{ marginRight: '8px' }} />
-            通知中心
-          </Title>
-          <Text type="secondary">查看您的所有通知消息</Text>
-        </div>
-        <Space>
-          <Button
-            icon={<CheckOutlined />}
-            onClick={handleMarkAllAsRead}
-            disabled={notifications.length === 0}
-          >
-            全部已读
-          </Button>
-          <Popconfirm
-            title="确定要清空所有通知吗？"
-            onConfirm={handleClearAll}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button
-              icon={<ClearOutlined />}
-              danger
+    <PageContainer>
+      <PageHeader
+        title="通知中心"
+        icon={<BellOutlined />}
+        extra={
+          <Space>
+            <LiquidButton
+              onClick={handleMarkAllAsRead}
               disabled={notifications.length === 0}
+              variant="secondary"
+              className="!h-10 !px-4 flex items-center gap-2 !rounded-full"
             >
-              清空通知
-            </Button>
-          </Popconfirm>
-        </Space>
-      </div>
+              <CheckOutlined /> 全部已读
+            </LiquidButton>
+            <Popconfirm
+              title="确定要清空所有通知吗？"
+              onConfirm={handleClearAll}
+              okText="确定"
+              cancelText="取消"
+            >
+              <LiquidButton
+                disabled={notifications.length === 0}
+                variant="danger"
+                className="!h-10 !px-4 flex items-center gap-2 !rounded-full"
+              >
+                <ClearOutlined /> 清空通知
+              </LiquidButton>
+            </Popconfirm>
+          </Space>
+        }
+      />
 
       {/* 通知列表 */}
       {notifications.length === 0 && !loading ? (
@@ -270,13 +270,12 @@ export default function NotificationPage() {
                     <div style={{ marginTop: '1rem' }}>
                       <Space>
                         {notification.relatedPost && (
-                          <Button
-                            type="link"
-                            size="small"
-                            style={{ padding: 0 }}
+                          <LiquidButton
+                            variant="ghost"
+                            className="!h-auto !p-0 !text-blue-500 hover:!text-blue-600 text-sm"
                           >
                             查看文章
-                          </Button>
+                          </LiquidButton>
                         )}
                         <Popconfirm
                           title="确定要删除这条通知吗？"
@@ -287,16 +286,13 @@ export default function NotificationPage() {
                           okText="确定"
                           cancelText="取消"
                         >
-                          <Button
-                            type="link"
-                            size="small"
-                            danger
-                            icon={<DeleteOutlined />}
+                          <LiquidButton
+                            variant="danger"
                             onClick={(e) => e.stopPropagation()}
-                            style={{ padding: 0 }}
+                            className="!h-auto !p-0 !bg-transparent !border-none !shadow-none flex items-center gap-1 text-sm"
                           >
-                            删除
-                          </Button>
+                            <DeleteOutlined /> 删除
+                          </LiquidButton>
                         </Popconfirm>
                       </Space>
                     </div>
@@ -307,6 +303,6 @@ export default function NotificationPage() {
           )}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -115,11 +115,12 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
     }, []);
 
     const displacementData = useTransform(() => {
-        const canvasW = canvasWidth ? getValueOrMotion(canvasWidth) : getValueOrMotion(width);
-        const canvasH = canvasHeight ? getValueOrMotion(canvasHeight) : getValueOrMotion(height);
+        const canvasW = Math.round(canvasWidth ? getValueOrMotion(canvasWidth) : getValueOrMotion(width));
+        const canvasH = Math.round(canvasHeight ? getValueOrMotion(canvasHeight) : getValueOrMotion(height));
         const devicePixelRatio = dpr ? getValueOrMotion(dpr) : 1;
+        const radiusVal = Math.round(getValueOrMotion(radius));
         const clampedBezelWidth = Math.max(
-            Math.min(getValueOrMotion(bezelWidthProp), 2 * getValueOrMotion(radius) - 1),
+            Math.min(getValueOrMotion(bezelWidthProp), 2 * radiusVal - 1),
             0,
         );
 
@@ -130,22 +131,27 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
             refractiveIndex: getValueOrMotion(refractiveIndex),
             canvasWidth: canvasW,
             canvasHeight: canvasH,
-            objectWidth: getValueOrMotion(width),
-            objectHeight: getValueOrMotion(height),
-            radius: getValueOrMotion(radius),
+            objectWidth: Math.round(getValueOrMotion(width)),
+            objectHeight: Math.round(getValueOrMotion(height)),
+            radius: radiusVal,
             dpr: devicePixelRatio,
         });
     });
 
     const specularLayer = useTransform(() => {
         const devicePixelRatio = dpr ? getValueOrMotion(dpr) : 1;
+        const radiusVal = Math.round(getValueOrMotion(radius));
+        const clampedBezelWidth = Math.max(
+            Math.min(getValueOrMotion(bezelWidthProp), 2 * radiusVal - 1),
+            0,
+        );
 
         return calculateRefractionSpecular(
             getValueOrMotion(width),
             getValueOrMotion(height),
-            getValueOrMotion(radius),
+            radiusVal,
             50,
-            undefined,
+            clampedBezelWidth,
             devicePixelRatio,
         );
     });
@@ -160,41 +166,88 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
         return layer ? imageDataToUrl(layer) : '';
     });
     
-    const scale = useTransform(() => {
+    const baseScale = useTransform(() => {
         const data = displacementData.get();
         return (data ? data.maximumDisplacement : 0) * (scaleRatio?.get() ?? 1);
     });
 
+    // Chromatic Aberration scales
+    const scaleR = useTransform(baseScale, (s) => s * 1.0);
+    const scaleG = useTransform(baseScale, (s) => s * 1.02);
+    const scaleB = useTransform(baseScale, (s) => s * 1.04);
+
     const content = (
-        <filter id={id}>
+        <filter id={id} colorInterpolationFilters="sRGB">
             <motion.feGaussianBlur
                 in={'SourceGraphic'}
                 stdDeviation={typeof blur === 'object' && 'get' in blur ? blur : useTransform(() => blur as number)}
                 result={`blurred_source_${id}`}
             />
 
+            {/* Displacement Map Processing: Blur it slightly to avoid 8-bit banding */}
             <motion.feImage
                 href={displacementMapDataUrl}
                 x={0}
                 y={0}
                 width={useTransform(() => (canvasWidth ? getValueOrMotion(canvasWidth) : getValueOrMotion(width)))}
                 height={useTransform(() => (canvasHeight ? getValueOrMotion(canvasHeight) : getValueOrMotion(height)))}
-                result={`displacement_map_${id}`}
+                result={`raw_displacement_map_${id}`}
+            />
+            <feGaussianBlur in={`raw_displacement_map_${id}`} stdDeviation="0.5" result={`displacement_map_${id}`} />
+
+            {/* Split RGB channels for chromatic aberration */}
+            <feColorMatrix 
+                in={`blurred_source_${id}`} 
+                type="matrix" 
+                values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" 
+                result={`r_channel_${id}`} 
+            />
+            <feColorMatrix 
+                in={`blurred_source_${id}`} 
+                type="matrix" 
+                values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" 
+                result={`g_channel_${id}`} 
+            />
+            <feColorMatrix 
+                in={`blurred_source_${id}`} 
+                type="matrix" 
+                values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" 
+                result={`b_channel_${id}`} 
             />
 
             <motion.feDisplacementMap
-                in={`blurred_source_${id}`}
+                in={`r_channel_${id}`}
                 in2={`displacement_map_${id}`}
-                scale={scale}
+                scale={scaleR}
                 xChannelSelector="R"
                 yChannelSelector="G"
-                result={`displaced_${id}`}
+                result={`displaced_r_${id}`}
+            />
+            <motion.feDisplacementMap
+                in={`g_channel_${id}`}
+                in2={`displacement_map_${id}`}
+                scale={scaleG}
+                xChannelSelector="R"
+                yChannelSelector="G"
+                result={`displaced_g_${id}`}
+            />
+            <motion.feDisplacementMap
+                in={`b_channel_${id}`}
+                in2={`displacement_map_${id}`}
+                scale={scaleB}
+                xChannelSelector="R"
+                yChannelSelector="G"
+                result={`displaced_b_${id}`}
             />
 
-            <motion.feColorMatrix
+            <feBlend in={`displaced_r_${id}`} in2={`displaced_g_${id}`} mode="screen" result={`rg_${id}`} />
+            <feBlend in={`rg_${id}`} in2={`displaced_b_${id}`} mode="screen" result={`displaced_${id}`} />
+
+            {/* JUICY SATURATION: Real glass looks more saturated due to refraction depth */}
+            <feColorMatrix
                 in={`displaced_${id}`}
                 type="saturate"
-                values={useTransform(() => getValueOrMotion(specularSaturation).toString()) as any}
+                values="3" 
                 result={`displaced_saturated_${id}`}
             />
 
@@ -204,8 +257,11 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
                 y={0}
                 width={useTransform(() => (canvasWidth ? getValueOrMotion(canvasWidth) : getValueOrMotion(width)))}
                 height={useTransform(() => (canvasHeight ? getValueOrMotion(canvasHeight) : getValueOrMotion(height)))}
-                result={`specular_layer_${id}`}
+                result={`raw_specular_layer_${id}`}
             />
+            
+            {/* Smooth specular to make it look like light diffraction */}
+            <feGaussianBlur in={`raw_specular_layer_${id}`} stdDeviation="0.8" result={`specular_layer_${id}`} />
 
             <feComposite in={`displaced_saturated_${id}`} in2={`specular_layer_${id}`} operator="in" result={`specular_saturated_${id}`} />
 
@@ -213,7 +269,11 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
                 <motion.feFuncA type="linear" slope={useTransform(() => getValueOrMotion(specularOpacity))} />
             </feComponentTransfer>
 
-            <motion.feBlend in={`specular_saturated_${id}`} in2={`displaced_${id}`} mode="normal" result={`withSaturation_${id}`} />
+            <feComponentTransfer in={`specular_saturated_${id}`} result={`specular_saturated_faded_${id}`}>
+                <motion.feFuncA type="linear" slope={useTransform(() => getValueOrMotion(specularOpacity))} />
+            </feComponentTransfer>
+
+            <motion.feBlend in={`specular_saturated_faded_${id}`} in2={`displaced_saturated_${id}`} mode="normal" result={`withSaturation_${id}`} />
             <motion.feBlend in={`specular_faded_${id}`} in2={`withSaturation_${id}`} mode="normal" />
         </filter>
     );

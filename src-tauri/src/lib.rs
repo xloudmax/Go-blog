@@ -1,15 +1,22 @@
 // src-tauri/src/lib.rs
+#[cfg(desktop)]
+use tauri_plugin_shell::process::CommandChild;
+#[cfg(desktop)]
 use tauri::Manager;
-use tauri_plugin_shell::{ShellExt, process::CommandChild};
+#[cfg(desktop)]
+use tauri_plugin_shell::ShellExt;
+#[cfg(desktop)]
 use tauri_plugin_global_shortcut::GlobalShortcutExt;
+#[cfg(desktop)]
 use std::sync::Mutex;
 use keyring::Entry;
 
+#[cfg(desktop)]
 struct SidecarState {
     child: Mutex<Option<CommandChild>>,
 }
 
-// --- 钥匙串操作 ---
+// --- 钥匙串/系统操作 ---
 
 #[tauri::command]
 fn store_token(token: String) -> Result<(), String> {
@@ -40,72 +47,102 @@ fn delete_token() -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![store_token, get_token, delete_token])
-        .setup(|app| {
-            // 1. 初始化系统托盘菜单
-            let show_i = tauri::menu::MenuItem::with_id(app, "show", "显示主窗口", true, None::<&str>)?;
-            let quit_i = tauri::menu::MenuItem::with_id(app, "quit", "彻底退出", true, None::<&str>)?;
-            let menu = tauri::menu::Menu::with_items(app, &[&show_i, &quit_i])?;
+    #[allow(unused_mut)]
+    let mut builder = tauri::Builder::default();
+    
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
+    }
 
-            let _tray = tauri::tray::TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
-                .menu(&menu)
-                .on_menu_event(|app, event| {
-                    match event.id.as_ref() {
-                        "show" => {
+    builder
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_os::init())
+        .invoke_handler(tauri::generate_handler![
+            store_token, 
+            get_token, 
+            delete_token
+        ])
+        .setup(|_app| {
+            #[cfg(desktop)]
+            {
+                let app = _app;
+                // 1. 初始化系统托盘菜单 (仅桌面)
+                let show_i = tauri::menu::MenuItem::with_id(app, "show", "显示主窗口", true, None::<&str>)?;
+                let quit_i = tauri::menu::MenuItem::with_id(app, "quit", "彻底退出", true, None::<&str>)?;
+                let menu = tauri::menu::Menu::with_items(app, &[&show_i, &quit_i])?;
+
+                let _tray = tauri::tray::TrayIconBuilder::new()
+                    .icon(app.default_window_icon().unwrap().clone())
+                    .menu(&menu)
+                    .on_menu_event(|app, event| {
+                        match event.id.as_ref() {
+                            "show" => {
+                                if let Some(window) = app.get_webview_window("main") {
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                }
+                            }
+                            "quit" => {
+                                if let Some(state) = app.try_state::<SidecarState>() {
+                                    if let Ok(mut child_lock) = state.child.lock() {
+                                        if let Some(child) = child_lock.take() {
+                                            let _ = child.kill();
+                                        }
+                                    }
+                                }
+                                app.exit(0);
+                            }
+                            _ => {}
+                        }
+                    })
+                    .on_tray_icon_event(|tray, event| {
+                        if let tauri::tray::TrayIconEvent::Click { .. } = event {
+                            let app = tray.app_handle();
                             if let Some(window) = app.get_webview_window("main") {
                                 let _ = window.show();
                                 let _ = window.set_focus();
                             }
                         }
-                        "quit" => {
-                            // 彻底清理并退出
-                            if let Some(state) = app.try_state::<SidecarState>() {
-                                if let Ok(mut child_lock) = state.child.lock() {
-                                    if let Some(child) = child_lock.take() {
-                                        let _ = child.kill();
-                                    }
-                                }
-                            }
-                            app.exit(0);
-                        }
-                        _ => {}
-                    }
-                })
-                .on_tray_icon_event(|tray, event| {
-                    if let tauri::tray::TrayIconEvent::Click { .. } = event {
-                        let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
+                    })
+                    .build(app)?;
+
+                // 2. 注册全局快捷键 (Cmd + Shift + B) (仅桌面)
+                let shortcut = tauri_plugin_global_shortcut::Shortcut::new(Some(tauri_plugin_global_shortcut::Modifiers::SUPER | tauri_plugin_global_shortcut::Modifiers::SHIFT), tauri_plugin_global_shortcut::Code::KeyB);
+                
+                app.global_shortcut().on_shortcut(shortcut, move |app, _shortcut, _event| {
+                    if let Some(window) = app.get_webview_window("main") {
+                        if window.is_visible().unwrap_or(false) {
+                            let _ = window.hide();
+                        } else {
                             let _ = window.show();
                             let _ = window.set_focus();
                         }
                     }
-                })
-                .build(app)?;
+                })?;
 
-            // 2. 注册全局快捷键 (Cmd + Shift + B)
-            let shortcut = tauri_plugin_global_shortcut::Shortcut::new(Some(tauri_plugin_global_shortcut::Modifiers::SUPER | tauri_plugin_global_shortcut::Modifiers::SHIFT), tauri_plugin_global_shortcut::Code::KeyB);
-            
-            app.global_shortcut().on_shortcut(shortcut, move |app, _shortcut, _event| {
-                if let Some(window) = app.get_webview_window("main") {
-                    if window.is_visible().unwrap_or(false) {
-                        let _ = window.hide();
-                    } else {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
-                }
-            })?;
+                // 3. 启动 Go Sidecar (仅桌面)
+                let sidecar_command = app.shell()
+                    .sidecar("blog-backend")
+                    .unwrap()
+                    .env("PORT", "11451");
 
-            // 3. 启动 Go Sidecar (带环境保护)
-            #[cfg(desktop)]
-            {
-                let sidecar_command = app.shell().sidecar("blog-backend").unwrap();
                 match sidecar_command.spawn() {
-                    Ok((_rx, child)) => {
+                    Ok((mut rx, child)) => {
+                        tauri::async_runtime::spawn(async move {
+                            while let Some(event) = rx.recv().await {
+                                match event {
+                                    tauri_plugin_shell::process::CommandEvent::Stdout(line) => {
+                                        println!("SIDECAR | STDOUT: {}", String::from_utf8_lossy(&line));
+                                    }
+                                    tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
+                                        eprintln!("SIDECAR | STDERR: {}", String::from_utf8_lossy(&line));
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        });
+
                         app.manage(SidecarState {
                             child: Mutex::new(Some(child)),
                         });
@@ -117,10 +154,15 @@ pub fn run() {
             }
             Ok(())
         })
-        .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                window.hide().unwrap();
-                api.prevent_close();
+        .on_window_event(|_window, _event| {
+            #[cfg(desktop)]
+            {
+                let window = _window;
+                let event = _event;
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    window.hide().unwrap();
+                    api.prevent_close();
+                }
             }
         })
         .run(tauri::generate_context!())

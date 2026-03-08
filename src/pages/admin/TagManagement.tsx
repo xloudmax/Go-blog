@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   Card,
   Table,
-  Button,
   Alert,
   Typography,
   Space,
@@ -19,6 +18,7 @@ import {
   Tag,
   Popconfirm
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
   TagsOutlined,
   AppstoreOutlined,
@@ -69,9 +69,9 @@ export default function TagManagement() {
         type="error"
         showIcon
         action={
-          <Button size="small" onClick={() => refetch()}>
+          <LiquidButton variant="secondary" size="small" onClick={() => refetch()} className="!h-8 !px-3">
             重试
-          </Button>
+          </LiquidButton>
         }
       />
     );
@@ -236,9 +236,14 @@ export default function TagManagement() {
           标签和分类管理
         </Title>
         <Tooltip title="刷新数据">
-          <Button icon={<ReloadOutlined spin={loading} />} onClick={() => refetch()} loading={loading}>
-            刷新
-          </Button>
+          <LiquidButton 
+            variant="secondary" 
+            onClick={() => refetch()} 
+            loading={loading}
+            className="!h-10 !px-4 flex items-center justify-center gap-2"
+          >
+            <ReloadOutlined spin={loading} /> 刷新
+          </LiquidButton>
         </Tooltip>
       </div>
 
@@ -283,12 +288,13 @@ export default function TagManagement() {
           onChange={setActiveTab}
           tabBarExtraContent={
             <Space>
-              <Button
-                icon={<MergeCellsOutlined />}
+              <LiquidButton
+                variant="secondary"
                 onClick={() => setMergeModalVisible(true)}
+                className="!h-9 !px-4 flex items-center justify-center gap-2"
               >
-                合并{activeTab === 'tags' ? '标签' : '分类'}
-              </Button>
+                <MergeCellsOutlined /> 合并{activeTab === 'tags' ? '标签' : '分类'}
+              </LiquidButton>
               <Popconfirm
                 title={`确定要清理未使用的${activeTab === 'tags' ? '标签' : '分类'}吗？`}
                 description="此操作将删除空标签或分类"
@@ -296,13 +302,13 @@ export default function TagManagement() {
                 okText="确认"
                 cancelText="取消"
               >
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
+                <LiquidButton
+                  variant="danger"
                   loading={activeTab === 'tags' ? deletingTags : deletingCategories}
+                  className="!h-9 !px-4 flex items-center justify-center gap-2"
                 >
-                  清理未使用
-                </Button>
+                  <DeleteOutlined /> 清理未使用
+                </LiquidButton>
               </Popconfirm>
             </Space>
           }

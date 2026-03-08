@@ -20,6 +20,7 @@
         "center": true,
         "hiddenTitle": true,
         "titleBarStyle": "Overlay",
+        "transparent": true,
         "label": "main"
       }
     ],

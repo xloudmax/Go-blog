@@ -4,7 +4,8 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react'
 import MDEditor from '@uiw/react-md-editor'
 import { ThemeContext } from '@/components/ThemeProvider'
-import { Card, Button, Space, Tooltip, App } from 'antd'
+import { Card, Space, Tooltip, App } from 'antd'
+import { LiquidButton } from './LiquidButton';
 import {
   SaveOutlined,
   EyeOutlined,
@@ -224,98 +225,100 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
                 <div className="flex flex-wrap items-center justify-between mb-3 gap-2">
                     <Space wrap>
                         <Tooltip title="标题">
-                            <Button
-                                size="small"
+                            <LiquidButton
                                 onClick={() => insertMarkdown('# 标题')}
-                                className="optimized-button"
+                                className="!px-2 !py-1 !h-7 !text-xs !rounded-md"
+                                variant="secondary"
                             >
                                 H1
-                            </Button>
+                            </LiquidButton>
                         </Tooltip>
                         <Tooltip title="粗体">
-                            <Button
-                                size="small"
+                            <LiquidButton
                                 onClick={() => insertMarkdown('**粗体文字**')}
-                                className="optimized-button"
+                                className="!px-2 !py-1 !h-7 !text-xs !rounded-md"
+                                variant="secondary"
                             >
                                 B
-                            </Button>
+                            </LiquidButton>
                         </Tooltip>
                         <Tooltip title="斜体">
-                            <Button
-                                size="small"
+                            <LiquidButton
                                 onClick={() => insertMarkdown('*斜体文字*')}
-                                className="optimized-button"
+                                className="!px-2 !py-1 !h-7 !text-xs !rounded-md"
+                                variant="secondary"
                             >
                                 I
-                            </Button>
+                            </LiquidButton>
                         </Tooltip>
                         <Tooltip title="代码">
-                            <Button
-                                size="small"
+                            <LiquidButton
                                 onClick={() => insertMarkdown('`代码`')}
-                                className="optimized-button"
+                                className="!px-2 !py-1 !h-7 !text-xs !rounded-md"
+                                variant="secondary"
                             >
                                 Code
-                            </Button>
+                            </LiquidButton>
                         </Tooltip>
                         <Tooltip title="链接">
-                            <Button
-                                size="small"
+                            <LiquidButton
                                 onClick={() => insertMarkdown('[链接文本](https://)')}
-                                className="optimized-button"
+                                className="!px-2 !py-1 !h-7 !text-xs !rounded-md"
+                                variant="secondary"
                             >
                                 Link
-                            </Button>
+                            </LiquidButton>
                         </Tooltip>
                         <Tooltip title="图片">
-                            <Button
-                                size="small"
+                            <LiquidButton
                                 onClick={() => insertMarkdown('![图片描述](https://)')}
-                                className="optimized-button"
+                                className="!px-2 !py-1 !h-7 !text-xs !rounded-md"
+                                variant="secondary"
                             >
                                 Img
-                            </Button>
+                            </LiquidButton>
                         </Tooltip>
                         <Tooltip title="引用">
-                            <Button
-                                size="small"
+                            <LiquidButton
                                 onClick={() => insertMarkdown('> 引用内容')}
-                                className="optimized-button"
+                                className="!px-2 !py-1 !h-7 !text-xs !rounded-md"
+                                variant="secondary"
                             >
                                 Quote
-                            </Button>
+                            </LiquidButton>
                         </Tooltip>
                         <Tooltip title="列表">
-                            <Button
-                                size="small"
+                            <LiquidButton
                                 onClick={() => insertMarkdown('- 列表项')}
-                                className="optimized-button"
+                                className="!px-2 !py-1 !h-7 !text-xs !rounded-md"
+                                variant="secondary"
                             >
                                 List
-                            </Button>
+                            </LiquidButton>
                         </Tooltip>
                     </Space>
                     <Space>
                         <Tooltip title="版本历史">
-                            <Button
-                                size="small"
-                                icon={<HistoryOutlined />}
+                            <LiquidButton
                                 onClick={() => notification.info({
                                     message: '提示',
                                     description: '版本历史功能即将推出',
                                     duration: 3,
                                 })}
-                                className="optimized-button"
-                            />
+                                className="!w-8 !h-8 !p-0 flex items-center justify-center !rounded-md"
+                                variant="secondary"
+                            >
+                                <HistoryOutlined />
+                            </LiquidButton>
                         </Tooltip>
                         <Tooltip title={isFullscreen ? "退出全屏" : "全屏"}>
-                            <Button
-                                size="small"
-                                icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+                            <LiquidButton
                                 onClick={toggleFullscreen}
-                                className="optimized-button"
-                            />
+                                className="!w-8 !h-8 !p-0 flex items-center justify-center !rounded-md"
+                                variant="secondary"
+                            >
+                                {isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+                            </LiquidButton>
                         </Tooltip>
                     </Space>
                 </div>
@@ -344,26 +347,25 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ initialValue, onSave })
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <Space>
-                        <Button
-                            icon={<EyeOutlined />}
+                        <LiquidButton
                             onClick={() => notification.info({
                                 message: '提示',
                                 description: '预览功能已在右侧实时显示',
                                 duration: 3,
                             })}
-                            className="optimized-button"
+                            className="!px-4 !py-2 !h-10 !rounded-xl"
+                            variant="secondary"
                         >
-                            预览
-                        </Button>
-                        <Button
-                            type="primary"
-                            icon={<SaveOutlined />}
+                            <EyeOutlined className="mr-1" /> 预览
+                        </LiquidButton>
+                        <LiquidButton
+                            variant="primary"
                             onClick={confirmSave}
                             loading={isSaving}
-                            className="optimized-button"
+                            className="!px-6 !py-2 !h-10 !rounded-xl shadow-blue-500/20 shadow-lg"
                         >
-                            {isSaving ? '保存中...' : '保存'}
-                        </Button>
+                            <SaveOutlined className="mr-1" /> {isSaving ? '保存中...' : '保存'}
+                        </LiquidButton>
                     </Space>
                 </div>
 

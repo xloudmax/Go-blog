@@ -4,7 +4,6 @@ import {
   Typography,
   Avatar,
   Tag,
-  Button,
   Space,
   Spin,
   Alert,
@@ -12,6 +11,7 @@ import {
   Tooltip,
   notification
 } from 'antd';
+import { LiquidButton } from '../components/LiquidButton';
 import {
   ArrowLeftOutlined,
   EyeOutlined,
@@ -30,6 +30,7 @@ import MarkdownViewer from '../components/MarkdownViewer';
 import CommentSection from '@/components/CommentSection';
 import TableOfContents from '@/components/TableOfContents';
 import BackToTop from '@/components/BackToTop';
+import { PageContainer } from '@/components/PageContainer';
 import confetti from 'canvas-confetti';
 
 const { Title, Paragraph } = Typography;
@@ -166,9 +167,9 @@ export default function PostDetailPage() {
         type="error"
         showIcon
         action={
-          <Button size="small" onClick={() => refetch()}>
+          <LiquidButton size="small" onClick={() => refetch()} variant="secondary" className="!h-8 !px-3">
             重试
-          </Button>
+          </LiquidButton>
         }
       />
     );
@@ -184,7 +185,7 @@ export default function PostDetailPage() {
           showIcon
           action={
             <Link to="/">
-              <Button type="primary">返回首页</Button>
+              <LiquidButton variant="primary">返回首页</LiquidButton>
             </Link>
           }
         />
@@ -193,11 +194,10 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div 
-        style={{ minHeight: '100vh', padding: '0 20px', boxSizing: 'border-box' }}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+    <PageContainer
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '3rem 0' }}>
         {/* 标准页面标题和导航 */}
@@ -206,12 +206,13 @@ export default function PostDetailPage() {
           <title>{post?.title ? `${post.title} - 博客平台` : '加载中... - 博客平台'}</title>
           {post?.excerpt && <meta name="description" content={post.excerpt} />}
           
-          <Button
-            icon={<ArrowLeftOutlined />}
+          <LiquidButton
             onClick={() => navigate('/home')}
+            variant="secondary"
+            className="!h-10 !px-4 flex items-center gap-2"
           >
-            返回
-          </Button>
+            <ArrowLeftOutlined /> 返回
+          </LiquidButton>
         </div>
 
         {/* 主内容区：文章 + TOC */}
@@ -271,46 +272,49 @@ export default function PostDetailPage() {
                     {isAuthenticated && user?.username === post.author.username && (
                       post.notionPageId ? (
                         <Tooltip title="此文章由 Notion 同步，请在 Notion 中编辑">
-                           <Button
-                             icon={<CloudSyncOutlined />}
+                           <LiquidButton
                              disabled
+                             variant="secondary"
+                             className="flex items-center gap-2"
                            >
-                             Notion 同步
-                           </Button>
+                             <CloudSyncOutlined /> Notion 同步
+                           </LiquidButton>
                         </Tooltip>
                       ) : (
                         <Tooltip title="编辑文章">
-                          <Button
-                            icon={<EditOutlined />}
+                          <LiquidButton
                             onClick={() => navigate(`/editor/posts/${post.slug}`)}
+                            variant="secondary"
+                            className="flex items-center gap-2"
                           >
-                            编辑
-                          </Button>
+                            <EditOutlined /> 编辑
+                          </LiquidButton>
                         </Tooltip>
                       )
                     )}
 
                     {/* 点赞按钮 - 使用优化后的逻辑 */}
                     <Tooltip title={isLiked ? "取消点赞" : "点赞"}>
-                      <Button
+                      <LiquidButton
                         ref={likeButtonRef}
-                        icon={<LikeOutlined />}
                         onClick={onLikeClick}
-                        type={isLiked ? "primary" : "default"}
+                        variant={isLiked ? "primary" : "secondary"}
                         disabled={!isAuthenticated}
+                        className="flex items-center gap-2"
                       >
-                        {likeCount}
-                      </Button>
+                        <LikeOutlined /> {likeCount}
+                      </LiquidButton>
                     </Tooltip>
 
                     {/* 分享按钮 */}
                     <Tooltip title="分享文章">
-                      <Button
-                        icon={<ShareAltOutlined />}
+                      <LiquidButton
                         onClick={handleShare}
+                        variant="secondary"
+                        className="flex items-center gap-2"
                       >
-                        分享
-                      </Button>
+                        <ShareAltOutlined /> 分享
+                      </LiquidButton>
                     </Tooltip>
                   </div>
                 </div>
@@ -389,6 +393,6 @@ export default function PostDetailPage() {
 
       {/* 返回顶部按钮 */}
       <BackToTop />
-    </div>
+    </PageContainer>
   );
 }

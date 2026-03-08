@@ -210,6 +210,7 @@ export const LiquidSwitch: FC<LiquidSwitchProps> = React.memo(({
 
     const handleGlobalPointerUp = useCallback(
         (e: MouseEvent | TouchEvent) => {
+            if (pointerDown.get() < 0.5) return;
             pointerDown.set(0);
 
             const x = e instanceof MouseEvent ? e.clientX : (e.changedTouches[0]?.clientX ?? 0);
@@ -228,9 +229,11 @@ export const LiquidSwitch: FC<LiquidSwitchProps> = React.memo(({
     useEffect(() => {
         window.addEventListener('mouseup', handleGlobalPointerUp);
         window.addEventListener('touchend', handleGlobalPointerUp);
+        window.addEventListener('touchcancel', handleGlobalPointerUp);
         return () => {
             window.removeEventListener('mouseup', handleGlobalPointerUp);
             window.removeEventListener('touchend', handleGlobalPointerUp);
+            window.removeEventListener('touchcancel', handleGlobalPointerUp);
         };
     }, [handleGlobalPointerUp]);
 

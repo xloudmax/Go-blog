@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
-    Button, 
     Input, 
     Checkbox, 
     Alert, 
@@ -390,8 +389,8 @@ export default function LoginPage() {
                         </Form.Item>
 
                         <div className="flex flex-wrap justify-between gap-2 px-2 mt-6">
-                            <Button
-                                type="text"
+                            <LiquidButton
+                                variant="ghost"
                                 onClick={() => {
                                     setShowVerification(false);
                                     setVerificationCode('');
@@ -401,9 +400,9 @@ export default function LoginPage() {
                                 className={isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-black'}
                             >
                                 返回
-                            </Button>
-                            <Button
-                                type="text"
+                            </LiquidButton>
+                            <LiquidButton
+                                variant="ghost"
                                 loading={loading.sendCode}
                                 disabled={countdown > 0}
                                 onClick={handleResendCode}
@@ -419,7 +418,7 @@ export default function LoginPage() {
                                         ? `重新发送(${countdown}s)` 
                                         : '重新发送'
                                 }
-                            </Button>
+                            </LiquidButton>
                         </div>
                     </Form>
                 </>

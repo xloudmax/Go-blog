@@ -4,8 +4,10 @@ import { Tabs, Card, Tag, Empty, Spin, Space, Typography } from 'antd';
 import { TagOutlined, FolderOutlined } from '@ant-design/icons';
 import { useGetTagsQuery, useGetCategoriesQuery } from '@/generated/graphql';
 import { LiquidSearchBox } from '@/components/LiquidSearchBox';
+import { PageHeader } from '@/components/PageHeader';
+import { PageContainer } from '@/components/PageContainer';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function TagsPage() {
   const navigate = useNavigate();
@@ -146,14 +148,11 @@ export default function TagsPage() {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
-      {/* 页面标题 */}
-      <div style={{ marginBottom: '2rem' }}>
-        <Title level={2} style={{ marginBottom: '0.5rem' }}>
-          标签与分类
-        </Title>
-        <Text type="secondary">浏览所有标签和分类，发现感兴趣的内容</Text>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="标签与分类"
+        icon={<TagOutlined />}
+      />
 
       {/* 搜索框 */}
       <div style={{ marginBottom: '1.5rem' }}>
@@ -203,6 +202,6 @@ export default function TagsPage() {
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
       `}</style>
-    </div>
+    </PageContainer>
   );
 }

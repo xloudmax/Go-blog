@@ -74,7 +74,7 @@ func main() {
 
 	// 初始化 Services
 	logger.Infow("初始化服务")
-	notionService := services.NewNotionService(db)
+	notionService := services.NewNotionService(db, cfg)
 	if notionService == nil {
 		logger.Warnw("Notion服务初始化失败 (可能是缺少 API Key)")
 	} else {

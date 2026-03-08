@@ -7,7 +7,6 @@ import {
   Spin,
   Input,
     Card,
-  Button,
   Typography,
   notification,
   Space,
@@ -18,6 +17,7 @@ import {
   Col,
   Modal
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
     LoadingOutlined,
     InfoCircleOutlined,
@@ -32,9 +32,11 @@ import { useQuery } from '@apollo/client';
 import MarkdownEditor from '@/components/MarkdownEditor'
 import { useBlogActions, POST_QUERY } from '@/api/graphql/blog'
 import { localFile } from '@/utils/localFile'
+import { PageHeader } from '@/components/PageHeader'
+import { PageContainer } from '@/components/PageContainer'
 
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export default function EditorPage() {
     const { file: fileNameFromParams } = useParams<{ file?: string }>()
@@ -223,7 +225,10 @@ export default function EditorPage() {
 
     const handleExportLocal = async () => {
         if (!markdownContent.trim()) {
-            message.warning('没有内容可导出');
+            notification.warning({
+                message: '警告',
+                description: '没有内容可导出',
+            });
             return;
         }
         const success = await localFile.exportMarkdown(newFileTitle, markdownContent);
@@ -251,24 +256,11 @@ export default function EditorPage() {
     }
 
     return (
-        <div 
-            className="min-h-screen" 
-            style={{ 
-                padding: '0 12px', 
-                boxSizing: 'border-box',
-                backgroundColor: 'transparent'
-            }}
-        >
-            <div className="w-full max-w-[2400px] mx-auto py-8">
-                {/* 标准页面标题 */}
-                <div className="mb-6">
-                    <Title level={2} className="mb-4">
-                        {isEditMode ? '编辑文章' : '创建文章'}
-                    </Title>
-                    <Paragraph type="secondary" className="mb-0">
-                        {isEditMode ? '修改现有文章内容' : '创作新的'}
-                    </Paragraph>
-                </div>
+        <PageContainer>
+            <PageHeader 
+                title={isEditMode ? '编辑文章' : '创建文章'} 
+                icon={<FileTextOutlined />} 
+            />
 
             <Card className="mb-5 optimized-card">
                 <Title level={4} className="text-heading-3">文章信息</Title>
@@ -322,10 +314,14 @@ export default function EditorPage() {
                                             onPressEnter={handleTagInputPress}
                                             className="optimized-input flex-1"
                                         />
-                                        <Button 
-                                            icon={<PlusOutlined />} 
+                                        <LiquidButton 
+                                            variant="secondary"
+                                            size="small"
+                                            className="!h-10 !w-10 flex items-center justify-center p-0"
                                             onClick={addTag}
-                                        />
+                                        >
+                                            <PlusOutlined />
+                                        </LiquidButton>
                                     </div>
                                 </div>
                                 <div>
@@ -357,26 +353,30 @@ export default function EditorPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <Space size="middle">
                         <Space>
-                            <Button 
-                                icon={<FileTextOutlined />} 
+                            <LiquidButton 
+                                variant="secondary"
+                                size="small"
+                                className="!h-9 !px-3 flex items-center gap-2"
                                 onClick={() => {
                                     // 插入标题
                                     const titleTemplate = '# 标题\n\n';
                                     setMarkdownContent(titleTemplate + markdownContent);
                                 }}
                             >
-                                标题
-                            </Button>
-                            <Button 
-                                icon={<FileTextOutlined />} 
+                                <FileTextOutlined /> 标题
+                            </LiquidButton>
+                            <LiquidButton 
+                                variant="secondary"
+                                size="small"
+                                className="!h-9 !px-3 flex items-center gap-2"
                                 onClick={() => {
                                     // 插入代码块
                                     const codeTemplate = '\n```\n// 在此处编写代码\n```\n';
                                     setMarkdownContent(markdownContent + codeTemplate);
                                 }}
                             >
-                                代码块
-                            </Button>
+                                <FileTextOutlined /> 代码块
+                            </LiquidButton>
                         </Space>
                         
                         <Divider type="vertical" className="h-8" />
@@ -384,44 +384,49 @@ export default function EditorPage() {
                         {/* 本地文件集成按钮组 */}
                         <Space>
                             <Tooltip title="从电脑选择 Markdown 文件导入">
-                                <Button 
-                                    icon={<ImportOutlined />} 
+                                <LiquidButton 
+                                    variant="secondary"
+                                    size="small"
+                                    className="!h-9 !px-3 flex items-center gap-2 !border-indigo-200 !text-indigo-600 hover:!bg-indigo-50"
                                     onClick={handleImportLocal}
-                                    className="border-indigo-200 text-indigo-600 hover:bg-indigo-50"
                                 >
-                                    导入本地
-                                </Button>
+                                    <ImportOutlined /> 导入本地
+                                </LiquidButton>
                             </Tooltip>
                             <Tooltip title="将当前草稿保存到本地磁盘">
-                                <Button 
-                                    icon={<ExportOutlined />} 
+                                <LiquidButton 
+                                    variant="secondary"
+                                    size="small"
+                                    className="!h-9 !px-3 flex items-center gap-2"
                                     onClick={handleExportLocal}
                                 >
-                                    存为本地
-                                </Button>
+                                    <ExportOutlined /> 存为本地
+                                </LiquidButton>
                             </Tooltip>
                         </Space>
                     </Space>
 
                     <Space>
-                        <Button 
-                            icon={<HistoryOutlined />} 
+                        <LiquidButton 
+                            variant="secondary"
+                            size="small"
+                            className="!h-9 !px-3 flex items-center gap-2"
                             onClick={() => notification.info({
                                 message: '提示',
                                 description: '版本历史功能即将推出',
                                 duration: 3,
                             })}
                         >
-                            版本历史
-                        </Button>
-                            <Button 
-                                icon={<CloudUploadOutlined />} 
-                                type="primary"
+                            <HistoryOutlined /> 版本历史
+                        </LiquidButton>
+                            <LiquidButton 
+                                variant="ghost"
+                                size="small"
+                                className="!h-9 !px-4 flex items-center gap-2 !text-indigo-600 hover:!text-indigo-700 font-medium"
                                 onClick={() => handleSave(markdownContent, 'PUBLISHED')}
-                                className="bg-indigo-600"
                             >
-                                发布文章
-                            </Button>
+                                <CloudUploadOutlined /> 发布文章
+                            </LiquidButton>
                     </Space>
                 </div>
             </Card>
@@ -446,9 +451,9 @@ export default function EditorPage() {
                 open={isPreviewVisible}
                 onCancel={closePreview}
                 footer={[
-                    <Button key="close" onClick={closePreview} className="optimized-button">
+                    <LiquidButton key="close" variant="secondary" onClick={closePreview} className="!h-10 !px-6">
                         关闭
-                    </Button>
+                    </LiquidButton>
                 ]}
                 width="80%"
                 className="optimized-card"
@@ -468,7 +473,6 @@ export default function EditorPage() {
                     </div>
                 </div>
             </Modal>
-            </div>
-        </div>
+            </PageContainer>
     )
 }

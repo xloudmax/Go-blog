@@ -167,25 +167,26 @@ export default function HomePage() {
                 {/* Spacer between Hero and Grid */}
                 <div className="w-full h-4" />
 
-                {posts.length > 1 ? (
+                {posts.slice(3).length > 0 ? (
                   <ArticleListContainer 
                     posts={posts.slice(3)} 
                     loading={false}
                     error={undefined}
                     onAction={handlePostAction}
                   />
-                ) : (
-                  <div className="py-10 text-center text-gray-400 italic">
-                    {/* Only show this if we have posts (handled by !error && posts.length > 0 check above) but only 1 post */}
-                     Stay tuned for more!
-                  </div>
-                )}
+                ) : posts.length === 0 ? (
+                  <ArticleListContainer 
+                    posts={[]} 
+                    loading={false}
+                    error={undefined}
+                  />
+                ) : null}
             </div>
             
             {/* Infinite Scroll Sentinel */}
             {!isInitialLoading && !error && (
               <div ref={observerTarget} className="mt-8 py-8 flex justify-center w-full min-h-[50px]">
-                {!loading && !hasMore && (
+                {!loading && !hasMore && posts.length > 3 && (
                    <div className="text-gray-400 italic">No more posts</div>
                 )}
               </div>

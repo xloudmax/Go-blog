@@ -7,6 +7,7 @@ export interface LiquidSwitchProps extends Omit<InputHTMLAttributes<HTMLInputEle
   defaultChecked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   scale?: number;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export const LiquidSwitch: React.FC<LiquidSwitchProps> = React.memo(({
@@ -15,6 +16,7 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = React.memo(({
   defaultChecked = false,
   onCheckedChange,
   disabled,
+  size = 'md',
   ...rest
 }) => {
   const isControlled = checked !== undefined;
@@ -29,15 +31,16 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = React.memo(({
   };
 
   return (
-    <div className={`relative inline-flex items-center justify-center ${containerClassName}`}>
-      <UILiquidSwitch
-        checked={isChecked}
-        onCheckedChange={handleCheckedChange}
-        disabled={disabled}
-        slider={{ width: 160, height: 67 }}
-        thumb={{ width: 146, height: 92 }}
-        refractiveIndex={1.2}
-      />
+    <div className={`relative inline-flex items-center justify-center pointer-events-none ${containerClassName}`}>
+      <div className="pointer-events-auto">
+        <UILiquidSwitch
+          checked={isChecked}
+          onCheckedChange={handleCheckedChange}
+          disabled={disabled}
+          size={size}
+          refractiveIndex={1.2}
+        />
+      </div>
       
       {/* Hidden input for forms */}
       <input

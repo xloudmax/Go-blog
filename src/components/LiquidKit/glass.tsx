@@ -43,8 +43,9 @@ const useMotionSizeObservers = <T extends HTMLElement = HTMLDivElement>(
     const height = useSpring(1, { stiffness: 200, damping: 40 });
     const borderRadius = useSpring(0, { stiffness: 200, damping: 40 });
 
-    // Ref to prevent infinite update loops
+    // Ref to prevent infinite update loops and handle initial measurement
     const isUpdating = useRef(false);
+    const isFirstUpdate = useRef(true);
 
     // Update dimensions and border radius
     const updateDimensions = () => {
@@ -55,19 +56,28 @@ const useMotionSizeObservers = <T extends HTMLElement = HTMLDivElement>(
         const rect = containerRef.current.getBoundingClientRect();
         const borderRadiusValue = getBorderRadius(containerRef.current, rect);
 
-        // Only update if values have actually changed to prevent infinite loops
+        // Only update if values have actually changed or if it's the first update
         const newWidth = Math.max(rect.width, 1);
         const newHeight = Math.max(rect.height, 1);
         const newRadius = Math.max(borderRadiusValue, 0);
 
-        if (Math.abs(width.get() - newWidth) > 0.5) {
-            width.set(newWidth);
-        }
-        if (Math.abs(height.get() - newHeight) > 0.5) {
-            height.set(newHeight);
-        }
-        if (Math.abs(borderRadius.get() - newRadius) > 0.5) {
-            borderRadius.set(newRadius);
+        const shouldForceJump = isFirstUpdate.current && newWidth > 1 && newHeight > 1;
+
+        if (shouldForceJump) {
+            width.jump(newWidth);
+            height.jump(newHeight);
+            borderRadius.jump(newRadius);
+            isFirstUpdate.current = false;
+        } else {
+            if (Math.abs(width.get() - newWidth) > 0.5) {
+                width.set(newWidth);
+            }
+            if (Math.abs(height.get() - newHeight) > 0.5) {
+                height.set(newHeight);
+            }
+            if (Math.abs(borderRadius.get() - newRadius) > 0.5) {
+                borderRadius.set(newRadius);
+            }
         }
 
         // Reset the updating flag after a short delay
@@ -101,7 +111,7 @@ const useMotionSizeObservers = <T extends HTMLElement = HTMLDivElement>(
         let timeoutId: ReturnType<typeof setTimeout>;
         const mutationObserver = new MutationObserver(() => {
             clearTimeout(timeoutId);
-            timeoutId = setTimeout(updateDimensions, 100); // Debounce mutations
+            timeoutId = setTimeout(updateDimensions, 150); // Increased debounce for stability
         });
 
         mutationObserver.observe(containerRef.current, {

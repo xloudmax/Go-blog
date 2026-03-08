@@ -8,7 +8,6 @@ import {
   Alert,
   Typography,
   Space,
-  Button,
   Row,
   Col,
   Collapse,
@@ -39,6 +38,8 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 import { LiquidSearchBox } from '@/components/LiquidSearchBox';
+import { PageHeader } from '@/components/PageHeader';
+import { PageContainer } from '@/components/PageContainer';
 
 const SearchPage: React.FC = () => {
   const { theme } = useContext(ThemeContext);
@@ -219,42 +220,32 @@ const SearchPage: React.FC = () => {
         }]}
       />
       
-      <Button 
-        type="primary" 
-        danger 
-        ghost
-        icon={<CloseOutlined />}
+      <LiquidButton 
+        variant="danger"
         onClick={resetFilters}
-        className="w-full rounded-full"
+        className="w-full !rounded-full !h-10 flex items-center justify-center gap-2"
       >
-        重置所有筛选
-      </Button>
+        <CloseOutlined /> 重置所有筛选
+      </LiquidButton>
     </div>
   );
 
   return (
-    <div className="min-h-screen pb-32">
-      <div className="w-full max-w-[2400px] mx-auto py-4 md:py-8 px-4 md:px-6">
+    <PageContainer className="pb-32">
         
-        {/* HEADER AREA */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div>
-            <Title level={2} className="!mb-1 !text-2xl md:!text-3xl flex items-center gap-3">
-              <SearchOutlined className="text-blue-500 opacity-80" /> 全局搜索
-            </Title>
-            <Text type="secondary" className="text-[11px] md:text-xs opacity-70">
-              探索 xloudmax 的数字大脑：寻找你感兴趣的任何内容
-            </Text>
-          </div>
-          
-          <Button 
-            className="lg:hidden rounded-full flex items-center gap-2 h-10 px-5 shadow-sm border-gray-200 dark:border-white/10 dark:bg-white/5 backdrop-blur-md"
-            icon={<FilterOutlined />}
-            onClick={() => setIsFilterDrawerOpen(true)}
-          >
-            筛选选项
-          </Button>
-        </div>
+        <PageHeader 
+          title="全局搜索"
+          icon={<SearchOutlined />}
+          extra={
+            <LiquidButton 
+              variant="secondary"
+              className="lg:hidden !rounded-full flex items-center gap-2 !h-10 px-5 shadow-sm border-gray-200 dark:border-white/10 dark:bg-white/5 backdrop-blur-md"
+              onClick={() => setIsFilterDrawerOpen(true)}
+            >
+              <FilterOutlined /> 筛选选项
+            </LiquidButton>
+          }
+        />
       
         {/* MAIN SEARCH BOX */}
         <div className="mb-8 lg:mb-12 sticky top-4 z-20">
@@ -280,7 +271,7 @@ const SearchPage: React.FC = () => {
              {/* HISTORY & TRENDING */}
              <div className="space-y-6">
                {searchHistory.length > 0 && (
-                 <Card title="最近搜索" extra={<Button type="link" size="small" onClick={clearSearchHistory} className="text-[10px] text-gray-400">清除</Button>} className="glassy-card border-0 rounded-2xl shadow-sm">
+                 <Card title="最近搜索" extra={<LiquidButton variant="ghost" className="!h-auto !p-0 text-[10px] text-gray-400 hover:text-red-400" onClick={clearSearchHistory}>清除</LiquidButton>} className="glassy-card border-0 rounded-2xl shadow-sm">
                    <div className="flex flex-wrap gap-2">
                      {searchHistory.map((history, index) => (
                        <Tag key={index} color="blue" onClick={() => handleHistorySearch(history)} className="cursor-pointer m-0 px-3 py-1 rounded-full border-blue-100 hover:border-blue-300 transition-colors">
@@ -379,12 +370,12 @@ const SearchPage: React.FC = () => {
 
                             <div className="flex items-center justify-between border-t border-gray-50 dark:border-white/5 pt-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 font-bold text-xs">
-                                  {String((post.author as Record<string, unknown>)?.username as string).charAt(0).toUpperCase()}
-                                </div>
+                                  <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 font-bold text-xs">
+                                    {String(((post.author as any).username || 'U')).charAt(0).toUpperCase()}
+                                  </div>
                                 <div className="flex flex-col">
-                                  <Text className="text-xs font-medium">{String((post.author as any)?.username || 'Unknown')}</Text>
-                                  {post.publishedAt && <Text className="text-[10px] text-gray-400">{dayjs(post.publishedAt as string).format('MMM D, YYYY')}</Text>}
+                                  <Text className="text-xs font-medium">{((post.author as any)?.username as string) || 'Unknown'}</Text>
+                                  {!!post.publishedAt && <Text className="text-[10px] text-gray-400">{dayjs(post.publishedAt as string).format('MMM D, YYYY')}</Text>}
                                 </div>
                               </div>
 
@@ -425,16 +416,15 @@ const SearchPage: React.FC = () => {
                   description={
                     <div className="space-y-4">
                       <Text type="secondary" className="text-lg block">找不到匹配的文章</Text>
-                      <Button type="primary" shape="round" onClick={resetFilters}>清除所有筛选再试</Button>
+                      <LiquidButton variant="primary" className="!rounded-full px-8" onClick={resetFilters}>清除所有筛选再试</LiquidButton>
                     </div>
                   }
                 />
               </div>
             )}
           </Col>
-        </Row>
-      </div>
-
+      </Row>
+      
       {/* MOBILE FILTER DRAWER */}
       <Drawer
         title={<span className="font-bold text-lg dark:text-white">高级筛选</span>}
@@ -483,7 +473,7 @@ const SearchPage: React.FC = () => {
            )}
         </div>
       </Drawer>
-    </div>
+    </PageContainer>
   );
 };
 

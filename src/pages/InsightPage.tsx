@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useGenerateMechanismTreeLazyQuery } from '../generated/graphql';
 import { MechanismTree } from '../components/MechanismTree';
-import { Spin, Alert, message, Typography, Button } from 'antd';
+import { Spin, Alert, message, Typography } from 'antd';
+import { LiquidButton } from '../components/LiquidButton';
 import { DeploymentUnitOutlined } from '@ant-design/icons';
 // import { ThemeContext } from '@/components/ThemeProvider';
 import { LiquidSearchBox } from '../components/LiquidSearchBox';
+import { PageHeader } from '../components/PageHeader';
+import { PageContainer } from '../components/PageContainer';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const InsightPage = () => {
   // const { theme } = useContext(ThemeContext);
@@ -32,24 +35,11 @@ const InsightPage = () => {
   ];
 
   return (
-    <div className="w-full max-w-[2400px] mx-auto py-8 px-2 md:px-6 animate-fade-in-up">
-      
-      {/* HEADER SECTION */}
-      <div className="mb-8 md:mb-10">
-        <div className="flex justify-between items-start">
-          <Text className="block text-indigo-500 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs mb-1">
-            INTELLIGENCE ENGINE
-          </Text>
-        </div>
-        <div className="flex justify-between items-end">
-          <Title level={1} className="!mb-0 !text-3xl md:!text-5xl font-extrabold tracking-tight leading-tight md:leading-none" style={{ fontFamily: 'var(--font-display)' }}>
-            知识洞察
-          </Title>
-        </div>
-        <Text className="text-gray-500 dark:text-gray-400 mt-3 block text-base md:text-lg font-medium max-w-2xl leading-relaxed">
-          利用先进 AI 模型，将复杂概念拆解为可交互的知识机制树。
-        </Text>
-      </div>
+    <PageContainer>
+      <PageHeader 
+        label="INTELLIGENCE ENGINE"
+        title="知识洞察"
+      />
 
       {/* SEARCH BAR */}
       <div className="mb-10 md:mb-12">
@@ -72,13 +62,14 @@ const InsightPage = () => {
             className="flex items-center"
           />
           <div className="static md:absolute md:right-2 md:top-1/2 md:-translate-y-1/2 flex gap-2 w-full md:w-auto">
-            <Button
+            <LiquidButton
               onClick={handleSearch}
               loading={loading}
-              className="h-14 md:h-14 w-full md:w-auto px-8 rounded-xl bg-slate-900 dark:bg-white/90 hover:bg-black dark:hover:bg-white border-none text-white dark:text-black font-bold text-lg shadow-lg hover:scale-[1.01] active:scale-95 transition-all z-20"
+              variant="primary"
+              className="!h-14 w-full md:w-auto px-8 !rounded-2xl text-lg font-bold shadow-xl shadow-blue-500/10 z-20"
             >
               立即生成
-            </Button>
+            </LiquidButton>
           </div>
         </div>
 
@@ -86,17 +77,17 @@ const InsightPage = () => {
         {!data && !loading && (
           <div className="mt-6 flex flex-wrap gap-2 md:gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             {suggestions.map(s => (
-              <Button 
+              <LiquidButton 
                 key={s}
-                type="text"
                 onClick={() => {
                   setQuery(s);
                   generateTree({ variables: { query: s } });
                 }}
                 className="!h-auto !px-4 md:!px-5 !py-2 md:!py-1.5 !rounded-full !bg-white/5 hover:!bg-white/10 !border !border-white/5 !text-gray-500 hover:!text-white text-[11px] md:text-xs backdrop-blur-sm transition-all shadow-sm"
+                variant="secondary"
               >
                 {s}
-              </Button>
+              </LiquidButton>
             ))}
           </div>
         )}
@@ -143,7 +134,7 @@ const InsightPage = () => {
           />
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

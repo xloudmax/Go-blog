@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext, ReactNode } from 'react';
 import { useCurrentUser, useAuth } from '@/api/graphql';
 import { AppContext, AppState, AppActions } from '@/context/AppContext';
+import { ThemeContext } from '@/components/ThemeProvider';
 
 // 应用状态提供器
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
@@ -8,11 +9,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: userLoading, error: userError, refetch: refetchUser } = useCurrentUser();
   const { login: authLogin, logout: authLogout } = useAuth();
 
-  // 本地状态
-  const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('theme');
-    return (saved as 'light' | 'dark') || 'light';
-  });
+  const { theme, toggle: toggleTheme } = useContext(ThemeContext) as { theme: 'light' | 'dark', toggle: () => void };
 
   const [sidebarOpen, setSidebarOpenState] = useState(false);
   const [error, setErrorState] = useState<string | null>(null);
@@ -29,11 +26,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [userError]);
 
-  // 主题持久化
-  useEffect(() => {
-    localStorage.setItem('theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
 
   // 状态对象
   const state: AppState = {
@@ -84,13 +76,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     },
 
     // 主题操作
-    toggleTheme: () => {
-      setThemeState(prev => prev === 'light' ? 'dark' : 'light');
-    },
-
-    setTheme: (newTheme: 'light' | 'dark') => {
-      setThemeState(newTheme);
-    },
+    toggleTheme,
+    setTheme: () => {}, // No-op as it's controlled by ThemeContext toggle
 
     // UI操作
     toggleSidebar: () => {
@@ -135,6 +122,7 @@ export const useAppUser = () => {
     user: state.currentUser,
     isAuthenticated: state.isAuthenticated,
     isAdmin: state.isAdmin,
+    isLoading: state.isLoading,
     login: actions.login,
     logout: actions.logout,
     refreshUser: actions.refreshUser,

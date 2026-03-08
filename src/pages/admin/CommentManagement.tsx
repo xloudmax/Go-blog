@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Table,
-  Button,
   Tag,
   Space,
   Select,
@@ -15,6 +14,7 @@ import {
   Statistic,
   Alert
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -256,37 +256,40 @@ export default function CommentManagement() {
         <Space size="small">
           {!record.isApproved && (
             <Tooltip title="批准">
-              <Button
-                type="primary"
+              <LiquidButton
+                variant="primary"
                 size="small"
-                icon={<CheckCircleOutlined />}
                 onClick={() => handleApprove(record.id)}
                 loading={moderationLoading.approve}
+                className="!h-8 flex items-center gap-1"
               >
-                批准
-              </Button>
+                <CheckCircleOutlined /> 批准
+              </LiquidButton>
             </Tooltip>
           )}
           {record.isApproved && (
             <Tooltip title="拒绝">
-              <Button
+              <LiquidButton
+                variant="secondary"
                 size="small"
-                icon={<CloseCircleOutlined />}
                 onClick={() => handleReject(record.id)}
                 loading={moderationLoading.reject}
+                className="!h-8 flex items-center gap-1"
               >
-                拒绝
-              </Button>
+                <CloseCircleOutlined /> 拒绝
+              </LiquidButton>
             </Tooltip>
           )}
           <Tooltip title="删除">
-            <Button
-              danger
+            <LiquidButton
+              variant="danger"
               size="small"
-              icon={<DeleteOutlined />}
               onClick={() => handleDelete(record.id, record.content)}
               loading={deleteLoading.delete}
-            />
+              className="!h-8 !w-8 !p-0 !bg-transparent !border-none !shadow-none flex items-center justify-center text-red-500 hover:text-red-600"
+            >
+              <DeleteOutlined />
+            </LiquidButton>
           </Tooltip>
         </Space>
       ),
@@ -301,9 +304,9 @@ export default function CommentManagement() {
         type="error"
         showIcon
         action={
-          <Button size="small" onClick={() => refetch()}>
+          <LiquidButton variant="secondary" size="small" onClick={() => refetch()} className="!h-8 !px-3">
             重试
-          </Button>
+          </LiquidButton>
         }
       />
     );

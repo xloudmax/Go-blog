@@ -1,7 +1,7 @@
 {
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
+		"dev": "vite --host",
 		"build": "vite build",
 		"preview": "vite preview",
 		"test": "vitest",
@@ -21,6 +21,7 @@
 		"@fontsource/inter": "^5.2.6",
 		"@tauri-apps/plugin-dialog": "^2.6.0",
 		"@tauri-apps/plugin-fs": "^2.4.5",
+		"@tauri-apps/plugin-os": "^2.3.2",
 		"@types/canvas-confetti": "^1.9.0",
 		"@types/dagre": "^0.7.53",
 		"@uiw/react-md-editor": "^4.0.8",
@@ -58,7 +59,7 @@
 		"tailwind-merge": "^3.5.0",
 		"typescript-eslint": "^8.41.0"
 	},
-	"packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd",
+	"packageManager": "pnpm@10.31.0",
 	"devDependencies": {
 		"@graphql-codegen/cli": "^5.0.7",
 		"@graphql-codegen/typescript": "^4.1.6",

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Upload, Button, Image, List, Card, message, Modal } from 'antd';
+import { Upload, Image, List, Card, message, Modal } from 'antd';
+import { LiquidButton } from './LiquidButton';
 import {
   UploadOutlined,
   InboxOutlined,
@@ -169,13 +170,14 @@ export default function ImageUpload({
           </Dragger>
         ) : (
           <Upload {...uploadProps}>
-            <Button
-              icon={uploading ? <LoadingOutlined /> : <UploadOutlined />}
+            <LiquidButton
               disabled={uploadProps.disabled}
               loading={uploading}
+              variant="secondary"
+              className="w-full sm:w-auto"
             >
               {uploading ? '上传中...' : buttonText}
-            </Button>
+            </LiquidButton>
           </Upload>
         )}
 

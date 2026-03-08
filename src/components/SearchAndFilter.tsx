@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Select, Button, Popover, ConfigProvider } from 'antd';
+import { Select, Popover, ConfigProvider } from 'antd';
+import { LiquidButton } from './LiquidButton';
 import { FilterOutlined } from '@ant-design/icons';
 import { LiquidSearchBox } from './LiquidSearchBox';
 import type { PostFilter } from '@/types';
@@ -113,15 +114,15 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
              </ConfigProvider>
            }
         >
-           <Button 
-             type="text" 
-             className={`flex items-center justify-center rounded-full w-8 h-8 transition-all
+           <LiquidButton 
+             variant="ghost"
+             className={`!w-10 !h-10 !p-0 flex items-center justify-center rounded-full transition-all
                ${selectedTags.length > 0 || activeFilters.status 
-                 ? 'text-blue-600 bg-blue-500/10' 
-                 : 'text-gray-400 hover:bg-black/5 hover:text-black'}`}
+                 ? '!text-blue-600 !bg-blue-500/10' 
+                 : '!text-gray-400 hover:!bg-black/5 hover:!text-black'}`}
            >
              <FilterOutlined className="text-base" />
-           </Button>
+           </LiquidButton>
         </Popover>
       </LiquidSearchBox>
     </div>

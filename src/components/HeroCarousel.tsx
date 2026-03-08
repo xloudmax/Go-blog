@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Button } from 'antd';
+import { LiquidButton } from './LiquidButton';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import type { BlogPost } from '@/types';
 import HeroArticleCard from './HeroArticleCard';
@@ -47,33 +47,28 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
       x: direction > 0 ? '100%' : '-100%',
       opacity: 0,
       scale: 0.9, // Start slightly smaller
-      filter: 'blur(4px)', // Slight blur for depth
       zIndex: 0,
     }),
     center: {
       x: 0,
       opacity: 1,
       scale: 1,
-      filter: 'blur(0px)',
       zIndex: 1,
       transition: {
-        x: { type: "spring", stiffness: 200, damping: 25, mass: 1 }, // Smoother spring
-        opacity: { duration: 0.3 },
-        scale: { duration: 0.3 },
-        filter: { duration: 0.3 }
+        x: { type: "spring", stiffness: 300, damping: 30, mass: 1 }, // Faster spring
+        opacity: { duration: 0.2 },
+        scale: { duration: 0.2 },
       }
     },
     exit: (direction: number) => ({
       x: direction < 0 ? '100%' : '-100%',
       opacity: 0,
       scale: 0.9, // Shrink slightly on exit
-      filter: 'blur(4px)',
       zIndex: 0,
       transition: {
-        x: { type: "spring", stiffness: 200, damping: 25, mass: 1 },
-        opacity: { duration: 0.3 },
-        scale: { duration: 0.3 },
-        filter: { duration: 0.3 }
+        x: { type: "spring", stiffness: 300, damping: 30, mass: 1 },
+        opacity: { duration: 0.2 },
+        scale: { duration: 0.2 },
       }
     })
   } as Variants;
@@ -81,7 +76,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
   if (!posts || posts.length === 0) return null;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-[24px] mb-12 group" style={{ height: '390px' }}>
+    <div className="relative w-[94%] md:w-full mx-auto overflow-hidden rounded-[24px] mb-8 md:mb-12 group h-[380px] md:h-[420px]">
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.div
            key={activePost.id}
@@ -91,7 +86,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
            animate="center"
            exit="exit"
            className="absolute inset-0 w-full h-full"
-           style={{ perspective: 1000 }}
+           style={{ perspective: 1000, willChange: 'transform, opacity' }}
         >
            <HeroArticleCard post={activePost} onNavigate={onNavigate} />
         </motion.div>
@@ -102,24 +97,24 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
         <>
           {/* Left Arrow */}
           <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-             <Button 
-                shape="circle" 
-                icon={<LeftOutlined />} 
+             <LiquidButton 
                 onClick={(e) => { e.stopPropagation(); handlePrev(); }}
-                className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white"
-                size="large"
-             />
+                className="!w-12 !h-12 !p-0 bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white flex items-center justify-center rounded-full"
+                variant="secondary"
+             >
+                <LeftOutlined />
+             </LiquidButton>
           </div>
 
           {/* Right Arrow */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-             <Button 
-                shape="circle" 
-                icon={<RightOutlined />} 
+             <LiquidButton 
                 onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white"
-                size="large"
-             />
+                className="!w-12 !h-12 !p-0 bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:text-white flex items-center justify-center rounded-full"
+                variant="secondary"
+             >
+                <RightOutlined />
+             </LiquidButton>
           </div>
 
           {/* Pagination Dots */}

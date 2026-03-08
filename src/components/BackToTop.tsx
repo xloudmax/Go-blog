@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button, Tooltip } from 'antd';
+import { Tooltip } from 'antd';
+import { LiquidButton } from './LiquidButton';
 import { VerticalAlignTopOutlined } from '@ant-design/icons';
 
 export default function BackToTop() {
@@ -36,20 +37,19 @@ export default function BackToTop() {
 
   return (
     <Tooltip title="返回顶部" placement="left">
-      <Button
-        type="primary"
-        shape="circle"
-        size="large"
-        icon={<VerticalAlignTopOutlined />}
+      <LiquidButton
+        variant="primary"
         onClick={scrollToTop}
+        className="!w-14 !h-14 !p-0 flex items-center justify-center !rounded-full shadow-lg border-white/20"
         style={{
           position: 'fixed',
           bottom: '40px',
           right: '40px',
           zIndex: 1000,
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
         }}
-      />
+      >
+        <VerticalAlignTopOutlined className="text-xl" />
+      </LiquidButton>
     </Tooltip>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
-  Button,
   Input,
   Alert,
   Steps,
@@ -9,6 +8,7 @@ import {
   Typography,
   Divider,
 } from "antd";
+import { LiquidButton } from "../components/LiquidButton";
 import {
   UserOutlined,
   LockOutlined,
@@ -263,12 +263,10 @@ export default function RegisterPage() {
           </Form.Item>
 
           <Form.Item>
-            <Button
-              type="primary"
+            <LiquidButton
               htmlType="submit"
               loading={loading.register}
-              block
-              className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
+              className="w-full h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
               style={{
                 background: "linear-gradient(to right, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8))",
                 backdropFilter: 'blur(8px)',
@@ -277,7 +275,7 @@ export default function RegisterPage() {
               }}
             >
               {loading.register ? "注册中..." : "立即注册"}
-            </Button>
+            </LiquidButton>
           </Form.Item>
         </Form>
       ) : (
@@ -303,12 +301,10 @@ export default function RegisterPage() {
             </Form.Item>
 
             <Form.Item>
-              <Button
-                type="primary"
+              <LiquidButton
                 htmlType="submit"
                 loading={loading.verifyEmail}
-                block
-                className="rounded-xl h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
+                className="w-full h-12 text-lg font-semibold shadow-lg hover:scale-[1.02] transition-transform"
                 style={{
                     background: "linear-gradient(to right, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8))",
                     backdropFilter: 'blur(8px)',
@@ -317,13 +313,13 @@ export default function RegisterPage() {
                 }}
               >
                 完成验证
-              </Button>
+              </LiquidButton>
             </Form.Item>
           </Form>
 
           <div className="flex justify-between mt-6 px-2">
-            <Button
-              type="text"
+            <LiquidButton
+              variant="ghost"
               onClick={() => {
                 setCurrentStep("register");
                 setVerificationCode("");
@@ -332,15 +328,15 @@ export default function RegisterPage() {
               className={isDarkMode ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-black"}
             >
               返回修改
-            </Button>
-            <Button
-              type="text"
+            </LiquidButton>
+            <LiquidButton
+              variant="ghost"
               loading={loading.sendCode}
               onClick={handleResendCode}
               className="text-indigo-500 hover:text-indigo-600"
             >
               重新发送
-            </Button>
+            </LiquidButton>
           </div>
         </>
       )}

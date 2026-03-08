@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   Avatar,
   Input,
-  Button,
   Space,
   Typography,
   Divider,
@@ -11,6 +10,7 @@ import {
   Alert,
   Tooltip
 } from 'antd';
+import { LiquidButton } from './LiquidButton';
 import {
   UserOutlined,
   LikeOutlined,
@@ -292,15 +292,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
                     </Text>
                   </Tooltip>
                   <Tooltip title="复制评论链接">
-                    <Button
-                      type="text"
+                    <LiquidButton
+                      variant="ghost"
                       size="small"
-                      icon={<LinkOutlined />}
+                      className="!h-8 !w-8 flex items-center justify-center p-0 !opacity-50 hover:!opacity-100"
                       onClick={() => copyCommentLink(comment.id)}
-                      style={{ opacity: 0.5 }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
-                    />
+                    >
+                      <LinkOutlined />
+                    </LiquidButton>
                   </Tooltip>
                 </div>
               </div>
@@ -313,52 +312,48 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
 
             {/* 操作按钮 */}
             <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
-              <Button
-                type="text"
+              <LiquidButton
+                variant="ghost"
                 size="small"
-                icon={isLiked ? <LikeFilled /> : <LikeOutlined />}
+                className="!h-8 !px-2 flex items-center gap-1 !text-[13px]"
                 onClick={() => handleLikeComment(comment.id, isLiked)}
                 loading={actionLoading.like || actionLoading.unlike}
-                style={{ fontSize: '13px' }}
               >
-                {comment.likeCount > 0 ? comment.likeCount : '赞'}
-              </Button>
+                {isLiked ? <LikeFilled /> : <LikeOutlined />} {comment.likeCount > 0 ? comment.likeCount : '赞'}
+              </LiquidButton>
 
               {/* 只在未达到最大深度时显示回复按钮 */}
               {depth < maxDepth && (
-                <Button
-                  type="text"
+                <LiquidButton
+                  variant="ghost"
                   size="small"
-                  icon={<MessageOutlined />}
+                  className="!h-8 !px-2 flex items-center gap-1 !text-[13px]"
                   onClick={() => setReplyingTo(isReplyingToThis ? null : comment.id)}
-                  style={{ fontSize: '13px' }}
                 >
-                  回复
-                </Button>
+                  <MessageOutlined /> 回复
+                </LiquidButton>
               )}
 
               {hasReplies && (
-                <Button
-                  type="text"
+                <LiquidButton
+                  variant="ghost"
                   size="small"
-                  icon={<MoreOutlined />}
+                  className="!h-8 !px-2 flex items-center gap-1 !text-[13px]"
                   onClick={() => toggleReplies(comment.id)}
-                  style={{ fontSize: '13px' }}
                 >
-                  {isExpanded ? '收起' : `${comment.replies.length} 条回复`}
-                </Button>
+                  <MoreOutlined /> {isExpanded ? '收起' : `${comment.replies.length} 条回复`}
+                </LiquidButton>
               )}
 
-              <Button
-                type="text"
+              <LiquidButton
+                variant="ghost"
                 size="small"
-                icon={<FlagOutlined />}
+                className="!h-8 !px-2 flex items-center gap-1 !text-[13px]"
                 onClick={() => handleReportComment(comment.id)}
                 loading={actionLoading.report}
-                style={{ fontSize: '13px' }}
               >
-                举报
-              </Button>
+                <FlagOutlined /> 举报
+              </LiquidButton>
             </div>
 
             {/* 回复输入框 */}
@@ -398,18 +393,18 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
                   style={{ marginBottom: '8px' }}
                 />
                 <Space size="small">
-                  <Button
-                    type="primary"
+                  <LiquidButton
+                    variant="primary"
                     size="small"
-                    icon={<SendOutlined />}
+                    className="!h-8 !px-3 flex items-center gap-1"
                     onClick={() => handleReplyComment(comment.id)}
                     loading={actionLoading.create}
                   >
-                    发送回复
-                  </Button>
-                  <Button size="small" onClick={cancelReply}>
+                    <SendOutlined /> 发送回复
+                  </LiquidButton>
+                  <LiquidButton variant="secondary" size="small" className="!h-8 !px-3" onClick={cancelReply}>
                     取消
-                  </Button>
+                  </LiquidButton>
                 </Space>
               </div>
             )}
@@ -530,14 +525,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
           className="!bg-gray-50 dark:!bg-[#151b28] !border-gray-200 dark:!border-gray-800 rounded-xl"
           style={{ marginBottom: '12px', padding: '16px' }}
         />
-        <Button
-          type="primary"
-          icon={<SendOutlined />}
+        <LiquidButton
+          variant="primary"
+          className="!h-10 !px-6 flex items-center gap-2"
           onClick={handleCreateComment}
           loading={actionLoading.create}
         >
-          发表评论
-        </Button>
+          <SendOutlined /> 发表评论
+        </LiquidButton>
       </div>
 
       <Divider style={{ margin: '1.5rem 0' }} />
@@ -566,9 +561,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
           {/* 分页 */}
           {total > 10 && (
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
-              <Button type="primary" ghost>
+              <LiquidButton variant="secondary" className="!px-8">
                 加载更多评论
-              </Button>
+              </LiquidButton>
             </div>
           )}
         </div>

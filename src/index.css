@@ -25,17 +25,7 @@
     background-color: var(--color-bg);
     background-image: radial-gradient(circle at 1px 1px, var(--color-border) 1px, transparent 0);
     background-size: 40px 40px;
-    user-select: none;
-    -webkit-user-select: none;
   }
-
-  /* 输入区恢复选中 */
-  input, textarea, [contenteditable], .ant-typography, code, pre {
-    user-select: text;
-    -webkit-user-select: text;
-  }
-
-  img, a { -webkit-user-drag: none; }
 }
 
 @layer components {
@@ -81,3 +71,19 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes shine {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  50% { transform: translateX(100%) skewX(-15deg); }
+  100% { transform: translateX(100%) skewX(-15deg); }
+}
+
+.animate-shine {
+  animation: shine 1.5s ease-in-out infinite;
+}
+
+/* 强力透明补丁 */
+html, body, #root {
+  background-color: transparent !important;
+}
+

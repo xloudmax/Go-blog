@@ -15,8 +15,11 @@
 		52B664969DE6745BC4FCB211 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B2595C37651409C8ECE2553 /* Security.framework */; };
 		5960BE52F6656159FF05186A /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBC5D87D18F718026627937F /* MetalKit.framework */; };
 		6BB040C2961EC17ED9B6B6B0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5A4AE2228DED9EFB69E32F31 /* Assets.xcassets */; };
+		A4AE67E12F5D6F0700B3A616 /* LiquidBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AE67E02F5D6F0700B3A616 /* LiquidBottomBar.swift */; };
+		A4AE67E22F5D6F0700B3A616 /* BottomBarPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AE67DF2F5D6F0700B3A616 /* BottomBarPlugin.swift */; };
 		C43DF6BE21CEA6AF2EA7C8DA /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FFE8700F4CFF9D77044ECFE /* QuartzCore.framework */; };
 		DA22F03D285B8DB06EB9FD79 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D365A4E65D9B10D14EA7E43 /* Metal.framework */; };
+		E032978C580D450DA26CD0F9 /* libapp.a in Resources */ = {isa = PBXBuildFile; fileRef = 54761B7AE646BB99FD095F1C /* libapp.a */; };
 		EA1A595CF89503419D2D77B9 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = F1CF0360B945125DC2DE302C /* assets */; };
 		F615105D3265AD1A3F4AD0D9 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C24AD1DCB6CD3E23F4A91745 /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
@@ -26,10 +29,14 @@
 		2D365A4E65D9B10D14EA7E43 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		4206D3EAF2B8A6C976290187 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = lib.rs; sourceTree = "<group>"; };
 		4B2595C37651409C8ECE2553 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		54761B7AE646BB99FD095F1C /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		5A4AE2228DED9EFB69E32F31 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7F61EAD825E8374493AD6F97 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		87F559ADFADEFDB80D000F71 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		9FFE8700F4CFF9D77044ECFE /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		A4AE67DE2F5D6A7D00B3A616 /* c404-blog_iOS-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "c404-blog_iOS-Bridging-Header.h"; sourceTree = "<group>"; };
+		A4AE67DF2F5D6F0700B3A616 /* BottomBarPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomBarPlugin.swift; sourceTree = "<group>"; };
+		A4AE67E02F5D6F0700B3A616 /* LiquidBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidBottomBar.swift; sourceTree = "<group>"; };
 		A539AB1293ED8C1C87359C77 /* C404 Blog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "C404 Blog.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A72E88DE755D4069819948F2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C24AD1DCB6CD3E23F4A91745 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -74,7 +81,10 @@
 		34B3E9F6E8F2148D07272C3A /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				A4AE67DF2F5D6F0700B3A616 /* BottomBarPlugin.swift */,
+				A4AE67E02F5D6F0700B3A616 /* LiquidBottomBar.swift */,
 				F9DD209C89557B1E31BD3D6D /* c404-blog */,
+				A4AE67DE2F5D6A7D00B3A616 /* c404-blog_iOS-Bridging-Header.h */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -102,6 +112,14 @@
 			);
 			sourceTree = "<group>";
 		};
+		6EFAE3FFE2436099A2B7C37F /* arm64 */ = {
+			isa = PBXGroup;
+			children = (
+				C1D4931B6B18BBB2917D6363 /* debug */,
+			);
+			path = arm64;
+			sourceTree = "<group>";
+		};
 		71C1D416374D378EE41ABF80 /* bindings */ = {
 			isa = PBXGroup;
 			children = (
@@ -125,6 +143,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		C1D4931B6B18BBB2917D6363 /* debug */ = {
+			isa = PBXGroup;
+			children = (
+				54761B7AE646BB99FD095F1C /* libapp.a */,
+			);
+			path = debug;
+			sourceTree = "<group>";
+		};
 		C90281C06F25293858ADC8A0 /* c404-blog_iOS */ = {
 			isa = PBXGroup;
 			children = (
@@ -137,6 +163,7 @@
 		E0C2F9053AB02FF62395E17B /* Externals */ = {
 			isa = PBXGroup;
 			children = (
+				6EFAE3FFE2436099A2B7C37F /* arm64 */,
 			);
 			path = Externals;
 			sourceTree = "<group>";
@@ -180,7 +207,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					4206D81BC97CFE6C022BF1F9 = {
+						LastSwiftMigration = 2600;
+					};
+				};
 			};
 			buildConfigurationList = 1151D4CDEA6F8330867091FE /* Build configuration list for PBXProject "c404-blog" */;
 			developmentRegion = en;
@@ -209,6 +241,7 @@
 				6BB040C2961EC17ED9B6B6B0 /* Assets.xcassets in Resources */,
 				F615105D3265AD1A3F4AD0D9 /* LaunchScreen.storyboard in Resources */,
 				EA1A595CF89503419D2D77B9 /* assets in Resources */,
+				E032978C580D450DA26CD0F9 /* libapp.a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,7 +267,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "node tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}";
+			shellScript = "cd ../../ && npx tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -244,6 +277,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				42A0CBC84F21B99F8559ABC7 /* main.mm in Sources */,
+				A4AE67E12F5D6F0700B3A616 /* LiquidBottomBar.swift in Sources */,
+				A4AE67E22F5D6F0700B3A616 /* BottomBarPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,12 +288,10 @@
 		2217D70437D4C101CD7C1F0D /* debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "c404-blog_iOS/c404-blog_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = D698XXJD58;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -287,6 +320,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = cc.xloudmax.blog;
 				PRODUCT_NAME = "C404 Blog";
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/c404-blog_iOS-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
 			};
@@ -295,12 +331,10 @@
 		4F687905FC7F760443004A32 /* release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "c404-blog_iOS/c404-blog_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = D698XXJD58;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -329,6 +363,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = cc.xloudmax.blog;
 				PRODUCT_NAME = "C404 Blog";
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/c404-blog_iOS-Bridging-Header.h";
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
 			};
@@ -371,6 +407,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -384,6 +421,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -427,6 +465,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -447,6 +486,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;

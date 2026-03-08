@@ -4,7 +4,6 @@ import {useAppUser} from '../../hooks';
 // 导入Ant Design组件
 import {
     Card,
-    Button,
     Alert,
     Spin,
     Statistic,
@@ -20,6 +19,7 @@ import {
     Switch,
     Tooltip
 } from 'antd';
+import { LiquidButton } from '@/components/LiquidButton';
 import {
     ReloadOutlined,
     WarningOutlined,
@@ -302,13 +302,14 @@ export default function SystemManagement() {
                         unCheckedChildren="关"
                     />
                 </Space>
-                <Button
-                    icon={<ReloadOutlined spin={loading} />}
+                <LiquidButton
+                    variant="secondary"
                     onClick={handleRefreshData}
                     loading={loading}
+                    className="!h-10 !px-4 flex items-center justify-center gap-2"
                 >
-                    刷新数据
-                </Button>
+                    <ReloadOutlined spin={loading} /> 刷新数据
+                </LiquidButton>
             </div>
 
             {/* 加载状态 */}
@@ -326,12 +327,14 @@ export default function SystemManagement() {
                     type="error"
                     showIcon
                     action={
-                        <Button
+                        <LiquidButton
+                            variant="secondary"
                             size="small"
                             onClick={handleRefreshData}
+                            className="!h-8 !px-3"
                         >
                             重试
-                        </Button>
+                        </LiquidButton>
                     }
                     style={{marginBottom: '24px'}}
                 />
@@ -535,15 +538,15 @@ export default function SystemManagement() {
                             <p style={{marginBottom: '16px'}}>
                                 清理系统缓存可以释放内存，但可能会暂时影响性能。
                             </p>
-                            <Button
-                                type="primary"
-                                danger
+                            <LiquidButton
+                                variant="danger"
                                 loading={operationLoading === 'cache'}
                                 onClick={handleClearCacheAction}
                                 disabled={!!operationLoading}
+                                className="!rounded-full flex items-center justify-center gap-2"
                             >
                                 {operationLoading === 'cache' ? '清理中...' : '清理缓存'}
-                            </Button>
+                            </LiquidButton>
                         </Card>
                     </Col>
 
@@ -560,14 +563,15 @@ export default function SystemManagement() {
                             <p style={{marginBottom: '16px'}}>
                                 重建搜索索引可以提高搜索准确性，但需要一些时间完成。
                             </p>
-                            <Button
-                                type="primary"
+                            <LiquidButton
+                                variant="primary"
                                 loading={operationLoading === 'search'}
                                 onClick={handleRebuildSearchIndexAction}
                                 disabled={!!operationLoading}
+                                className="!rounded-full flex items-center justify-center gap-2"
                             >
                                 {operationLoading === 'search' ? '重建中...' : '重建索引'}
-                            </Button>
+                            </LiquidButton>
                         </Card>
                     </Col>
                 </Row>
