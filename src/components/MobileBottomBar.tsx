@@ -1,6 +1,6 @@
-import React, { useContext, useState, useEffect, useRef } from 'react';
+import React, { useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate, MotionValue, useSpring } from 'framer-motion';
 import {
   HomeOutlined,
   SearchOutlined,
@@ -10,134 +10,307 @@ import {
 } from '@ant-design/icons';
 import { ThemeContext } from './ThemeProvider';
 import { useAppUser } from '@/hooks';
+import { LiquidGlass } from './LiquidKit/glass';
+import { CONVEX_CIRCLE } from './LiquidKit/liquid-lib';
 
-// Tauri API
-let emit: any;
-let listen: any;
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
 
-if (window.__TAURI_INTERNALS__) {
-  import('@tauri-apps/api/event').then(mod => { 
-    emit = mod.emit; 
-    listen = mod.listen; 
-  });
+const getTauriEvent = async () => {
+  if (!isTauri) return null;
+  try {
+    return await import('@tauri-apps/api/event');
+  } catch {
+    return null;
+  }
+};
+
+const getNavItems = (userAvatar?: string, isAuthenticated?: boolean) => [
+  { key: 'home', icon: <HomeOutlined />, label: '首页', path: '/home' },
+  { key: 'search', icon: <SearchOutlined />, label: '搜索', path: '/search' },
+  { key: 'insight', icon: <DeploymentUnitOutlined />, label: 'Insight', path: '/insight' },
+  { key: 'tags', icon: <AppstoreOutlined />, label: '分类', path: '/tags' },
+  { key: 'profile', icon: userAvatar ? <div className="w-6 h-6 rounded-full bg-cover border border-white/20" style={{ backgroundImage: `url(${userAvatar})` }} /> : <UserOutlined />, label: '我的', path: isAuthenticated ? '/profile' : '/login' },
+];
+
+interface NavItem {
+  key: string;
+  icon: React.ReactNode;
+  label: string;
+  path: string;
 }
 
-const MobileBottomBar: React.FC = () => {
+/**
+ * 视觉图标组件 - 纯静态，等待透镜
+ */
+const NavIcon = ({ index, item, x, tabWidth, isDarkMode }: { index: number, item: NavItem, x: MotionValue<number>, tabWidth: number, isDarkMode: boolean }) => {
+  const distance = useTransform(x, (val) => Math.abs(val - index * tabWidth));
+  const opacity = useTransform(distance, [0, tabWidth], [1, 0.25]);
+
+  return (
+    <div className="flex-1 h-full flex flex-col items-center justify-center gap-1">
+      <motion.div 
+        style={{ opacity, color: isDarkMode ? '#fff' : '#000' }}
+        className="text-xl flex items-center justify-center pointer-events-none"
+      >
+        {item.icon}
+      </motion.div>
+      <motion.span 
+        style={{ opacity, color: isDarkMode ? '#fff' : '#000' }}
+        className="text-[9px] font-black tracking-tight pointer-events-none"
+      >
+        {item.label}
+      </motion.span>
+    </div>
+  );
+};
+
+const MobileBottomBar: React.FC = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme } = useContext(ThemeContext);
   const { isAuthenticated, user } = useAppUser();
   const isDarkMode = theme === 'dark';
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const [isIOS, setIsIOS] = useState(false);
-
-  const navItems = [
-    { key: 'home', icon: <HomeOutlined />, label: '首页', path: '/home' },
-    { key: 'search', icon: <SearchOutlined />, label: '搜索', path: '/search' },
-    { key: 'insight', icon: <DeploymentUnitOutlined />, label: 'Insight', path: '/insight' },
-    { key: 'tags', icon: <AppstoreOutlined />, label: '分类', path: '/tags' },
-    { key: 'profile', icon: user?.avatar ? <div className="w-6 h-6 rounded-full bg-cover" style={{ backgroundImage: `url(${user.avatar})` }} /> : <UserOutlined />, label: '我的', path: isAuthenticated ? '/profile' : '/login' },
-  ];
-
-  const activeIndex = navItems.findIndex(item => 
-    location.pathname === item.path || (item.path !== '/home' && location.pathname.startsWith(item.path))
+  
+  // Immediate detection to avoid flickering on iOS
+  const [isIOS, setIsIOS] = useState(() => 
+    typeof window !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent)
   );
 
   useEffect(() => {
-    const checkPlatform = async () => {
-      if (window.__TAURI_INTERNALS__) {
-        try {
-          const { type } = await import('@tauri-apps/plugin-os');
-          if (type() === 'ios') {
-            setIsIOS(true);
-            if (emit) emit('show-native-bar');
-          }
-        } catch (e) { console.error(e); }
-      }
-    };
-    checkPlatform();
+    if (!isTauri) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [{ type }, tauriEvent] = await Promise.all([
+          import('@tauri-apps/plugin-os'),
+          getTauriEvent(),
+        ]);
+        if (cancelled) return;
+        if (type() === 'ios') {
+          setIsIOS(true);
+          tauriEvent?.emit('show-native-bar');
+        }
+      } catch (e) { console.error('Platform detection failed:', e); }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
+  // 固定的最优参数配置
+  const guiConfig = useMemo(() => ({
+    glassThickness: 140,
+    bezelWidth: 57, 
+    refractiveIndex: 1.9,
+    blur: 0,
+    specularOpacity: isDarkMode ? 0.2 : 0.4,
+    specularSaturation: 4, 
+    brightness: 1.15,
+    contrast: 1.1,
+  }), [isDarkMode]);
+
+  const x = useMotionValue(0);
+  const pillOpacity = useSpring(1, { stiffness: 400, damping: 25 });
+  
+  // 动态尺寸弹簧
+  const pillWidthSpring = useSpring(74, { stiffness: 400, damping: 25 });
+  const pillHeightSpring = useSpring(54, { stiffness: 400, damping: 25 });
+
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [isActive, setIsActive] = useState(false); 
+
+  const navItems = useMemo(() => getNavItems(user?.avatar ?? undefined, isAuthenticated), [user?.avatar, isAuthenticated]);
+
+  // Sync native tab bar changes
   useEffect(() => {
-    if (isIOS && listen) {
-      const unlisten = listen('tab-changed', (event: any) => {
-        navigate(navItems[event.payload.index]?.path || '/home');
-      });
-      return () => { unlisten.then((f: any) => f()); };
+    if (!isIOS) return;
+    
+    // Listen for custom tab-changed events from Swift
+    const handleTabChanged = (event: any) => {
+      const idx = event.detail?.index;
+      if (typeof idx === 'number' && navItems[idx]) {
+        navigate(navItems[idx].path);
+      }
+    };
+
+    window.addEventListener('tab-changed', handleTabChanged);
+    
+    // Also try to sync initial state once mounted
+    if (isTauri) {
+        getTauriEvent().then(m => m?.emit('show-native-bar'));
     }
-  }, [isIOS, isAuthenticated, navigate]);
+
+    return () => {
+      window.removeEventListener('tab-changed', handleTabChanged);
+    };
+  }, [isIOS, navigate, navItems]);
+
+  const activeIndex = useMemo(() => {
+    const idx = navItems.findIndex(item => location.pathname === item.path || (item.path !== '/home' && location.pathname.startsWith(item.path)));
+    return idx === -1 ? 0 : idx;
+  }, [location.pathname, navItems]);
+
+  const tabWidth = useMemo(() => containerWidth / navItems.length, [containerWidth, navItems.length]);
+  const barHeight = 64; 
+
+  useEffect(() => {
+    if (containerWidth > 0 && !isActive) {
+      animate(x, activeIndex * tabWidth, { type: 'spring', stiffness: 450, damping: 38 });
+    }
+  }, [activeIndex, containerWidth, tabWidth, x, isActive]);
+
+  useEffect(() => {
+    const updateWidth = () => { if (containerRef.current) setContainerWidth(containerRef.current.offsetWidth); };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
+  const handleInteraction = useCallback((targetX: number) => {
+    const nextIndex = Math.max(0, Math.min(navItems.length - 1, Math.floor(targetX / tabWidth)));
+    animate(x, nextIndex * tabWidth, {
+      type: 'spring', stiffness: 450, damping: 38,
+      onComplete: () => {
+        if (nextIndex !== activeIndex) {
+          navigate(navItems[nextIndex].path);
+          getTauriEvent().then(m => m?.emit('haptic-feedback', { type: 'selection' }));
+        }
+        // 恢复状态
+        pillOpacity.set(1);
+        pillWidthSpring.set(74);
+        pillHeightSpring.set(54);
+        setTimeout(() => setIsActive(false), 80);
+      }
+    });
+  }, [activeIndex, navItems, navigate, tabWidth, x, pillOpacity, pillWidthSpring, pillHeightSpring]);
+
+  const onStartInteraction = () => {
+    setIsActive(true);
+    // 交互时变大，产生被“捏”和“膨胀”的效果
+    pillOpacity.set(0.85);
+    pillWidthSpring.set(88); // 变宽
+    pillHeightSpring.set(68); // 变高 (超出底座高度产生强烈放大感)
+  };
+
+  // 动态居中计算
+  const centerOffset = useTransform(pillWidthSpring, (w) => (tabWidth - w) / 2);
+  const verticalOffset = useTransform(pillHeightSpring, (h) => (barHeight - h) / 2);
 
   if (isIOS) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-[9999] md:hidden">
-      <div 
-        ref={containerRef}
-        className="mx-auto max-w-md w-full h-16 overflow-hidden shadow-2xl relative select-none touch-none"
-        style={{
-          borderRadius: '24px',
-          backgroundColor: isDarkMode ? 'rgba(30, 30, 30, 0.4)' : 'rgba(255, 255, 255, 0.4)',
-          backdropFilter: 'blur(30px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(30px) saturate(180%)',
-          border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.4)'}`,
-        }}
-      >
-        {/* 1. 底层：内容显示层 (不接收事件) */}
-        <div className="flex justify-around items-center h-full px-3 relative z-10 pointer-events-none">
-          {navItems.map((item, index) => (
-            <div key={item.key} className="flex flex-col items-center justify-center w-full h-full gap-1">
-              <div className="text-xl" style={{ color: activeIndex === index ? (isDarkMode ? '#fff' : '#000') : 'rgba(128,128,128,0.5)' }}>
-                {item.icon}
-              </div>
-              <span className="text-[10px] font-bold" style={{ opacity: activeIndex === index ? 1 : 0.5 }}>{item.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* 2. 顶层：真正的拖拽滑块 (在图标上方，捕获所有点击和拖拽) */}
-        <motion.div
-          drag="x"
-          dragConstraints={containerRef}
-          dragElastic={0.05}
-          dragMomentum={false}
-          onDragEnd={(_, info) => {
-            const rect = containerRef.current?.getBoundingClientRect();
-            if (!rect) return;
-            const dropX = info.point.x - rect.left;
-            const tabWidth = rect.width / navItems.length;
-            const nextIndex = Math.max(0, Math.min(navItems.length - 1, Math.floor(dropX / tabWidth)));
-            navigate(navItems[nextIndex].path);
-          }}
-          // 点击非当前项也触发跳转
-          onTap={(event, info) => {
-            const rect = containerRef.current?.getBoundingClientRect();
-            if (!rect) return;
-            const tapX = info.point.x - rect.left;
-            const tabWidth = rect.width / navItems.length;
-            const nextIndex = Math.max(0, Math.min(navItems.length - 1, Math.floor(tapX / tabWidth)));
-            navigate(navItems[nextIndex].path);
-          }}
-          animate={{
-            x: activeIndex * ((containerRef.current?.offsetWidth || 0) / navItems.length)
-          }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="absolute top-2 bottom-2 left-1 z-50 cursor-grab active:cursor-grabbing"
+      {/* 外层容器包裹背景，限制底座范围，不限制透镜溢出 */}
+      <div className="mx-auto max-w-md w-full h-16 shadow-2xl relative select-none touch-none">
+        
+        {/* 底座背景层 (可裁切) */}
+        <div 
+          className="absolute inset-0 overflow-hidden"
           style={{
-            width: `calc(${100 / navItems.length}% - 8px)`,
-            borderRadius: '16px',
-            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.7)',
-            border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.8)'}`,
-            boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+            borderRadius: '32px',
+            backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 0.35)' : 'rgba(255, 255, 255, 0.35)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)'}`,
           }}
-        >
-          {/* 装饰用的液态高光 */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-50 rounded-[inherit]" />
-        </motion.div>
+        />
+
+        {/* 交互核心层，解除 overflow-hidden */}
+        <div ref={containerRef} className="absolute inset-0">
+          {/* 1. 视觉图标层 (Z-0) */}
+          <div className="flex justify-around items-center h-full relative z-0 px-1 pointer-events-none">
+            {containerWidth > 0 && navItems.map((item, index) => (
+              <NavIcon key={item.key} index={index} item={item} x={x} tabWidth={tabWidth} isDarkMode={isDarkMode} />
+            ))}
+          </div>
+
+          {/* 2. 真实物理透镜滑块 (Z-10) */}
+          <motion.div
+            style={{ 
+              x: useTransform([x, centerOffset], ([xVal, offset]) => (xVal as number) + (offset as number)),
+              y: verticalOffset, // 动态垂直居中
+              width: pillWidthSpring,
+              height: pillHeightSpring,
+              opacity: pillOpacity,
+            }}
+            className="absolute top-0 left-0 z-10 pointer-events-none"
+          >
+            <motion.div 
+              className="w-full h-full relative overflow-hidden"
+              style={{ borderRadius: useTransform(pillHeightSpring, (h) => h / 2) }}
+            >
+              {/* 核心：物理折射引擎 - 背景+图标一体化放大，使用 GUI 参数 */}
+              <LiquidGlass
+                glassThickness={guiConfig.glassThickness} 
+                blur={guiConfig.blur} 
+                bezelWidth={guiConfig.bezelWidth} 
+                refractiveIndex={guiConfig.refractiveIndex} 
+                specularOpacity={guiConfig.specularOpacity}
+                specularSaturation={guiConfig.specularSaturation}
+                bezelHeightFn={CONVEX_CIRCLE.fn}
+                style={{ width: '100%', height: '100%' }}
+                className="bg-transparent" // 确保背景透明，否则会阻断折射
+              />
+
+              {/* 菲涅耳全反射 & 增强亮度，部分使用 GUI 参数 */}
+              <div 
+                className="absolute inset-0 z-[2] pointer-events-none"
+                style={{
+                  background: `radial-gradient(ellipse at center, 
+                    rgba(255,255,255,0) 20%, 
+                    rgba(255,255,255,${isDarkMode ? 0.05 : 0.1}) 60%, 
+                    rgba(255,255,255,${isDarkMode ? 0.3 : 0.6}) 100%)`,
+                  backdropFilter: `brightness(${guiConfig.brightness}) contrast(${guiConfig.contrast})`,
+                  mixBlendMode: 'overlay',
+                }}
+              />
+
+              {/* 物理边框亮线 */}
+              <motion.div 
+                className="absolute inset-0 border-[1.5px]" 
+                style={{ 
+                  borderRadius: useTransform(pillHeightSpring, (h) => h / 2),
+                  borderColor: `rgba(255,255,255,${isDarkMode ? 0.2 : 0.5})`,
+                  boxShadow: `inset 0 0 12px rgba(255,255,255,${isDarkMode ? 0.1 : 0.3})`
+                }} 
+              />
+            </motion.div>
+          </motion.div>
+
+          {/* 3. 透明手势交互层 (Z-20) */}
+          <motion.div
+            drag="x"
+            dragConstraints={containerRef}
+            dragElastic={0.02}
+            dragMomentum={false}
+            onDragStart={onStartInteraction}
+            onDrag={(_, info) => {
+              const maxDragX = containerWidth - tabWidth;
+              const newX = Math.max(0, Math.min(maxDragX, activeIndex * tabWidth + info.offset.x));
+              x.set(newX);
+            }}
+            onDragEnd={(_, info) => {
+              const rect = containerRef.current?.getBoundingClientRect();
+              if (rect) {
+                const localX = Math.max(0, Math.min(containerWidth - 1, info.point.x - rect.left));
+                handleInteraction(localX);
+              }
+            }}
+            onTap={(_, info) => {
+              const rect = containerRef.current?.getBoundingClientRect();
+              if (rect) {
+                const localX = Math.max(0, Math.min(containerWidth - 1, info.point.x - rect.left));
+                onStartInteraction();
+                handleInteraction(localX);
+              }
+            }}
+            className="absolute inset-0 z-20 cursor-grab active:cursor-grabbing"
+          />
+        </div>
       </div>
+      
       <div className="h-[env(safe-area-inset-bottom)] mt-2" />
     </div>
   );
-};
+});
 
 export default MobileBottomBar;

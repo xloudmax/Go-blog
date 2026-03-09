@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Upload, Image, List, Card, message, Modal } from 'antd';
 import { LiquidButton } from './LiquidButton';
 import {
-  UploadOutlined,
   InboxOutlined,
   DeleteOutlined,
   EyeOutlined,

@@ -39,7 +39,9 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
   const { isAuthenticated, isAdmin, user, logout } = useAppUser();
 
   // 获取未读通知数量
-  const { data: unreadData } = useUnreadNotificationCount();
+  const { data: unreadData } = useUnreadNotificationCount({
+    skip: !isAuthenticated
+  });
   const unreadCount = unreadData?.unreadNotificationCount || 0;
 
   // 顶部导航菜单项

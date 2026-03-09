@@ -41,6 +41,9 @@ importers:
       '@types/dagre':
         specifier: ^0.7.53
         version: 0.7.53
+      '@types/dat.gui':
+        specifier: ^0.7.13
+        version: 0.7.13
       '@uiw/react-md-editor':
         specifier: ^4.0.8
         version: 4.0.8(@types/react@19.1.12)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -62,6 +65,9 @@ importers:
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
+      dat.gui:
+        specifier: ^0.7.9
+        version: 0.7.9
       dayjs:
         specifier: ^1.11.18
         version: 1.11.18
@@ -1794,6 +1800,9 @@ packages:
   '@types/dagre@0.7.53':
     resolution: {integrity: sha512-f4gkWqzPZvYmKhOsDnhq/R8mO4UMcKdxZo+i5SCkOU1wvGeHJeUXGIHeE9pnwGyPMDof1Vx5ZQo4nxpeg2TTVQ==}
 
+  '@types/dat.gui@0.7.13':
+    resolution: {integrity: sha512-LmG4Pr0mbsB/1WVttf8xaHx45BvSBDGY5D9+0/9AZCbI4vvOguwBHZdKyJMxt5Yst8+icRSHKmr7ClV2u5ZtDA==}
+
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
 
@@ -2519,6 +2528,9 @@ packages:
 
   dagre@0.8.5:
     resolution: {integrity: sha512-/aTqmnRta7x7MCCpExk7HQL2O4owCT2h8NT//9I1OQ9vt29Pa0BzSAkR5lwFUcQ7491yVi/3CXU9jQ5o0Mn2Sw==}
+
+  dat.gui@0.7.9:
+    resolution: {integrity: sha512-sCNc1OHobc+Erc1HqiswYgHdVNpSJUlk/Hz8vzOCsER7rl+oF/4+v8GXFUyCgtXpoCX6+bnmg07DedLvBLwYKQ==}
 
   data-uri-to-buffer@4.0.1:
     resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==}
@@ -6730,6 +6742,8 @@ snapshots:
 
   '@types/dagre@0.7.53': {}
 
+  '@types/dat.gui@0.7.13': {}
+
   '@types/debug@4.1.12':
     dependencies:
       '@types/ms': 2.1.0
@@ -7651,6 +7665,8 @@ snapshots:
     dependencies:
       graphlib: 2.1.8
       lodash: 4.17.21
+
+  dat.gui@0.7.9: {}
 
   data-uri-to-buffer@4.0.1: {}
 

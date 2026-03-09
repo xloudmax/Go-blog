@@ -33,6 +33,7 @@ const { Content, Footer } = Layout;
 const { Text } = Typography;
 const { useBreakpoint } = Grid;
 
+
 export default function AppLayout() {
     const { theme: appTheme, toggle } = useContext(ThemeContext)
     const screens = useBreakpoint();
@@ -61,17 +62,17 @@ export default function AppLayout() {
             {isMobile && <MobileBottomBar />}
 
 
-            <Layout style={{
-                minHeight: '100vh',
+            <Layout className="min-h-screen" style={{
                 marginLeft: isMobile ? 0 : '72px',
-                marginBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom))' : 0, // Padding for bottom bar + safe area
+                marginBottom: isMobile ? '140px' : 0, // accommodate Apple Music style native bar + mini player
                 backgroundColor: 'transparent',
-                transition: 'all 0.3s ease'
+                display: 'flex',
+                flexDirection: 'column'
             }}>
                 <Content style={{
                     backgroundColor: 'transparent',
-                    padding: isMobile ? 'calc(1rem + env(safe-area-inset-top)) 1rem 0' : 'calc(2rem + env(safe-area-inset-top)) 1.5rem 0',
-                    transition: 'all 0.3s ease'
+                    padding: isMobile ? 'env(safe-area-inset-top) 1rem 0' : '2rem 1.5rem 0',
+                    flex: 1
                 }}>
                     <Suspense fallback={<PageLoading />}>
                         <div className="page-enter-active min-h-full">

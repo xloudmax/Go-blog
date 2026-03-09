@@ -2,27 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { MotionValue, motion, useTransform } from 'framer-motion';
 import { CONVEX, calculateRefractionSpecular, getDisplacementData, getValueOrMotion } from './liquid-lib';
 
-// function getBezier (bezelType: "convex_circle" | "convex_squircle" | "concave" | "lip") {
-//   let surfaceFn;
-//   switch (bezelType) {
-//     case "convex_circle":
-//       surfaceFn = CONVEX_CIRCLE.fn;
-//       break;
-//     case "convex_squircle":
-//       surfaceFn = CONVEX.fn;
-//       break;
-//     case "concave":
-//       surfaceFn = CONCAVE.fn;
-//       break;
-//     case "lip":
-//       surfaceFn = LIP.fn;
-//       break;
-//     default:
-//       surfaceFn = CONVEX.fn;
-//   }
-//   return surfaceFn;
-// }
-
 function imageDataToUrl(imageData: ImageData): string {
     if (typeof document === 'undefined') {
         return '';
@@ -48,45 +27,14 @@ export type LiquidFilterProps = {
     width: number | MotionValue<number>;
     height: number | MotionValue<number>;
     radius: number | MotionValue<number>;
-    /**
-     * SVG Gauss gradient applied
-     * @default 0.2
-     */
     blur?: number | MotionValue<number>;
-    /**
-     * Glass tickess.
-     * Bigger this value is, longer will be the translations.
-     * @default 40
-     */
     glassThickness?: number | MotionValue<number>;
-    /**
-     * Width of the non-flat glass surface at the boundaries.
-     * @default 20
-     */
     bezelWidth?: number | MotionValue<number>;
-    /**
-     * Value used in the snell law: n1 sin(θ1) = n2 sin(θ2)
-     * Water is 1.33
-     *
-     * @default 1.5
-     */
     refractiveIndex?: number | MotionValue<number>;
-    /**
-     * Opacity of the border
-     * @default 0.4
-     */
     specularOpacity?: number | MotionValue<number>;
-    /**
-     * @default 4
-     */
     specularSaturation?: number | MotionValue<number>;
     dpr?: number | MotionValue<number>;
-    /**
-     * Set the profile of the edges.
-     * @default CONVEX.fn
-     */
     bezelHeightFn?: (x: number) => number;
-    // bezelType?: 'convex_circle' | 'convex_squircle' | 'concave' | 'lip';
 };
 
 export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
@@ -107,7 +55,6 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
     bezelHeightFn = CONVEX.fn,
     dpr,
 }) => {
-    // Hydration fix: only render on client to avoid SSR/client mismatch with dynamic canvas data
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
@@ -184,7 +131,6 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
                 result={`blurred_source_${id}`}
             />
 
-            {/* Displacement Map Processing: Blur it slightly to avoid 8-bit banding */}
             <motion.feImage
                 href={displacementMapDataUrl}
                 x={0}
@@ -195,7 +141,6 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
             />
             <feGaussianBlur in={`raw_displacement_map_${id}`} stdDeviation="0.5" result={`displacement_map_${id}`} />
 
-            {/* Split RGB channels for chromatic aberration */}
             <feColorMatrix 
                 in={`blurred_source_${id}`} 
                 type="matrix" 
@@ -243,14 +188,15 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
             <feBlend in={`displaced_r_${id}`} in2={`displaced_g_${id}`} mode="screen" result={`rg_${id}`} />
             <feBlend in={`rg_${id}`} in2={`displaced_b_${id}`} mode="screen" result={`displaced_${id}`} />
 
-            {/* JUICY SATURATION: Real glass looks more saturated due to refraction depth */}
-            <feColorMatrix
+            {/* 1. 生成一张全局极其鲜艳的变体图 (吸取饱和度参数) */}
+            <motion.feColorMatrix
                 in={`displaced_${id}`}
                 type="saturate"
-                values="3" 
-                result={`displaced_saturated_${id}`}
+                values={specularSaturation as any} 
+                result={`super_saturated_bg_${id}`}
             />
 
+            {/* 2. 加载你的白色高光蒙版 */}
             <motion.feImage
                 href={specularLayerDataUrl}
                 x={0}
@@ -260,25 +206,39 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
                 result={`raw_specular_layer_${id}`}
             />
             
-            {/* Smooth specular to make it look like light diffraction */}
-            <feGaussianBlur in={`raw_specular_layer_${id}`} stdDeviation="0.8" result={`specular_layer_${id}`} />
+            {/* 让他稍微柔和一点点 */}
+            <feGaussianBlur in={`raw_specular_layer_${id}`} stdDeviation="0.5" result={`specular_layer_${id}`} />
 
-            <feComposite in={`displaced_saturated_${id}`} in2={`specular_layer_${id}`} operator="in" result={`specular_saturated_${id}`} />
+            {/* 3. 灵魂核心：用高光的形状，把那张超高饱和度的图抠出来 (operator="in") */}
+            <feComposite 
+                in={`super_saturated_bg_${id}`} 
+                in2={`specular_layer_${id}`} 
+                operator="in" 
+                result={`colored_edge_glow_${id}`} 
+            />
 
-            <feComponentTransfer in={`specular_layer_${id}`} result={`specular_faded_${id}`}>
-                <motion.feFuncA type="linear" slope={useTransform(() => getValueOrMotion(specularOpacity))} />
+            {/* 4. 降低纯白色高光的透明度 */}
+            <feComponentTransfer in={`specular_layer_${id}`} result={`specular_white_faded_${id}`}>
+                <motion.feFuncA type="linear" slope={specularOpacity} />
             </feComponentTransfer>
 
-            <feComponentTransfer in={`specular_saturated_${id}`} result={`specular_saturated_faded_${id}`}>
-                <motion.feFuncA type="linear" slope={useTransform(() => getValueOrMotion(specularOpacity))} />
-            </feComponentTransfer>
+            {/* 5. 将鲜艳的边缘色带，盖在正常玻璃的上方 */}
+            <feBlend 
+                in={`colored_edge_glow_${id}`} 
+                in2={`displaced_${id}`} 
+                mode="screen" 
+                result={`glass_with_colored_edges_${id}`} 
+            />
 
-            <motion.feBlend in={`specular_saturated_faded_${id}`} in2={`displaced_saturated_${id}`} mode="normal" result={`withSaturation_${id}`} />
-            <motion.feBlend in={`specular_faded_${id}`} in2={`withSaturation_${id}`} mode="normal" />
+            {/* 6. 最后，把半透明的物理白光高光叠加在最顶层 */}
+            <feBlend 
+                in={`specular_white_faded_${id}`} 
+                in2={`glass_with_colored_edges_${id}`} 
+                mode="screen" 
+            />
         </filter>
     );
 
-    // Return null during SSR to prevent hydration mismatch
     if (!isMounted) {
         return null;
     }

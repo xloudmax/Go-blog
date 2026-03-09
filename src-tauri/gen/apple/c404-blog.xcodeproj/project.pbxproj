@@ -15,7 +15,7 @@
 		52B664969DE6745BC4FCB211 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B2595C37651409C8ECE2553 /* Security.framework */; };
 		5960BE52F6656159FF05186A /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CBC5D87D18F718026627937F /* MetalKit.framework */; };
 		6BB040C2961EC17ED9B6B6B0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5A4AE2228DED9EFB69E32F31 /* Assets.xcassets */; };
-		A4AE67E12F5D6F0700B3A616 /* LiquidBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AE67E02F5D6F0700B3A616 /* LiquidBottomBar.swift */; };
+		A4AE67E12F5D6F0700B3A616 /* NativeBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AE67E02F5D6F0700B3A616 /* NativeBottomBar.swift */; };
 		A4AE67E22F5D6F0700B3A616 /* BottomBarPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AE67DF2F5D6F0700B3A616 /* BottomBarPlugin.swift */; };
 		C43DF6BE21CEA6AF2EA7C8DA /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FFE8700F4CFF9D77044ECFE /* QuartzCore.framework */; };
 		DA22F03D285B8DB06EB9FD79 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D365A4E65D9B10D14EA7E43 /* Metal.framework */; };
@@ -36,7 +36,7 @@
 		9FFE8700F4CFF9D77044ECFE /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		A4AE67DE2F5D6A7D00B3A616 /* c404-blog_iOS-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "c404-blog_iOS-Bridging-Header.h"; sourceTree = "<group>"; };
 		A4AE67DF2F5D6F0700B3A616 /* BottomBarPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomBarPlugin.swift; sourceTree = "<group>"; };
-		A4AE67E02F5D6F0700B3A616 /* LiquidBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidBottomBar.swift; sourceTree = "<group>"; };
+		A4AE67E02F5D6F0700B3A616 /* NativeBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBottomBar.swift; sourceTree = "<group>"; };
 		A539AB1293ED8C1C87359C77 /* C404 Blog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "C404 Blog.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A72E88DE755D4069819948F2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C24AD1DCB6CD3E23F4A91745 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -82,7 +82,7 @@
 			isa = PBXGroup;
 			children = (
 				A4AE67DF2F5D6F0700B3A616 /* BottomBarPlugin.swift */,
-				A4AE67E02F5D6F0700B3A616 /* LiquidBottomBar.swift */,
+				A4AE67E02F5D6F0700B3A616 /* NativeBottomBar.swift */,
 				F9DD209C89557B1E31BD3D6D /* c404-blog */,
 				A4AE67DE2F5D6A7D00B3A616 /* c404-blog_iOS-Bridging-Header.h */,
 			);
@@ -267,7 +267,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd ../../ && npx tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}";
+			shellScript = "export PATH=\"$HOME/.nvm/versions/node/v22.19.0/bin:$PATH\"\ncd ../../ && npx tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -277,7 +277,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				42A0CBC84F21B99F8559ABC7 /* main.mm in Sources */,
-				A4AE67E12F5D6F0700B3A616 /* LiquidBottomBar.swift in Sources */,
+				A4AE67E12F5D6F0700B3A616 /* NativeBottomBar.swift in Sources */,
 				A4AE67E22F5D6F0700B3A616 /* BottomBarPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -292,6 +292,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "c404-blog_iOS/c404-blog_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = D698XXJD58;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -335,6 +336,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "c404-blog_iOS/c404-blog_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = D698XXJD58;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (

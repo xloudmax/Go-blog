@@ -24,7 +24,8 @@ tokenStorage.get().then(t => {
 
 // 创建HTTP链接
 const uploadLink = createUploadLink({
-  uri: `${import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:12345/"}graphql`,
+  // Ensure we don't end up with double slashes if the env var ends with one
+  uri: `${(import.meta.env.VITE_API_BASE_URL || "http://172.26.89.207:11451").replace(/\/$/, '')}/graphql`,
 });
 
 // 认证链接 - 自动添加JWT token到请求头
@@ -81,7 +82,7 @@ const getNewToken = async () => {
   `;
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:12345/"}graphql`, {
+    const response = await fetch(`${(import.meta.env.VITE_API_BASE_URL || "http://172.26.89.207:11451").replace(/\/$/, '')}/graphql`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

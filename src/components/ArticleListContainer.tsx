@@ -74,7 +74,7 @@ const ArticleListContainer: React.FC<ArticleListContainerProps> = ({
 
   // 动态计算网格布局
   const getGridClass = () => {
-    const baseClasses = "!gap-y-8 !gap-x-6 md:!gap-x-8 lg:!gap-x-[30px] pb-12";
+    const baseClasses = "!gap-y-6 md:!gap-y-8 !gap-x-6 md:!gap-x-8 lg:!gap-x-[30px] pb-12";
     
     // 只有1篇文章时，居中显示，不留白
     if (posts.length === 1) {

@@ -48,9 +48,8 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate }) => {
 
   return (
     <motion.div 
-      className="group relative w-full overflow-hidden rounded-[24px] cursor-pointer"
+      className="group relative w-full overflow-hidden rounded-[24px] cursor-pointer h-64 md:h-80"
       style={{ 
-        height: '320px', 
         transformStyle: 'preserve-3d'
       }}
       initial={{ boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.25)' }}
@@ -80,22 +79,22 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate }) => {
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
 
       {/* Content Layer */}
-      <div className="absolute bottom-0 inset-x-0 h-full flex flex-col justify-end !p-6 z-10 transition-all duration-500">
+      <div className="absolute bottom-0 inset-x-0 h-full flex flex-col justify-end !p-4 md:!p-6 z-10 transition-all duration-500">
         <div className="transform transition-transform duration-500 translate-y-0 flex flex-col gap-0.5">
           
           {/* Badge & Date */}
           <div className="flex items-center gap-3">
-             <span className="bg-white/20 backdrop-blur-md !px-1.5 !py-0.5 rounded-full text-white font-bold tracking-wider text-[10px] border border-white/10 shadow-sm">
+             <span className="bg-white/20 backdrop-blur-md !px-1.5 !py-0.5 rounded-full text-white font-bold tracking-wider text-[10px] border border-white/20 shadow-sm">
                 {post.tags && post.tags.length > 0 ? `#${post.tags[0]}` : 'POST'}
              </span>
-             <span className="text-gray-300 text-xs flex items-center font-medium drop-shadow-md">
+             <span className="text-gray-300 text-[10px] md:text-xs flex items-center font-medium drop-shadow-md">
                 <ClockCircleOutlined className="mr-1" />
                 {formatDate(post.publishedAt || post.createdAt)}
              </span>
           </div>
 
           {/* Title - Scaled down for standard card but structurally identical */}
-          <h1 className="text-white !mb-0 text-2xl md:text-3xl font-extrabold leading-none tracking-tight drop-shadow-2xl line-clamp-2" style={{ fontFamily: 'var(--font-display, inherit)' }}>
+          <h1 className="text-white !mb-0 text-xl md:text-2xl lg:text-3xl font-extrabold leading-none tracking-tight drop-shadow-2xl line-clamp-2" style={{ fontFamily: 'var(--font-display, inherit)' }}>
             {post.title}
           </h1>
 

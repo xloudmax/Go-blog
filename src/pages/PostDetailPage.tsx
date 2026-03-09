@@ -80,9 +80,16 @@ export default function PostDetailPage() {
     await handleLike();
   };
 
-  // 当文章数据变化时重新初始化点赞状态
+  // Sync with native mini-player (Apple Music style)
   useEffect(() => {
-    // useLike hook 会自动处理这个逻辑
+    if (post && (window as any).webkit?.messageHandlers?.updateArticle) {
+      const payload = {
+        title: post.title,
+        author: post.author.username
+      };
+      (window as any).webkit.messageHandlers.updateArticle.postMessage(payload);
+      console.log('[DEBUG] Sent article update to native:', payload);
+    }
   }, [post]);
 
 

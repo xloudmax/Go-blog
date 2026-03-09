@@ -92,24 +92,29 @@ export default function HomePage() {
     return () => observer.disconnect();
   }, [loading, loadMore, hasMore]);
 
+  // Detect iOS for conditional UI
+  const isIOS = useMemo(() =>
+    typeof window !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent)
+  , []);
+
   return (
-    <div className="min-h-screen"> 
+    <div className="min-h-screen">
       {/* Background is handled globally by AppLayout transparent content */}
-      
-      <div className="w-full max-w-[2400px] mx-auto pt-2 pb-8 px-2 md:px-6"> 
-        
+
+      <div className="w-full max-w-[2400px] mx-auto pt-2 pb-8 px-4 md:px-6">
+
         {/* APP STORE HEADER - Unified & Responsive */}
         <div className="mb-6 animate-fade-in-up">
            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 border-b border-gray-100 dark:border-white/5 pb-4 md:pb-2">
              <div className="flex flex-col">
-               <Text className="block text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider text-[10px] mb-1 whitespace-nowrap">
+               <Text className="block text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider text-xs mb-1 whitespace-nowrap">
                  {dateParts[1] || 'Today'}
                </Text>
-               <Title level={1} className="!mt-0 !mb-0 !text-3xl md:!text-5xl font-extrabold tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
+               <Title level={1} className="!mt-0 !mb-0 !text-2xl sm:!text-3xl md:!text-5xl font-extrabold tracking-tight leading-none" style={{ fontFamily: 'var(--font-display)' }}>
                  {dateParts[0] || '今日阅读'}
                </Title>
              </div>
-             
+
              <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 sm:gap-6 w-full md:w-auto">
                 <SearchAndFilter
                   onSearch={handleSearch}
@@ -119,7 +124,7 @@ export default function HomePage() {
                   allTags={allTags}
                   className="w-full md:w-80 lg:w-96"
                 />
-                <ActiveFilters 
+                <ActiveFilters
                     activeFilters={filter as PostFilter}
                     onFilterChange={handleFilter}
                     onClearFilters={clearFilters}
@@ -129,23 +134,21 @@ export default function HomePage() {
            </div>
         </div>
 
-        {/* HERO SECTION */}
-        {isInitialLoading ? (
-           <HeroSkeleton />
-        ) : !error && posts.length > 0 && (
-          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-             <HeroCarousel 
-                posts={posts.slice(0, 3)} 
-                onNavigate={(slug) => handlePostAction('view', { slug } as BlogPost)} 
-             />
-          </div>
+        {/* HERO SECTION - Hidden on iOS as requested */}
+        {!isIOS && (
+          <>
+            {isInitialLoading ? (
+               <HeroSkeleton />
+            ) : !error && posts.length > 0 && (
+              <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                 <HeroCarousel
+                    posts={posts.slice(0, 3)}
+                    onNavigate={(slug) => handlePostAction('view', { slug } as BlogPost)}
+                 />
+              </div>
+            )}
+          </>
         )}
-
-
-
-
-
-
 
         {/* REMAINING POSTS GRID */}
         {isInitialLoading ? (
@@ -165,11 +168,11 @@ export default function HomePage() {
           <>
             <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
                 {/* Spacer between Hero and Grid */}
-                <div className="w-full h-4" />
+                {!isIOS && <div className="w-full h-4" />}
 
-                {posts.slice(3).length > 0 ? (
-                  <ArticleListContainer 
-                    posts={posts.slice(3)} 
+                {(isIOS ? posts : posts.slice(3)).length > 0 ? (
+                  <ArticleListContainer
+                    posts={isIOS ? posts : posts.slice(3)}
                     loading={false}
                     error={undefined}
                     onAction={handlePostAction}
@@ -186,7 +189,7 @@ export default function HomePage() {
             {/* Infinite Scroll Sentinel */}
             {!isInitialLoading && !error && (
               <div ref={observerTarget} className="mt-8 py-8 flex justify-center w-full min-h-[50px]">
-                {!loading && !hasMore && posts.length > 3 && (
+                {!loading && !hasMore && posts.length > 0 && (
                    <div className="text-gray-400 italic">No more posts</div>
                 )}
               </div>

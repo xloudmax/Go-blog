@@ -90,10 +90,11 @@ export const useNotifications = (limit = 20, offset = 0) => {
 };
 
 // 使用未读通知数量
-export const useUnreadNotificationCount = () => {
+export const useUnreadNotificationCount = (options = {}) => {
   return useQuery(UNREAD_NOTIFICATION_COUNT_QUERY, {
     fetchPolicy: 'cache-and-network',
     pollInterval: 30000, // 每30秒轮询一次
+    ...options
   });
 };
 
