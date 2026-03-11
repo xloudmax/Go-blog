@@ -7,15 +7,23 @@ import { isIOS, isTauri } from './platform';
  * 在 桌面端 (Tauri) 下使用 localhost
  */
 export const getApiBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  
+  // If env var is set, use it (unless it's the hardcoded Tailscale IP and we're not on iOS)
+  if (envUrl && envUrl !== "http://100.64.250.28:11451") {
+    return envUrl;
+  }
+
   if (isTauri) {
     if (isIOS) {
-      return 'http://100.64.250.28:11451';
+      // Default Tailscale IP for iOS testing if no other URL is provided
+      return envUrl || 'http://100.64.250.28:11451';
     } else {
       // Desktop Tauri
       return 'http://localhost:11451';
     }
   }
 
-  // 默认使用环境变量或固定 IP
-  return import.meta.env.VITE_API_BASE_URL || "http://localhost:11451";
+  // Default fallback
+  return envUrl || "http://localhost:11451";
 };

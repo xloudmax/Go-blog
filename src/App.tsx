@@ -3,6 +3,7 @@
 
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAppUser } from '@/hooks';
 import AppLayout from './layouts/AppLayout';
 import PageLoading from './components/PageLoading';
 
@@ -10,7 +11,6 @@ const LandingPage = lazy(() => import('./pages/LandingPage'));
 const HomePage = lazy(() => import('./pages/HomePage'));
 const PostDetailPage = lazy(() => import('./pages/PostDetailPage'));
 
-const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
 const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
 
 const Router = isStatic ? HashRouter : BrowserRouter;
@@ -20,13 +20,19 @@ const Router = isStatic ? HashRouter : BrowserRouter;
  * 配置应用的主要路由
  */
 export default function App() {
+    const { isAuthenticated, isLoading } = useAppUser();
+
+    if (isLoading && !isStatic) {
+        return <PageLoading />;
+    }
+
     if (isStatic) {
         return (
             <Router>
                 <Suspense fallback={<PageLoading />}>
                     <Routes>
                         <Route path="/" element={<Navigate to="/home" replace />} />
-                        {/* 使用 AppLayout 包裹，找回背景和导航栏 */}
+                        {/* 使用 AppLayout 包裹，找回背景 and 导航栏 */}
                         <Route element={<AppLayout />}>
                             <Route path="/home" element={<HomePage />} />
                             <Route path="/post/:slug" element={<PostDetailPage />} />
@@ -42,7 +48,7 @@ export default function App() {
         <Router>
             <Suspense fallback={<PageLoading />}>
                 <Routes>
-                    <Route path="/" element={(isTauri || isStatic) ? <Navigate to="/home" replace /> : <LandingPage />} />
+                    <Route path="/" element={isAuthenticated || isStatic ? <Navigate to="/home" replace /> : <LandingPage />} />
                     <Route path="/*" element={<AppLayout />} />
                 </Routes>
             </Suspense>

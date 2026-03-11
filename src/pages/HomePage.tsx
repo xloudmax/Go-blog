@@ -39,7 +39,7 @@ export default function HomePage() {
   const { tags: trendingTags } = useBlogDashboard();
 
   // 适配 SearchAndFilter 的 allTags (只传名称)
-  const allTags = useMemo(() => trendingTags.map(t => t.name), [trendingTags]);
+  const allTags = useMemo(() => (trendingTags || []).map(t => t.name), [trendingTags]);
 
   // 处理搜索
   const handleSearch = (query: string) => {

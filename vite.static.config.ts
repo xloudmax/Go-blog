@@ -1,10 +1,41 @@
 // vite.static.config.ts
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import Unfonts from 'unplugin-fonts/vite'
 import path from 'path'
+import { visualizer } from 'rollup-plugin-visualizer'
+import vitePluginCompression from 'vite-plugin-compression'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    Unfonts({
+      fontsource: {
+        families: [
+          {
+            name: 'Inter',
+            weights: [400, 500, 600, 700],
+            subset: 'latin',
+          }
+        ]
+      }
+    }),
+    visualizer({ open: false, filename: "stats-static.html" }),
+    vitePluginCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240,
+      algorithm: 'gzip',
+      ext: '.gz',
+    }),
+    vitePluginCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240,
+      algorithm: 'brotliCompress',
+      ext: '.br',
+    }),
+  ],
   build: {
     outDir: 'dist-static',
     emptyOutDir: true,

@@ -2,11 +2,29 @@ import { useState, useEffect, useContext, ReactNode } from 'react';
 import { useCurrentUser, useAuth } from '@/api/graphql';
 import { AppContext, AppState, AppActions } from '@/context/AppContext';
 import { ThemeContext } from '@/components/ThemeProvider';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 // 应用状态提供器
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-  // 获取用户数据
-  const { user, loading: userLoading, error: userError, refetch: refetchUser } = useCurrentUser();
+  // 获取用户状态
+  const [token, setTokenState] = useState<string | null>(() => {
+    // 同步获取初步的 token (Web 端立即生效)
+    return localStorage.getItem('token');
+  });
+
+  // 初始化时获取 token (主要为了 Tauri 异步获取钥匙串中的 token)
+  const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
+
+  useEffect(() => {
+    if (isStatic) return;
+    tokenStorage.get().then(t => {
+      if (t !== token) {
+        setTokenState(t);
+      }
+    });
+  }, [isStatic, token]);
+
+  const { user, loading: userLoading, error: userError, refetch: refetchUser } = useCurrentUser(isStatic ? null : token);
   const { login: authLogin, logout: authLogout } = useAuth();
 
   const { theme, toggle: toggleTheme } = useContext(ThemeContext) as { theme: 'light' | 'dark', toggle: () => void };
@@ -45,7 +63,14 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       try {
         setErrorState(null);
         const result = await authLogin(identifier, password, remember);
-        if (result) {
+        if (result && result.token) {
+          // 1. 设置持久化存储 (Tauri/Web 兼容)
+          await tokenStorage.set(result.token);
+          
+          // 2. 也是最重要的：同步更新本地 state 以触发 useCurrentUser 的响应式重新请求
+          setTokenState(result.token);
+          
+          // 3. 立即重试获取用户信息 (Apollo 会因为 context 变化而重新执行 ME_QUERY)
           await refetchUser();
         }
         return result;
@@ -58,6 +83,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     logout: async () => {
       try {
         await authLogout();
+        await tokenStorage.remove();
+        setTokenState(null);
         setErrorState(null);
       } catch (error: unknown) {
         if (process.env.NODE_ENV === 'development') {
@@ -65,8 +92,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
            console.error('登出错误:', error instanceof Error ? error.message : String(error));
         }
         // 即使登出失败也清理本地状态
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
+        await tokenStorage.remove();
+        setTokenState(null);
         window.location.href = '/login';
       }
     },

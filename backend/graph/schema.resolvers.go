@@ -1481,7 +1481,7 @@ func (r *mutationResolver) UpdateGitHubConfig(ctx context.Context, repo string, 
 	if err := models.SetSetting(r.DB, "github_repo", repo); err != nil {
 		return nil, err
 	}
-	if err := models.SetSetting(r.DB, "github_token", token); err != nil {
+	if err := models.SetSensitiveSetting(r.DB, "github_token", token); err != nil {
 		return nil, err
 	}
 	return &GeneralResponse{Success: true, Message: strPtr("GitHub config updated")}, nil
@@ -1493,9 +1493,9 @@ func (r *mutationResolver) DeployToGitHubPages(ctx context.Context) (*GeneralRes
 	if err != nil {
 		return nil, fmt.Errorf("github repo not configured")
 	}
-	token, err := models.GetSetting(r.DB, "github_token")
-	if err != nil {
-		return nil, fmt.Errorf("github token not configured")
+	token, err := models.GetSensitiveSetting(r.DB, "github_token")
+	if err != nil || token == "" {
+		return nil, fmt.Errorf("github token not configured or decryption failed")
 	}
 
 	parts := strings.Split(repo, "/")
@@ -3262,11 +3262,17 @@ func (r *queryResolver) GetGitHubConfig(ctx context.Context) (*GitHubConfig, err
 	}
 
 	repo, _ := models.GetSetting(r.DB, "github_repo")
-	token, _ := models.GetSetting(r.DB, "github_token")
+	token, _ := models.GetSensitiveSetting(r.DB, "github_token")
+
+	// 屏蔽令牌，只显示是否存在
+	maskedToken := ""
+	if token != "" {
+		maskedToken = "********"
+	}
 
 	return &GitHubConfig{
 		Repo:  repo,
-		Token: token,
+		Token: maskedToken,
 	}, nil
 }
 

@@ -220,7 +220,15 @@ export const useBlogDashboard = () => {
     if (isStatic) {
       fetch('./static/dashboard.json')
         .then(res => res.json())
-        .then(data => setStaticDashboard(data))
+        .then(data => {
+          if (data) {
+            setStaticDashboard({
+              popularPosts: data.popularPosts || [],
+              recentPosts: data.recentPosts || [],
+              tags: data.tags || []
+            });
+          }
+        })
         .catch(console.error);
     }
   }, [isStatic]);
@@ -236,7 +244,7 @@ export const useBlogDashboard = () => {
   }, [recentData?.getRecentPosts, staticDashboard.recentPosts, isStatic]);
 
   const tags = useMemo(() => {
-    if (isStatic) return staticDashboard.tags;
+    if (isStatic) return staticDashboard.tags || [];
     return tagsData?.getTags || [];
   }, [tagsData?.getTags, staticDashboard.tags, isStatic]);
 

@@ -467,10 +467,19 @@ export const useAuth = () => {
 };
 
 // 当前用户 Hook
-export const useCurrentUser = () => {
+export const useCurrentUser = (token?: string | null) => {
+  // 预先尝试从显式传入或本地获取以确定初始状态
+  const effectiveToken = token !== undefined ? token : localStorage.getItem('token');
+  
   const { data, loading, error, refetch } = useQuery(ME_QUERY, {
-    skip: !localStorage.getItem('token'),
-    errorPolicy: 'all'
+    skip: !effectiveToken,
+    errorPolicy: 'all',
+    // 强制依赖 token 的变化
+    context: {
+      headers: {
+        authorization: effectiveToken ? `Bearer ${effectiveToken}` : "",
+      }
+    }
   });
 
   return {

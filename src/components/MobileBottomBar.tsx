@@ -6,7 +6,8 @@ import {
   SearchOutlined,
   AppstoreOutlined,
   DeploymentUnitOutlined,
-  UserOutlined
+  UserOutlined,
+  SettingOutlined
 } from '@ant-design/icons';
 import { ThemeContext } from './ThemeProvider';
 import { useAppUser } from '@/hooks';
@@ -26,19 +27,31 @@ const getTauriEvent = async () => {
 
 const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
 
-const getNavItems = (userAvatar?: string, isAuthenticated?: boolean) => {
+const getNavItems = (userAvatar?: string, isAuthenticated?: boolean, isAdmin?: boolean) => {
   if (isStatic) {
     return [
       { key: 'home', icon: <HomeOutlined />, label: '首页', path: '/home' },
     ];
   }
-  return [
+  const items = [
     { key: 'home', icon: <HomeOutlined />, label: '首页', path: '/home' },
     { key: 'search', icon: <SearchOutlined />, label: '搜索', path: '/search' },
     { key: 'insight', icon: <DeploymentUnitOutlined />, label: 'Insight', path: '/insight' },
     { key: 'tags', icon: <AppstoreOutlined />, label: '分类', path: '/tags' },
-    { key: 'profile', icon: userAvatar ? <div className="w-6 h-6 rounded-full bg-cover border border-white/20" style={{ backgroundImage: `url(${userAvatar})` }} /> : <UserOutlined />, label: '我的', path: isAuthenticated ? '/profile' : '/login' },
   ];
+
+  if (isAdmin) {
+    items.push({ key: 'admin', icon: <SettingOutlined />, label: '管理', path: '/admin' });
+  }
+
+  items.push({ 
+    key: 'profile', 
+    icon: userAvatar ? <div className="w-6 h-6 rounded-full bg-cover border border-white/20" style={{ backgroundImage: `url(${userAvatar})` }} /> : <UserOutlined />, 
+    label: '我的', 
+    path: isAuthenticated ? '/profile' : '/login' 
+  });
+
+  return items;
 };
 
 interface NavItem {
@@ -77,7 +90,7 @@ const MobileBottomBar: React.FC = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme } = useContext(ThemeContext);
-  const { isAuthenticated, user } = useAppUser();
+  const { isAuthenticated, isAdmin, user } = useAppUser();
   const isDarkMode = theme === 'dark';
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -127,7 +140,7 @@ const MobileBottomBar: React.FC = React.memo(() => {
   const [containerWidth, setContainerWidth] = useState(0);
   const [isActive, setIsActive] = useState(false); 
 
-  const navItems = useMemo(() => getNavItems(user?.avatar ?? undefined, isAuthenticated), [user?.avatar, isAuthenticated]);
+  const navItems = useMemo(() => getNavItems(user?.avatar ?? undefined, isAuthenticated, isAdmin), [user?.avatar, isAuthenticated, isAdmin]);
 
   // Sync native tab bar changes
   useEffect(() => {
