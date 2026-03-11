@@ -111,36 +111,12 @@ func InitTestDB() (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect to test database: %w", err)
 	}
 
-	// 自动迁移数据库结构
-	if err := autoMigrate(db); err != nil {
+	// 运行数据库迁移和索引创建 (使用统一的 RunMigrations)
+	if err := RunMigrations(db); err != nil {
 		return nil, fmt.Errorf("failed to migrate test database: %w", err)
 	}
 
 	return db, nil
-}
-
-// autoMigrate 自动迁移数据库结构
-func autoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(
-		&models.User{},
-		&models.BlogPost{},
-		&models.BlogPostStats{},
-		&models.BlogPostVersion{},
-		&models.BlogPostLike{},
-		&models.BlogPostComment{},
-		&models.BlogPostCommentLike{},
-		&models.InviteCode{},
-		&models.PasswordResetToken{},
-		&models.RefreshToken{},
-		&models.SearchQuery{},
-		&models.Notification{},
-		&models.Tag{},
-		&models.Category{},
-		&models.Setting{},
-		&models.KnowledgeNode{},
-		&models.KnowledgeEdge{},
-		&models.Community{},
-	)
 }
 
 // CloseDB 关闭数据库连接

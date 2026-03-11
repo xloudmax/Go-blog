@@ -10,13 +10,13 @@ func TestMemoryCacheSetGetExpireAndStop(t *testing.T) {
 	c.Set("key", "value", 10*time.Millisecond)
 
 	var v string
-	if ok := c.Get("key", &v); !ok || v != "value" {
+	if found := c.Get("key", &v); !found || v != "value" {
 		t.Fatalf("expected value from cache")
 	}
 
 	// wait for expiration
 	time.Sleep(15 * time.Millisecond)
-	if ok := c.Get("key", &v); ok {
+	if found := c.Get("key", &v); found {
 		t.Fatalf("expected key to expire")
 	}
 
@@ -38,6 +38,4 @@ func TestEmailVerificationService(t *testing.T) {
 	if evs.VerifyCode("a@example.com", code, "LOGIN") {
 		t.Fatalf("code should not verify twice")
 	}
-
-	evs.Stop()
 }

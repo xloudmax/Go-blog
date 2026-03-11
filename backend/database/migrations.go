@@ -11,26 +11,40 @@ import (
 
 // RunMigrations 执行数据库迁移
 func RunMigrations(db *gorm.DB) error {
-	// 自动迁移模型
+	driverName := db.Dialector.Name()
+
+	// 1. 基础模型自动迁移 (跨数据库兼容)
 	err := db.AutoMigrate(
 		&models.User{},
 		&models.BlogPost{},
 		&models.BlogPostStats{},
 		&models.BlogPostVersion{},
 		&models.BlogPostLike{},
-		&models.BlogPostComment{},     // 添加评论模型
-		&models.BlogPostCommentLike{}, // 添加评论点赞模型
+		&models.BlogPostComment{},
+		&models.BlogPostCommentLike{},
 		&models.InviteCode{},
-		&models.PasswordResetToken{}, // 添加密码重置令牌模型
-		&models.RefreshToken{},       // 添加刷新令牌模型
-		&models.SearchQuery{},        // 添加搜索查询记录模型
-		&models.Notification{},       // 添加通知模型
-		&models.Tag{},                // 添加标签模型
-		&models.Category{},           // 添加分类模型
-		&models.Setting{},            // 添加设置模型
+		&models.PasswordResetToken{},
+		&models.RefreshToken{},
+		&models.SearchQuery{},
+		&models.Notification{},
+		&models.Tag{},
+		&models.Category{},
+		&models.Setting{},
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to migrate base models: %w", err)
+	}
+
+	// 2. 针对 Postgres 的高级特性模型迁移
+	if driverName == "postgres" {
+		err = db.AutoMigrate(
+			&models.KnowledgeNode{},
+			&models.KnowledgeEdge{},
+			&models.Community{},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to migrate knowledge graph models: %w", err)
+		}
 	}
 
 	// 迁移现有数据的冗余字段到Stats表
@@ -43,12 +57,11 @@ func RunMigrations(db *gorm.DB) error {
 		return err
 	}
 
-	// 创建全文搜索索引（如果数据库支持）
-	if err := createFullTextSearchIndexes(db); err != nil {
-		// 如果不支持全文搜索，记录日志但不中断
-		// 禁用全文搜索相关功能
-		fmt.Printf("Warning: Full-text search indexes creation failed: %v\n", err)
-		fmt.Println("Hint: ensure SQLite is built with FTS5 support (e.g. run with GOFLAGS=\"-tags=sqlite_fts5\" or source backend/set_env.sh)")
+	// 创建全文搜索索引 (针对 SQLite)
+	if driverName == "sqlite" {
+		if err := createFullTextSearchIndexes(db); err != nil {
+			fmt.Printf("Warning: SQLite FTS5 creation failed: %v\n", err)
+		}
 	}
 
 	// 创建评论相关索引
@@ -67,8 +80,10 @@ func RunMigrations(db *gorm.DB) error {
 	}
 
 	// 初始化知识图谱全文搜索 (Postgres 专用)
-	if err := initKnowledgeGraphFTS(db); err != nil {
-		fmt.Printf("Warning: Knowledge graph FTS initialization failed: %v\n", err)
+	if driverName == "postgres" {
+		if err := initKnowledgeGraphFTS(db); err != nil {
+			fmt.Printf("Warning: Knowledge graph FTS initialization failed: %v\n", err)
+		}
 	}
 
 	return nil
@@ -81,8 +96,8 @@ func createSearchIndexes(db *gorm.DB) error {
 		// 标题搜索索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_title ON blog_post(title)",
 
-		// 内容搜索索引（前缀索引，避免索引过大）
-		"CREATE INDEX IF NOT EXISTS idx_blog_post_content_prefix ON blog_post(substr(content, 1, 100))",
+		// 内容搜索索引 (部分数据库版本可能不支持函数索引)
+		"CREATE INDEX IF NOT EXISTS idx_blog_post_content_prefix ON blog_post(content)",
 
 		// 标签搜索索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_tags ON blog_post(tags)",
@@ -90,14 +105,26 @@ func createSearchIndexes(db *gorm.DB) error {
 		// 分类搜索索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_categories ON blog_post(categories)",
 
-		// 状态和访问级别组合索引（用于权限过滤）
+		// 状态和访问级别组合索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_status_access ON blog_post(status, access_level)",
 
 		// 作者ID索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_author_id ON blog_post(author_id)",
 
-		// 创建时间索引（用于排序）
+		// 创建时间索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_created_at ON blog_post(created_at DESC)",
+	}
+
+	for _, indexSQL := range indexes {
+		if err := db.Exec(indexSQL).Error; err != nil {
+			// 记录警告但不中断，某些复杂的索引语法可能在特定版本的数据库中不兼容
+			fmt.Printf("Warning: Failed to create index [%s]: %v\n", indexSQL, err)
+			continue
+		}
+	}
+
+	return nil
+}
 
 		// 发布时间索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_published_at ON blog_post(published_at DESC)",
