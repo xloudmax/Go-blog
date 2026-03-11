@@ -155,10 +155,10 @@ type ComplexityRoot struct {
 	}
 
 	MechanismNode struct {
-		Children func(childComplexity int) int
-		ID       func(childComplexity int) int
-		Label    func(childComplexity int) int
-		Note     func(childComplexity int) int
+		ActiveIngredient func(childComplexity int) int
+		Children         func(childComplexity int) int
+		ID               func(childComplexity int) int
+		Title            func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -351,7 +351,7 @@ type ComplexityRoot struct {
 
 type BlogPostResolver interface {
 	Author(ctx context.Context, obj *BlogPost) (*User, error)
-
+	Versions(ctx context.Context, obj *BlogPost) ([]*BlogPostVersion, error)
 	Stats(ctx context.Context, obj *BlogPost) (*BlogPostStats, error)
 }
 type MutationResolver interface {
@@ -937,6 +937,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.InviteCode.UsedBy(childComplexity), true
 
+	case "MechanismNode.active_ingredient":
+		if e.ComplexityRoot.MechanismNode.ActiveIngredient == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MechanismNode.ActiveIngredient(childComplexity), true
 	case "MechanismNode.children":
 		if e.ComplexityRoot.MechanismNode.Children == nil {
 			break
@@ -949,18 +955,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.MechanismNode.ID(childComplexity), true
-	case "MechanismNode.label":
-		if e.ComplexityRoot.MechanismNode.Label == nil {
+	case "MechanismNode.title":
+		if e.ComplexityRoot.MechanismNode.Title == nil {
 			break
 		}
 
-		return e.ComplexityRoot.MechanismNode.Label(childComplexity), true
-	case "MechanismNode.note":
-		if e.ComplexityRoot.MechanismNode.Note == nil {
-			break
-		}
-
-		return e.ComplexityRoot.MechanismNode.Note(childComplexity), true
+		return e.ComplexityRoot.MechanismNode.Title(childComplexity), true
 
 	case "Mutation.adminCreateUser":
 		if e.ComplexityRoot.Mutation.AdminCreateUser == nil {
@@ -3843,7 +3843,7 @@ func (ec *executionContext) _BlogPost_versions(ctx context.Context, field graphq
 		field,
 		ec.fieldContext_BlogPost_versions,
 		func(ctx context.Context) (any, error) {
-			return obj.Versions, nil
+			return ec.Resolvers.BlogPost().Versions(ctx, obj)
 		},
 		nil,
 		ec.marshalNBlogPostVersion2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostVersionᚄ,
@@ -3856,8 +3856,8 @@ func (ec *executionContext) fieldContext_BlogPost_versions(_ context.Context, fi
 	fc = &graphql.FieldContext{
 		Object:     "BlogPost",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -5905,14 +5905,14 @@ func (ec *executionContext) fieldContext_MechanismNode_id(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _MechanismNode_label(ctx context.Context, field graphql.CollectedField, obj *models.MechanismNode) (ret graphql.Marshaler) {
+func (ec *executionContext) _MechanismNode_title(ctx context.Context, field graphql.CollectedField, obj *models.MechanismNode) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_MechanismNode_label,
+		ec.fieldContext_MechanismNode_title,
 		func(ctx context.Context) (any, error) {
-			return obj.Label, nil
+			return obj.Title, nil
 		},
 		nil,
 		ec.marshalNString2string,
@@ -5921,7 +5921,7 @@ func (ec *executionContext) _MechanismNode_label(ctx context.Context, field grap
 	)
 }
 
-func (ec *executionContext) fieldContext_MechanismNode_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MechanismNode_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MechanismNode",
 		Field:      field,
@@ -5934,14 +5934,14 @@ func (ec *executionContext) fieldContext_MechanismNode_label(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _MechanismNode_note(ctx context.Context, field graphql.CollectedField, obj *models.MechanismNode) (ret graphql.Marshaler) {
+func (ec *executionContext) _MechanismNode_active_ingredient(ctx context.Context, field graphql.CollectedField, obj *models.MechanismNode) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_MechanismNode_note,
+		ec.fieldContext_MechanismNode_active_ingredient,
 		func(ctx context.Context) (any, error) {
-			return obj.Note, nil
+			return obj.ActiveIngredient, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -5950,7 +5950,7 @@ func (ec *executionContext) _MechanismNode_note(ctx context.Context, field graph
 	)
 }
 
-func (ec *executionContext) fieldContext_MechanismNode_note(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MechanismNode_active_ingredient(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MechanismNode",
 		Field:      field,
@@ -5989,10 +5989,10 @@ func (ec *executionContext) fieldContext_MechanismNode_children(_ context.Contex
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_MechanismNode_id(ctx, field)
-			case "label":
-				return ec.fieldContext_MechanismNode_label(ctx, field)
-			case "note":
-				return ec.fieldContext_MechanismNode_note(ctx, field)
+			case "title":
+				return ec.fieldContext_MechanismNode_title(ctx, field)
+			case "active_ingredient":
+				return ec.fieldContext_MechanismNode_active_ingredient(ctx, field)
 			case "children":
 				return ec.fieldContext_MechanismNode_children(ctx, field)
 			}
@@ -9338,10 +9338,10 @@ func (ec *executionContext) fieldContext_Query_generateMechanismTree(ctx context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_MechanismNode_id(ctx, field)
-			case "label":
-				return ec.fieldContext_MechanismNode_label(ctx, field)
-			case "note":
-				return ec.fieldContext_MechanismNode_note(ctx, field)
+			case "title":
+				return ec.fieldContext_MechanismNode_title(ctx, field)
+			case "active_ingredient":
+				return ec.fieldContext_MechanismNode_active_ingredient(ctx, field)
 			case "children":
 				return ec.fieldContext_MechanismNode_children(ctx, field)
 			}
@@ -15164,10 +15164,41 @@ func (ec *executionContext) _BlogPost(ctx context.Context, sel ast.SelectionSet,
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "versions":
-			out.Values[i] = ec._BlogPost_versions(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._BlogPost_versions(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "stats":
 			field := field
 
@@ -15836,13 +15867,13 @@ func (ec *executionContext) _MechanismNode(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "label":
-			out.Values[i] = ec._MechanismNode_label(ctx, field, obj)
+		case "title":
+			out.Values[i] = ec._MechanismNode_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "note":
-			out.Values[i] = ec._MechanismNode_note(ctx, field, obj)
+		case "active_ingredient":
+			out.Values[i] = ec._MechanismNode_active_ingredient(ctx, field, obj)
 		case "children":
 			out.Values[i] = ec._MechanismNode_children(ctx, field, obj)
 		default:

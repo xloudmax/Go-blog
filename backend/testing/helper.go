@@ -2,7 +2,6 @@ package testing
 
 import (
 	"bytes"
-	"github.com/goccy/go-json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"repair-platform/routes"
 	"repair-platform/services"
 	"testing"
+
+	"github.com/goccy/go-json"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -66,7 +67,9 @@ func SetupTestEnvironment(t *testing.T) *TestHelper {
 
 	// 创建 Gin 路由
 	router := gin.New()
-	routes.SetupRoutes(router, db, cfg, nil, services.NewAIService())
+	aiSvc := services.NewAIService()
+	graphRAG := services.NewGraphRAGService(db, aiSvc)
+	routes.SetupRoutes(router, db, cfg, nil, aiSvc, graphRAG)
 
 	return &TestHelper{
 		DB:     db,

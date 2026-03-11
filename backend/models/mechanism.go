@@ -1,8 +1,8 @@
 package models
 
 type MechanismNode struct {
-	ID       string           `json:"id"`
-	Label    string           `json:"label"`
-	Note     *string          `json:"note,omitempty"`
-	Children []*MechanismNode `json:"children,omitempty"`
+	ID               string           `json:"id"`
+	Title            string           `json:"title"`
+	ActiveIngredient *string          `json:"active_ingredient,omitempty"`
+	Children         []*MechanismNode `json:"children,omitempty"`
 }

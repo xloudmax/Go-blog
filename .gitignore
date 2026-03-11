@@ -45,5 +45,16 @@ backend/.env.*
 .env.production
 .env.local
 
+# Reports
+stats.html
+stats-static.html
+*-report.json
+
+# Build outputs
+dist-static
+
+# Binaries
+src-tauri/blog-backend-*
+
 # Tauri
 src-tauri/target/

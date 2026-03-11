@@ -45,17 +45,17 @@ const CustomNode = ({ data }: NodeProps) => {
                 {icon}
             </span>
             <div className={`font-bold text-sm ${textClass}`}>
-                {data.label as string}
+                {data.title as string}
             </div>
         </div>
         
-        {!!data.note && (
+        {!!data.active_ingredient && (
           <div className={`
             text-xs mt-1 pt-2 border-t flex items-start gap-1
             ${isRoot ? 'border-white/20 text-indigo-100' : 'border-slate-100 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 italic'}
           `}>
              <span className="opacity-70 not-italic">💡</span>
-             <span>{String(data.note || '')}</span>
+             <span>{String(data.active_ingredient || '')}</span>
           </div>
         )}
       </div>

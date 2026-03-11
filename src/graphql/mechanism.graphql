@@ -1,20 +1,20 @@
 query GenerateMechanismTree($query: String!) {
   generateMechanismTree(query: $query) {
     id
-    label
-    note
+    title
+    active_ingredient
     children {
       id
-      label
-      note
+      title
+      active_ingredient
       children {
         id
-        label
-        note
+        title
+        active_ingredient
         children {
           id
-          label
-          note
+          title
+          active_ingredient
         }
       }
     }

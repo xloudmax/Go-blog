@@ -3,7 +3,6 @@ package services
 import (
 	"bytes"
 	"context"
-	"github.com/goccy/go-json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"repair-platform/config"
 	"repair-platform/models"
 	"time"
+
+	"github.com/goccy/go-json"
 )
 
 type AIService struct {
@@ -83,20 +84,60 @@ func (s *AIService) GenerateMechanismTree(ctx context.Context, query string) (*m
 	return &root, nil
 }
 
+type embeddingRequest struct {
+	Text string `json:"text"`
+}
+
+type embeddingResponse struct {
+	Embedding []float32 `json:"embedding"`
+}
+
+// GetEmbedding calls the Python service to simplify embedding generation using the shared OpenAI client.
+func (s *AIService) GetEmbedding(ctx context.Context, text string) ([]float32, error) {
+	reqBody := embeddingRequest{Text: text}
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	u, _ := url.Parse(s.pythonServiceURL)
+	u.Path = "/embedding" // We'll add this to main.py if not exists, or adapt
+
+	req, _ := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("ai_service returned %d", resp.StatusCode)
+	}
+
+	var res embeddingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, err
+	}
+
+	return res.Embedding, nil
+}
+
 func getFallbackMockData(query string) *models.MechanismNode {
-	note := "Service Unavailable - Mocking"
+	activeIngredient := "Service Unavailable - Mocking"
 	return &models.MechanismNode{
-		ID:    "root",
-		Label: fmt.Sprintf("Fallback Mock: %s", query),
-		Note:  &note,
+		ID:               "root",
+		Title:            fmt.Sprintf("Fallback Mock: %s", query),
+		ActiveIngredient: &activeIngredient,
 		Children: []*models.MechanismNode{
 			{
 				ID:    "error-node",
-				Label: "Python Service Not Reachable or Timeout",
+				Title: "Python Service Not Reachable or Timeout",
 				Children: []*models.MechanismNode{
-					{ID: "check-1", Label: "Check if main.py is running"},
-					{ID: "check-2", Label: "Check port 8000"},
-					{ID: "check-3", Label: "Check network connection and AI_SERVICE_URL"},
+					{ID: "check-1", Title: "Check if main.py is running"},
+					{ID: "check-2", Title: "Check port 8000"},
+					{ID: "check-3", Title: "Check network connection and AI_SERVICE_URL"},
 				},
 			},
 		},

@@ -100,9 +100,12 @@ func main() {
 	aiService := services.NewAIService()
 	logger.Infow("AI服务已初始化")
 
+	graphRAGService := services.NewGraphRAGService(db, aiService)
+	logger.Infow("GraphRAG服务已初始化")
+
 	// 配置路由
 	logger.Infow("配置路由和中间件")
-	routes.SetupRoutes(r, db, cfg, notionService, aiService)
+	routes.SetupRoutes(r, db, cfg, notionService, aiService, graphRAGService)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,

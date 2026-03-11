@@ -225,10 +225,10 @@ export type LoginInput = {
 
 export type MechanismNode = {
   __typename?: 'MechanismNode';
+  active_ingredient?: Maybe<Scalars['String']['output']>;
   children?: Maybe<Array<MechanismNode>>;
   id: Scalars['String']['output'];
-  label: Scalars['String']['output'];
-  note?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
 };
 
 export type Mutation = {
@@ -1359,7 +1359,7 @@ export type GenerateMechanismTreeQueryVariables = Exact<{
 }>;
 
 
-export type GenerateMechanismTreeQueryData = { __typename?: 'Query', generateMechanismTree: { __typename?: 'MechanismNode', id: string, label: string, note?: string | null, children?: Array<{ __typename?: 'MechanismNode', id: string, label: string, note?: string | null, children?: Array<{ __typename?: 'MechanismNode', id: string, label: string, note?: string | null, children?: Array<{ __typename?: 'MechanismNode', id: string, label: string, note?: string | null }> | null }> | null }> | null } };
+export type GenerateMechanismTreeQueryData = { __typename?: 'Query', generateMechanismTree: { __typename?: 'MechanismNode', id: string, title: string, active_ingredient?: string | null, children?: Array<{ __typename?: 'MechanismNode', id: string, title: string, active_ingredient?: string | null, children?: Array<{ __typename?: 'MechanismNode', id: string, title: string, active_ingredient?: string | null, children?: Array<{ __typename?: 'MechanismNode', id: string, title: string, active_ingredient?: string | null }> | null }> | null }> | null } };
 
 export type EnhancedSearchQueryVariables = Exact<{
   input: SearchInput;
@@ -2135,7 +2135,7 @@ export function useReportCommentMutation(baseOptions?: ApolloReactHooks.Mutation
 export type ReportCommentMutationHookResult = ReturnType<typeof useReportCommentMutation>;
 export type ReportCommentMutationResult = Apollo.MutationResult<ReportCommentMutationData>;
 export type ReportCommentMutationOptions = Apollo.BaseMutationOptions<ReportCommentMutationData, ReportCommentMutationVariables>;
-export const GenerateMechanismTreeDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GenerateMechanismTree"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateMechanismTree"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"note"}},{"kind":"Field","name":{"kind":"Name","value":"children"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"note"}},{"kind":"Field","name":{"kind":"Name","value":"children"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"note"}},{"kind":"Field","name":{"kind":"Name","value":"children"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"note"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode;
+export const GenerateMechanismTreeDocument = /*#__PURE__*/ {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GenerateMechanismTree"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generateMechanismTree"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"active_ingredient"}},{"kind":"Field","name":{"kind":"Name","value":"children"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"active_ingredient"}},{"kind":"Field","name":{"kind":"Name","value":"children"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"active_ingredient"}},{"kind":"Field","name":{"kind":"Name","value":"children"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"active_ingredient"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode;
 export function useGenerateMechanismTreeQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GenerateMechanismTreeQueryData, GenerateMechanismTreeQueryVariables> & ({ variables: GenerateMechanismTreeQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
         return ApolloReactHooks.useQuery<GenerateMechanismTreeQueryData, GenerateMechanismTreeQueryVariables>(GenerateMechanismTreeDocument, options);

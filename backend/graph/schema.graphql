@@ -687,8 +687,8 @@ extend type Mutation {
 
 type MechanismNode {
   id: String!
-  label: String!
-  note: String
+  title: String!
+  active_ingredient: String
   children: [MechanismNode!]
 }
 

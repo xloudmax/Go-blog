@@ -74,8 +74,8 @@ const flattenTree = (node: MechanismNode, isDarkMode: boolean, parentId?: string
     id: node.id,
     type: 'custom', // Use our custom node
     data: {
-      label: node.label,
-      note: node.note,
+      title: node.title,
+      active_ingredient: node.active_ingredient,
       isRoot,
       isMechanism,
     },

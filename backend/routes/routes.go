@@ -26,7 +26,7 @@ import (
 )
 
 // SetupRoutes 设置应用程序的路由和中间件（全面迁移到GraphQL）
-func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *services.NotionService, aiService *services.AIService) {
+func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *services.NotionService, aiService *services.AIService, graphRAGService *services.GraphRAGService) {
 	logger := middleware.GetLogger()
 	logger.Infow("开始注册路由")
 
@@ -52,13 +52,49 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, notionService *
 	// 设置 GraphQL 路由（唯一接口）
 	setupGraphQLRoutes(r, db, cfg, notionService, aiService)
 
+	// 设置 GraphRAG 路由
+	setupGraphRAGRoutes(r, graphRAGService)
+
 	// 设置上传路由
 	setupUploadRoutes(r, db, cfg)
 
 	// 设置健康检查路由
 	setupHealthRoutes(r)
 
-	logger.Infow("路由注册完成 - 全面迁移到GraphQL")
+	logger.Infow("路由注册完成")
+}
+
+type graphSearchRequest struct {
+	Query   string `json:"query"`
+	MaxHops int    `json:"max_hops"`
+}
+
+func setupGraphRAGRoutes(r *gin.Engine, s *services.GraphRAGService) {
+	graph := r.Group("/api/graph")
+	{
+		graph.POST("/search", func(c *gin.Context) {
+			var req graphSearchRequest
+			if err := c.ShouldBindJSON(&req); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+
+			if req.MaxHops <= 0 {
+				req.MaxHops = 2 // Default 2 hops
+			}
+
+			results, err := s.LocalSearch(c.Request.Context(), req.Query, req.MaxHops)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"query":   req.Query,
+				"results": results,
+			})
+		})
+	}
 }
 
 // setupGraphQLRoutes 设置 GraphQL 路由（唯一接口）

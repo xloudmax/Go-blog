@@ -69,6 +69,44 @@ func (r *blogPostResolver) Author(ctx context.Context, obj *BlogPost) (*User, er
 	return gUser, nil
 }
 
+// Versions is the resolver for the versions field.
+func (r *blogPostResolver) Versions(ctx context.Context, obj *BlogPost) ([]*BlogPostVersion, error) {
+	// 解析文章ID
+	postID, err := strconv.ParseUint(obj.ID, 10, 64)
+	if err != nil {
+		return []*BlogPostVersion{}, nil
+	}
+
+	// 获取版本历史
+	var versions []models.BlogPostVersion
+	err = r.Resolver.DB.Where("blog_post_id = ?", uint(postID)).
+		Preload("CreatedBy").
+		Order("version_num DESC").
+		Find(&versions).Error
+
+	if err != nil {
+		return []*BlogPostVersion{}, nil
+	}
+
+	// 转换结果
+	result := make([]*BlogPostVersion, len(versions))
+	for i, version := range versions {
+		result[i] = &BlogPostVersion{
+			ID:         strconv.FormatUint(uint64(version.ID), 10),
+			VersionNum: version.VersionNum,
+			Title:      version.Title,
+			Content:    version.Content,
+			ChangeLog:  strPtr(version.ChangeLog),
+			CreatedAt:  version.CreatedAt,
+		}
+		if version.CreatedBy.ID != 0 {
+			result[i].CreatedBy = convertToGraphQLUser(&version.CreatedBy)
+		}
+	}
+
+	return result, nil
+}
+
 // Stats is the resolver for the stats field.
 func (r *blogPostResolver) Stats(ctx context.Context, obj *BlogPost) (*BlogPostStats, error) {
 	fmt.Printf("[DEBUG] Stats resolver called for Post ID: %s\n", obj.ID)
@@ -145,44 +183,6 @@ func (r *blogPostResolver) Stats(ctx context.Context, obj *BlogPost) (*BlogPostS
 		LastViewedAt: stats.LastViewedAt,
 		UpdatedAt:    updatedAt,
 	}, nil
-}
-
-// Versions is the resolver for the versions field.
-func (r *blogPostResolver) Versions(ctx context.Context, obj *BlogPost) ([]*BlogPostVersion, error) {
-	// 解析文章ID
-	postID, err := strconv.ParseUint(obj.ID, 10, 64)
-	if err != nil {
-		return []*BlogPostVersion{}, nil
-	}
-
-	// 获取版本历史
-	var versions []models.BlogPostVersion
-	err = r.Resolver.DB.Where("blog_post_id = ?", uint(postID)).
-		Preload("CreatedBy").
-		Order("version_num DESC").
-		Find(&versions).Error
-
-	if err != nil {
-		return []*BlogPostVersion{}, nil
-	}
-
-	// 转换结果
-	result := make([]*BlogPostVersion, len(versions))
-	for i, version := range versions {
-		result[i] = &BlogPostVersion{
-			ID:         strconv.FormatUint(uint64(version.ID), 10),
-			VersionNum: version.VersionNum,
-			Title:      version.Title,
-			Content:    version.Content,
-			ChangeLog:  strPtr(version.ChangeLog),
-			CreatedAt:  version.CreatedAt,
-		}
-		if version.CreatedBy.ID != 0 {
-			result[i].CreatedBy = convertToGraphQLUser(&version.CreatedBy)
-		}
-	}
-
-	return result, nil
 }
 
 // Register is the resolver for the register field.
