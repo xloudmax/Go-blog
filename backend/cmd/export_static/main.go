@@ -1,4 +1,4 @@
-package export_static
+package main
 
 import (
 	"github.com/goccy/go-json"

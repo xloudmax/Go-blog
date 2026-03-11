@@ -23,11 +23,10 @@ export const useLiquidMagnifierGUI = (initialConfig: LiquidMagnifierConfig, fold
     if (typeof window === 'undefined') return;
 
     // 检查是否已经有 GUI 实例，防止热更新导致重复创建
-    let gui: dat.GUI;
     // 简单防御，查找 DOM 中是否有 dat.gui 的根节点
-    const existingGui = document.querySelector('.dg.ac');
+    // const existingGui = document.querySelector('.dg.ac');
     
-    gui = new dat.GUI();
+    const gui = new dat.GUI();
     const folder = gui.addFolder(folderName);
     const proxyConfig = { ...initialConfig };
 

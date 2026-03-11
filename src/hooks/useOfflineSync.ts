@@ -4,11 +4,13 @@ import { useAppUser } from './useAppState';
 import { useBlogActions } from '../api/graphql/blog';
 import offlineStorage from '@/utils/offlineStorage';
 
-export function useOfflineSync() {
+export function useOfflineSync(options: { skip?: boolean } = {}) {
     const { isAuthenticated } = useAppUser();
     const { createPost } = useBlogActions();
 
     useEffect(() => {
+        if (options.skip) return;
+        
         const syncOfflinePosts = async () => {
             if (!isAuthenticated || !navigator.onLine) return;
 

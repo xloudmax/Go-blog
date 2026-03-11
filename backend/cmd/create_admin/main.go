@@ -1,4 +1,4 @@
-package create_admin
+package main
 
 import (
 	"log"

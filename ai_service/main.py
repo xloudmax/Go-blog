@@ -3,7 +3,10 @@ import json
 import hashlib
 import asyncio
 import logging
-from typing import Optional, List, Dict, Any, Union
+import re
+import io
+import threading
+from typing import Optional, List, Dict, Any, Union, Generator
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -503,34 +506,140 @@ async def generate_mechanism_tree_stream(request: GenerateTreeRequest):
                 yield f"data: {json.dumps({'error': 'OpenAI client not configured'})}\n\n"
                 return
 
-            response = await retry_with_backoff(
-                client.chat.completions.create,
+            # Note: We don't use retry_with_backoff for streaming as it complicates the generator.
+            # Real implementation would need a specialized streaming retry wrapper.
+            stream = await client.chat.completions.create(
                 model=LLM_MODEL,
                 messages=[
                     {"role": "system", "content": MECHANISM_TREE_PROMPT},
                     {"role": "user", "content": f"Query: {query}"}
                 ],
+                stream=True,
                 response_format={"type": "json_object"}
             )
-            
-            content = response.choices[0].message.content
-            raw_data = json.loads(content)
-            tree = MechanismNode(**raw_data)
-            flattened = flatten_tree(tree)
-            
-            # Stream metadata first
-            yield f"data: {json.dumps({'type': 'metadata', 'query': query, 'root_mechanism': tree.title})}\n\n"
-            await asyncio.sleep(0.1)
 
-            # Stream nodes one by one to simulate "growth"
-            for node in flattened["nodes"]:
-                yield f"data: {json.dumps({'type': 'node', 'data': node.model_dump()})}\n\n"
-                await asyncio.sleep(0.05) # Small delay for animation feel
+            # Bridge between async token stream and sync ijson parser
+            class AsyncByteStream(io.BytesIO):
+                def __init__(self):
+                    super().__init__()
+                    self._condition = threading.Condition()
+                    self._closed = False
 
-            # Stream edges
-            for edge in flattened["edges"]:
-                yield f"data: {json.dumps({'type': 'edge', 'data': edge.model_dump()})}\n\n"
-                await asyncio.sleep(0.02)
+                def write_tokens(self, tokens: bytes):
+                    with self._condition:
+                        self.write(tokens)
+                        self._condition.notify_all()
+
+                def close_stream(self):
+                    with self._condition:
+                        self._closed = True
+                        self._condition.notify_all()
+
+                def read(self, size=-1):
+                    # ijson calls read in a loop usually. 
+                    # This needs to be blocking for ijson but feedable from async.
+                    # Since we are running ijson in a thread, this works.
+                    with self._condition:
+                        while self.tell() == len(self.getvalue()) and not self._closed:
+                            self._condition.wait()
+                        return super().read(size)
+
+            # However, ijson 3.0+ supports async backends or we can use the 'items' generator
+            # with a custom file-like object. 
+            # A cleaner way with FastAPI/Async is to use ijson.parse or ijson.items 
+            # but we need a way to feed it chunks.
+            
+            # Alternative: ijson.sendable_list or just manually parse chunks 
+            # if we want to avoid complex threading.
+            # But let's use the simplest reliable pattern: yield events as they are parsed.
+            
+            full_content = ""
+            node_count = 0
+            edge_count = 0
+            
+            # For "BioSpark 2025" high-compliance, we emit specific event types.
+            async for chunk in stream:
+                token = chunk.choices[0].delta.content or ""
+                full_content += token
+                
+                # Simple "Heuristic" parsing for now to demonstrate True Streaming.
+                # True ijson incremental parsing usually requires a separate thread/pipe.
+                # Given the complexity of ijson with async streams, we'll implement 
+                # a high-frequency "buffer-and-search" parser for the flat format.
+                
+                # Look for nodes
+                try:
+                    # Search for the most recently completed node object
+                    # This is a robust way to handle the "nodes" array in the flat structure.
+                    if '{"id":' in token or '"parentId":' in token or '}' in token:
+                         # Attempt to find completed nodes in current buffer
+                         # We look for the pattern in flat JSON: {"id": "...", ...}
+                         # This is specifically optimized for our FLATTENED prompt.
+                         nodes_start = full_content.find('"nodes": [')
+                         if nodes_start != -1:
+                             nodes_content = full_content[nodes_start + 10:]
+                             # Find all {...} blocks within nodes_content
+                             import re
+                             node_matches = list(re.finditer(r'\{[^{}]+\}', nodes_content))
+                             if len(node_matches) > node_count:
+                                 for i in range(node_count, len(node_matches)):
+                                     try:
+                                         node_json = node_matches[i].group(0)
+                                         node_data = json.loads(node_json)
+                                         # Validate it has required fields
+                                         if "id" in node_data and "title" in node_data:
+                                             # Convert to React Flow format via existing logic
+                                             m_node = MechanismNode(
+                                                 id=node_data["id"],
+                                                 title=node_data["title"],
+                                                 active_ingredient=node_data.get("active_ingredient", "")
+                                             )
+                                             # Reuse flatten_tree's logic for styling (level etc)
+                                             # For streaming, we might just emit the raw node and let frontend style,
+                                             # but here we generate the full data.
+                                             
+                                             # Metadata emission
+                                             if node_count == 0:
+                                                 root_match = re.search(r'"root_mechanism":\s*"([^"]+)"', full_content)
+                                                 root_mech = root_match.group(1) if root_match else "Analyzing..."
+                                                 yield f"data: {json.dumps({'type': 'metadata', 'query': query, 'root_mechanism': root_mech})}\n\n"
+
+                                             yield f"data: {json.dumps({'type': 'node', 'data': {
+                                                 'id': m_node.id,
+                                                 'type': 'customMechanismNode',
+                                                 'data': {
+                                                     'title': m_node.title,
+                                                     'active_ingredient': m_node.active_ingredient,
+                                                     'level': 0 # Frontend Dagre will fix layout
+                                                 },
+                                                 'position': {'x': 0, 'y': 0}
+                                             }})}\n\n"
+                                             node_count += 1
+                                     except:
+                                         continue
+
+                         # Similar logic for edges
+                         edges_start = full_content.find('"edges": [')
+                         if edges_start != -1:
+                             edges_content = full_content[edges_start + 10:]
+                             edge_matches = list(re.finditer(r'\{[^{}]+\}', edges_content))
+                             if len(edge_matches) > edge_count:
+                                 for i in range(edge_count, len(edge_matches)):
+                                     try:
+                                         edge_json = edge_matches[i].group(0)
+                                         edge_data = json.loads(edge_json)
+                                         if "source" in edge_data and "target" in edge_data:
+                                             yield f"data: {json.dumps({'type': 'edge', 'data': {
+                                                 'id': f"edge-{edge_data['source']}-{edge_data['target']}",
+                                                 'source': edge_data['source'],
+                                                 'target': edge_data['target']
+                                             }})}\n\n"
+                                             edge_count += 1
+                                     except:
+                                         continue
+                except Exception as e:
+                    # Ignore partial parse errors during streaming
+                    pass
 
             yield "data: [DONE]\n\n"
         except Exception as e:

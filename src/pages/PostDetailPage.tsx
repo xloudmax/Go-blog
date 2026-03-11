@@ -47,13 +47,11 @@ export default function PostDetailPage() {
   const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
 
   // 获取文章详情
-  const { data: apolloData, loading: apolloLoading, error: apolloError, refetch } = isStatic
-    ? { data: null, loading: false, error: null, refetch: () => {} }
-    : useQuery(POST_QUERY, {
-        variables: { slug },
-        skip: !slug,
-        errorPolicy: 'all'
-      });
+  const { data: apolloData, loading: apolloLoading, error: apolloError, refetch } = useQuery(POST_QUERY, {
+    variables: { id: slug },
+    skip: isStatic || !slug,
+    errorPolicy: 'all'
+  });
 
   const [staticPost, setStaticPost] = useState<any>(null);
   const [staticLoading, setStaticLoading] = useState(isStatic);

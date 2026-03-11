@@ -31,7 +31,7 @@ export const localFile = {
       if (selected && typeof selected === 'string') {
         const content = await readTextFile(selected);
         // 尝试从文件名提取标题
-        const fileName = selected.split(/[\/]/).pop() || '';
+        const fileName = selected.split(/[/]/).pop() || '';
         const title = fileName.replace(/\.[^/.]+$/, "");
         
         return { title, content };

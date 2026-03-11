@@ -3176,7 +3176,7 @@ func (r *queryResolver) GetNotionPages(ctx context.Context) ([]*NotionPage, erro
 	}
 
 	if r.Resolver.NotionService == nil {
-		return nil, fmt.Errorf("Notion服务未初始化，请检查后端是否配置了 NOTION_API_KEY")
+		return nil, fmt.Errorf("notion服务未初始化，请检查后端是否配置了 NOTION_API_KEY")
 	}
 
 	pages, err := r.Resolver.NotionService.ListPages(ctx)

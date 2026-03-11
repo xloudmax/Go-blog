@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useOptimistic, useTransition } from 'react';
 import { MechanismNode } from '../generated/graphql';
 import { MechanismTree } from '../components/MechanismTree';
 import { Alert, message, Typography, Grid } from 'antd';
@@ -39,6 +39,21 @@ const InsightPage = () => {
 
   const [ragLoading, setRagLoading] = useState(false);
   const [ragError, setRagError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  // useOptimistic for "BioSpark" instant feel
+  const [optimisticGraph, setOptimisticGraph] = useOptimistic(
+    graphData,
+    (state, newQuery: string) => {
+      if (!newQuery) return state;
+      return {
+        id: 'optimistic-root',
+        title: `Exploring: ${newQuery}...`,
+        active_ingredient: 'BioSpark Inference Engine Active',
+        children: []
+      } as MechanismNode;
+    }
+  );
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -48,11 +63,15 @@ const InsightPage = () => {
 
     setRagLoading(true);
     setRagError(null);
-    setGraphData(null);
     setGlobalAnswer(null);
+
+    startTransition(() => {
+        setOptimisticGraph(query);
+    });
 
     try {
       if (searchMode === 'global') {
+        setRagLoading(true);
         const response = await fetch('/api/graph/global-search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -63,6 +82,7 @@ const InsightPage = () => {
           const result = await response.json();
           setGlobalAnswer(result.answer);
           setIsGraphRAG(true);
+          setGraphData(null); // Clear for global text answer
         } else {
           throw new Error('Global search failed');
         }
@@ -70,7 +90,7 @@ const InsightPage = () => {
         return;
       }
 
-      // Local Search Logic - Try GraphRAG first, if empty, use STREAMING generation
+      // Local Search Logic - Try GraphRAG first
       const response = await fetch('/api/graph/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -83,7 +103,7 @@ const InsightPage = () => {
           const root: MechanismNode = {
             id: 'rag-root',
             title: `Search: ${query}`,
-            active_ingredient: 'Knowledge Graph Retrieval',
+            active_ingredient: 'Found in Knowledge Graph',
             children: result.results.map((r: any) => ({
               id: r.id,
               title: r.name,
@@ -93,13 +113,13 @@ const InsightPage = () => {
           };
           setGraphData(root);
           setIsGraphRAG(true);
-          setRagLoading(false);
           return;
         }
       }
       
       // Fallback to STREAMING generation
       setIsGraphRAG(false);
+      setRagLoading(true);
       const streamResponse = await fetch('/api/graph/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,9 +133,8 @@ const InsightPage = () => {
       const decoder = new TextDecoder();
       let buffer = '';
       
-      let discoveredNodes: any[] = [];
-      let discoveredEdges: any[] = [];
-
+      const discoveredNodes: any[] = [];
+      const discoveredEdges: any[] = [];
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -135,21 +154,18 @@ const InsightPage = () => {
                 setGraphData({
                   id: 'root',
                   title: event.root_mechanism,
-                  active_ingredient: 'Analyzing...',
+                  active_ingredient: 'Generating hierarchy...',
                   children: []
                 });
               } else if (event.type === 'node') {
-                const newNode = event.data;
-                discoveredNodes.push(newNode);
-                
-                // Update graph data incrementally
-                setGraphData(() => rebuildTree(discoveredNodes, discoveredEdges));
+                discoveredNodes.push(event.data);
+                setGraphData(rebuildTree(discoveredNodes, discoveredEdges));
               } else if (event.type === 'edge') {
                 discoveredEdges.push(event.data);
-                setGraphData(() => rebuildTree(discoveredNodes, discoveredEdges));
+                setGraphData(rebuildTree(discoveredNodes, discoveredEdges));
               }
             } catch (e) {
-              console.error('Error parsing SSE event:', e);
+              // Ignore partial parse
             }
           }
         }
@@ -296,7 +312,7 @@ const InsightPage = () => {
         </div>
 
       {/* SUGGESTIONS */}
-      {!graphData && !globalAnswer && !loading && (
+      {!optimisticGraph && !globalAnswer && !loading && !isPending && (
         <div className="mt-8 flex justify-center flex-wrap gap-2 md:gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           {suggestions.map(s => (
             <LiquidButton 
@@ -316,9 +332,9 @@ const InsightPage = () => {
     </div>
 
       {/* CONTENT AREA */}
-      {(graphData || globalAnswer) && (
+      {(optimisticGraph || globalAnswer) && (
         <div className={`relative w-full rounded-[32px] overflow-hidden border border-white/10 transition-all duration-700 ${
-          (graphData || globalAnswer) ? 'min-h-[60vh] bg-black/20 shadow-2xl' : 'h-0 opacity-0'
+          (optimisticGraph || globalAnswer) ? 'min-h-[60vh] bg-black/20 shadow-2xl' : 'h-0 opacity-0'
         }`}>
           {/* BADGE */}
           <div className="absolute top-6 left-6 z-20 flex items-center gap-2">
@@ -334,9 +350,20 @@ const InsightPage = () => {
           </div>
 
           {/* TREE VIEW */}
-          {graphData && !globalAnswer && (
-            <div className="h-[75vh]">
-              <MechanismTree data={graphData} />
+          {(optimisticGraph || isPending) && !globalAnswer && (
+            <div className={`h-[75vh] relative animate-scale-in transition-all duration-1000 ${isPending ? 'opacity-50 grayscale' : 'opacity-100 grayscale-0'}`}>
+               {/* BIO-SPARK HUD */}
+               <div className="absolute top-2 right-12 z-20 pointer-events-none">
+                  <div className="flex flex-col items-end gap-1">
+                      <div className="text-[8px] tracking-[4px] text-indigo-400/50 uppercase font-black">BioSpark Pulse</div>
+                      <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map(i => (
+                              <div key={i} className={`w-1 h-3 rounded-full ${loading || isPending ? 'bg-indigo-500 animate-pulse' : 'bg-indigo-500/20'}`} style={{ animationDelay: `${i*0.1}s` }} />
+                          ))}
+                      </div>
+                  </div>
+               </div>
+               {optimisticGraph && <MechanismTree data={optimisticGraph} />}
             </div>
           )}
 
@@ -355,7 +382,7 @@ const InsightPage = () => {
       )}
 
     {/* EMPTY STATE */}
-    {!graphData && !globalAnswer && !loading && (
+    {!optimisticGraph && !globalAnswer && !loading && !isPending && (
       <div className="py-24 flex flex-col items-center justify-center glassy-card rounded-[40px] border-dashed border-white/10 mx-auto max-w-2xl">
         <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-8 border border-white/10">
           <DeploymentUnitOutlined className="text-4xl text-gray-600" />

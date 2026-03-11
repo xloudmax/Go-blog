@@ -42,10 +42,8 @@ export default function AppLayout() {
     const { theme: appTheme, toggle } = useContext(ThemeContext)
     const screens = useBreakpoint();
     
-    // 使用自定义 Hook 处理离线文章同步 (静态模式跳过)
-    if (!isStatic) {
-        useOfflineSync();
-    }
+    // 使用自定义 Hook 处理离线文章同步 (静态模式通过 skip 选项跳过)
+    useOfflineSync({ skip: isStatic });
 
     // 桌面端 (Tauri) 极致预加载优化
     useEffect(() => {

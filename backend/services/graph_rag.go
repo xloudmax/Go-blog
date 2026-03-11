@@ -114,11 +114,6 @@ func (s *GraphRAGService) LocalSearch(ctx context.Context, query string, maxHops
 func (s *GraphRAGService) getHybridSeeds(ctx context.Context, query string, vectorStr string, topN int) ([]uuid.UUID, error) {
 	const k = 60 // RRF constant
 
-	type NodeRank struct {
-		ID   uuid.UUID
-		Rank int
-	}
-
 	// 1. Vector Search Ranking
 	var vectorNodes []uuid.UUID
 	err := s.db.WithContext(ctx).Raw(`

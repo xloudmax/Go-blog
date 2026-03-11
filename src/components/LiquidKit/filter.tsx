@@ -123,8 +123,10 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
     const scaleG = useTransform(baseScale, (s) => s * 1.02);
     const scaleB = useTransform(baseScale, (s) => s * 1.04);
 
-    // 提升 useTransform 调用到顶级，确保在所有条件下都执行
-    const blurDeviation = typeof blur === 'object' && 'get' in blur ? blur : useTransform(() => blur as number);
+    // Unconditionally call useTransform to comply with Rules of Hooks
+    const staticBlurTransform = useTransform(() => (typeof blur === 'number' ? blur : 0));
+    const blurDeviation = typeof blur === 'object' && 'get' in blur ? blur : staticBlurTransform;
+    
     const filterWidth = useTransform(() => (canvasWidth ? getValueOrMotion(canvasWidth) : getValueOrMotion(width)));
     const filterHeight = useTransform(() => (canvasHeight ? getValueOrMotion(canvasHeight) : getValueOrMotion(height)));
 
