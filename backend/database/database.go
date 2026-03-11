@@ -139,6 +139,7 @@ func autoMigrate(db *gorm.DB) error {
 		&models.Setting{},
 		&models.KnowledgeNode{},
 		&models.KnowledgeEdge{},
+		&models.Community{},
 	)
 }
 

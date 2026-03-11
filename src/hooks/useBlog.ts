@@ -31,17 +31,16 @@ export const useBlogList = (initialLimit = 15) => {
   // Static export support: Fetch from JSON files instead of GraphQL
   const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
 
-  const { data, loading: apolloLoading, error: apolloError, refetch } = isStatic 
-    ? { data: null, loading: false, error: null, refetch: () => {} }
-    : usePostsQuery({
-        variables: {
-          limit,
-          offset,
-          filter,
-          sort
-        },
-        notifyOnNetworkStatusChange: true
-      });
+  const { data, loading: apolloLoading, error: apolloError, refetch } = usePostsQuery({
+    variables: {
+      limit,
+      offset,
+      filter,
+      sort
+    },
+    notifyOnNetworkStatusChange: true,
+    skip: isStatic
+  });
 
   const [staticPosts, setStaticPosts] = useState<BlogPost[]>([]);
   const [staticLoading, setStaticLoading] = useState(isStatic);
@@ -194,21 +193,18 @@ export const useBlogDashboard = () => {
   // Static export support
   const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
 
-  const { data: popularData, loading: loadingPopular } = isStatic 
-    ? { data: null, loading: false }
-    : usePopularPostsQuery({
-        variables: { limit: 5 }
-      });
-  const { data: recentData, loading: loadingRecent } = isStatic
-    ? { data: null, loading: false }
-    : useRecentPostsQuery({
-        variables: { limit: 5 }
-      });
-  const { data: tagsData, loading: loadingTags } = isStatic
-    ? { data: null, loading: false }
-    : useGetTagsQuery({
-        variables: { limit: 20 }
-      });
+  const { data: popularData, loading: loadingPopular } = usePopularPostsQuery({
+    variables: { limit: 5 },
+    skip: isStatic
+  });
+  const { data: recentData, loading: loadingRecent } = useRecentPostsQuery({
+    variables: { limit: 5 },
+    skip: isStatic
+  });
+  const { data: tagsData, loading: loadingTags } = useGetTagsQuery({
+    variables: { limit: 20 },
+    skip: isStatic
+  });
 
   const [staticDashboard, setStaticDashboard] = useState<any>({
     popularPosts: [],

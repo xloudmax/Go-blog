@@ -55,10 +55,21 @@ export function getRoundedDistance(x: number, y: number, w: number, h: number, r
     return -(outsideDist + insideDist);
 }
 
+export interface LiquidConfig {
+    canvasWidth: number;
+    canvasHeight: number;
+    glassThickness?: number;
+    bezelWidth?: number;
+    radius: number;
+    bezelHeightFn?: (x: number) => number;
+    dpr?: number;
+    refractiveIndex?: number;
+}
+
 /**
  * 物理折射模拟：完全遵循文章中的光学原理、表面函数与 SVG 渲染数值限制。
  */
-export function getDisplacementData(config: any): DisplacementData | null {
+export function getDisplacementData(config: LiquidConfig): DisplacementData | null {
     if (typeof window === 'undefined') return null;
     const { canvasWidth, canvasHeight, glassThickness = 40, bezelWidth = 20, radius, bezelHeightFn = CONVEX.fn, dpr = 1 } = config;
     const w = Math.floor(canvasWidth * dpr);

@@ -112,7 +112,8 @@ func (tb *TokenBlacklist) IsBlacklisted(tokenString string) bool {
 	tb.mutex.RLock()
 	defer tb.mutex.RUnlock()
 
-	return tb.cache.Get(tokenHash, nil)
+	found := tb.cache.Get(tokenHash, nil)
+	return found
 }
 
 // GetBlacklistInfo 获取黑名单信息（用于调试）

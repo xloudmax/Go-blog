@@ -66,6 +66,11 @@ func RunMigrations(db *gorm.DB) error {
 		return err
 	}
 
+	// 初始化知识图谱全文搜索 (Postgres 专用)
+	if err := initKnowledgeGraphFTS(db); err != nil {
+		fmt.Printf("Warning: Knowledge graph FTS initialization failed: %v\n", err)
+	}
+
 	return nil
 }
 
@@ -137,8 +142,9 @@ func createFullTextSearchIndexes(db *gorm.DB) error {
 	)`
 
 	if err := db.Exec(createFTSTable).Error; err != nil {
-		// 如果FTS表创建失败，不创建相关触发器
-		return fmt.Errorf("failed to create FTS table: %w", err)
+		// 如果FTS表创建失败，仅记录警告并返回，不要报错导致程序退出
+		fmt.Printf("⚠️ 警告: 无法创建全文搜索虚拟表 (可能缺少 FTS5 支持): %v\n", err)
+		return nil
 	}
 
 	// 对于 SQLite，我们可以创建虚拟表来支持全文搜索
@@ -501,4 +507,30 @@ func migrateTagsAndCategories(db *gorm.DB) error {
 		fmt.Printf("标签和分类数据迁移完成\n")
 		return nil
 	})
+}
+
+// initKnowledgeGraphFTS 为知识图谱节点初始化全文搜索 (Postgres 专用)
+func initKnowledgeGraphFTS(db *gorm.DB) error {
+	// 添加生成列和 GIN 索引 (Postgres 语法)
+	var count int
+	err := db.Raw("SELECT count(*) FROM information_schema.columns WHERE table_name='knowledge_nodes' AND table_schema='public' AND column_name='search_vector'").Scan(&count).Error
+	if err != nil {
+		return nil
+	}
+
+	if count == 0 {
+		sql := `
+			ALTER TABLE knowledge_nodes 
+			ADD COLUMN IF NOT EXISTS search_vector tsvector 
+			GENERATED ALWAYS AS (
+				setweight(to_tsvector('simple', coalesce(name, '')), 'A') || 
+				setweight(to_tsvector('simple', coalesce(description, '')), 'B')
+			) STORED;
+			CREATE INDEX IF NOT EXISTS idx_nodes_search_vector ON knowledge_nodes USING GIN (search_vector);
+		`
+		if err := db.Exec(sql).Error; err != nil {
+			return fmt.Errorf("failed to create FTS column/index: %w", err)
+		}
+	}
+	return nil
 }

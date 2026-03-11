@@ -102,7 +102,7 @@ const useMotionSizeObservers = <T extends HTMLElement = HTMLDivElement>(
         return () => {
             resizeObserver.disconnect();
         };
-    }, [disabled]);
+    }, [disabled, updateDimensions]);
 
     // Watch for border radius changes through MutationObserver
     useEffect(() => {
@@ -123,7 +123,7 @@ const useMotionSizeObservers = <T extends HTMLElement = HTMLDivElement>(
             clearTimeout(timeoutId);
             mutationObserver.disconnect();
         };
-    }, [disabled]);
+    }, [disabled, updateDimensions]);
 
     return {
         width,
@@ -267,7 +267,7 @@ const LiquidDiv = React.forwardRef<HTMLDivElement, { filterId: string; fallbackB
             if (svgSupported && typeof document !== 'undefined') {
                 isLiquidSupported.set(true);
             }
-        }, []);
+        }, [supportsSVGFilters, isLiquidSupported]);
 
         return (
             <motion.div

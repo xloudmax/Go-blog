@@ -26,11 +26,11 @@ export const LiquidPanel: React.FC<LiquidPanelProps> = ({
     onDrag: _d, 
     onDragStart: _ds, 
     onDragEnd: _de, 
-    // @ts-ignore - these might not exist on all HTMLAttributes but sometimes appear in spread
+    // @ts-expect-error - these might not exist on all HTMLAttributes but sometimes appear in spread
     onPan: _p, 
-    // @ts-ignore
+    // @ts-expect-error
     onPanStart: _ps, 
-    // @ts-ignore
+    // @ts-expect-error
     onPanEnd: _pe, 
     ...safeProps 
   } = props as any;

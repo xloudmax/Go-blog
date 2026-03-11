@@ -18,7 +18,7 @@ const CONTENT_VARIANTS: Variants = {
     opacity: 1, 
     y: 0, 
     filter: 'blur(0px)',
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as any }
+    transition: { duration: 0.6, ease: "easeOut" }
   }
 };
 

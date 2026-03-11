@@ -13,6 +13,20 @@ type KnowledgeNode struct {
 	Type        string         `gorm:"type:string" json:"type"`
 	Description string         `gorm:"type:text" json:"description"`
 	Embedding   []float32      `gorm:"type:vector(1536)" json:"-"` // Handled via raw SQL if needed
+	CommunityID *int           `gorm:"index" json:"community_id"`  // Community assignment via Leiden
+	Metadata    map[string]any `gorm:"type:jsonb;default:'{}'" json:"metadata"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+}
+
+// Community represents a cluster of nodes in the knowledge graph.
+type Community struct {
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	CommunityID int            `gorm:"uniqueIndex" json:"community_id"`
+	Level       int            `json:"level"` // Hierarchical level (0=leaf, 1=aggregated...)
+	Title       string         `json:"title"`
+	Summary     string         `gorm:"type:text" json:"summary"`
+	Findings    map[string]any `gorm:"type:jsonb;default:'{}'" json:"findings"` // Key takeaways
 	Metadata    map[string]any `gorm:"type:jsonb;default:'{}'" json:"metadata"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
@@ -38,6 +52,11 @@ func (KnowledgeNode) TableName() string {
 // TableName overrides the table name for KnowledgeEdge.
 func (KnowledgeEdge) TableName() string {
 	return "knowledge_edges"
+}
+
+// TableName overrides the table name for Community.
+func (Community) TableName() string {
+	return "communities"
 }
 
 // GraphSearchResult represents a single node returned from a multi-hop search.

@@ -112,13 +112,11 @@ export const LiquidSlider: React.FC<LiquidSliderProps> = React.memo(({
 
     const [left, setLeft] = useState(0);
     const computeLeft = useCallback(() => {
-        console.warn('COMPUTE LEFT');
         const clampedValue = Math.min(Math.max(value.get(), min), max);
         const ratio = (clampedValue - min) / (max - min); // Convert value to 0-1 ratio
         const trackWidth = sliderWidth - thumbWidth + thumbWidthRest / 3; // Usable track width
         setLeft(ratio * trackWidth - thumbWidthRest / 3);
-    }, [value, thumbWidth, min, max, sliderWidth, forceActive]);
-
+    }, [value, thumbWidth, min, max, sliderWidth, thumbWidthRest]);
     // to avoid double render for controlled input during dragging
     const isDragging = useRef(false);
     const [controlledPosSet, isControlledPosSet] = useState(false);

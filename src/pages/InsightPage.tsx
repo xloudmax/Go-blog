@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useGenerateMechanismTreeLazyQuery, MechanismNode } from '../generated/graphql';
+import { MechanismNode } from '../generated/graphql';
 import { MechanismTree } from '../components/MechanismTree';
-import { Spin, Alert, message, Typography, Grid } from 'antd';
+import { Alert, message, Typography, Grid } from 'antd';
 import { LiquidButton } from '../components/LiquidButton';
 import { DeploymentUnitOutlined } from '@ant-design/icons';
 // import { ThemeContext } from '@/components/ThemeProvider';
@@ -20,16 +20,22 @@ const InsightPage = () => {
   const [query, setQuery] = useState('');
   const [graphData, setGraphData] = useState<MechanismNode | null>(null);
   const [isGraphRAG, setIsGraphRAG] = useState(false);
+  const [searchMode, setSearchMode] = useState<'local' | 'global'>('local');
+  const [globalAnswer, setGlobalAnswer] = useState<string | null>(null);
+  const [isBuildingCommunities, setIsBuildingCommunities] = useState(false);
   
-  const [generateTree, { loading: genLoading, error: genError }] = useGenerateMechanismTreeLazyQuery({
-    fetchPolicy: 'network-only',
-    onCompleted: (data) => {
-      if (data?.generateMechanismTree) {
-        setGraphData(data.generateMechanismTree as MechanismNode);
-        setIsGraphRAG(false);
-      }
-    }
-  });
+  // const [generateTree, { loading: genLoading, error: genError }] = useGenerateMechanismTreeLazyQuery({
+  //   fetchPolicy: 'network-only',
+  //   onCompleted: (data) => {
+  //     if (data?.generateMechanismTree) {
+  //       setGraphData(data.generateMechanismTree as MechanismNode);
+  //       setIsGraphRAG(false);
+  //       setGlobalAnswer(null);
+  //     }
+  //   }
+  // });
+  const genLoading = false;
+  const genError = null;
 
   const [ragLoading, setRagLoading] = useState(false);
   const [ragError, setRagError] = useState<string | null>(null);
@@ -43,9 +49,28 @@ const InsightPage = () => {
     setRagLoading(true);
     setRagError(null);
     setGraphData(null);
+    setGlobalAnswer(null);
 
     try {
-      // 1. Try GraphRAG Search First
+      if (searchMode === 'global') {
+        const response = await fetch('/api/graph/global-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setGlobalAnswer(result.answer);
+          setIsGraphRAG(true);
+        } else {
+          throw new Error('Global search failed');
+        }
+        setRagLoading(false);
+        return;
+      }
+
+      // Local Search Logic - Try GraphRAG first, if empty, use STREAMING generation
       const response = await fetch('/api/graph/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,8 +80,6 @@ const InsightPage = () => {
       if (response.ok) {
         const result = await response.json();
         if (result.results && result.results.length > 0) {
-          // Convert GraphRAG results to MechanismNode structure
-          // This is a heuristic conversion for the tree view
           const root: MechanismNode = {
             id: 'rag-root',
             title: `Search: ${query}`,
@@ -75,13 +98,116 @@ const InsightPage = () => {
         }
       }
       
-      // 2. Fallback to Dynamic Generation if no graph data found
-      generateTree({ variables: { query } });
+      // Fallback to STREAMING generation
+      setIsGraphRAG(false);
+      const streamResponse = await fetch('/api/graph/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!streamResponse.ok) throw new Error('Streaming failed');
+      if (!streamResponse.body) throw new Error('No body in stream');
+
+      const reader = streamResponse.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      
+      let discoveredNodes: any[] = [];
+      let discoveredEdges: any[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() || '';
+
+        for (const part of parts) {
+          if (part.startsWith('data: ')) {
+            const dataStr = part.slice(6).trim();
+            if (dataStr === '[DONE]') break;
+
+            try {
+              const event = JSON.parse(dataStr);
+              if (event.type === 'metadata') {
+                setGraphData({
+                  id: 'root',
+                  title: event.root_mechanism,
+                  active_ingredient: 'Analyzing...',
+                  children: []
+                });
+              } else if (event.type === 'node') {
+                const newNode = event.data;
+                discoveredNodes.push(newNode);
+                
+                // Update graph data incrementally
+                setGraphData(() => rebuildTree(discoveredNodes, discoveredEdges));
+              } else if (event.type === 'edge') {
+                discoveredEdges.push(event.data);
+                setGraphData(() => rebuildTree(discoveredNodes, discoveredEdges));
+              }
+            } catch (e) {
+              console.error('Error parsing SSE event:', e);
+            }
+          }
+        }
+      }
     } catch (err) {
-      console.error('GraphRAG error, falling back to Gen:', err);
-      generateTree({ variables: { query } });
+      console.error('Search error:', err);
+      setRagError('搜索过程中出现错误，请稍后再试。');
     } finally {
       setRagLoading(false);
+    }
+  };
+
+  const rebuildTree = (nodes: any[], edges: any[]): MechanismNode | null => {
+    if (nodes.length === 0) return null;
+    
+    const nodeMap = new Map<string, MechanismNode>();
+    nodes.forEach(n => {
+      nodeMap.set(n.id, {
+        id: n.id,
+        title: n.data.label || n.title,
+        active_ingredient: n.data.active_ingredient || n.active_ingredient,
+        children: []
+      });
+    });
+
+    let root: MechanismNode | null = null;
+    
+    // Find root (usually the one with ID 'root' or first one)
+    root = nodeMap.get('root') || nodeMap.values().next().value || null;
+
+    edges.forEach(e => {
+      const source = nodeMap.get(e.source);
+      const target = nodeMap.get(e.target);
+      if (source && target) {
+        // Avoid duplicate children
+        if (!source.children) source.children = [];
+        if (!source.children.some(c => c.id === target.id)) {
+          source.children.push(target);
+        }
+      }
+    });
+
+    return root;
+  };
+
+  const handleBuildCommunities = async () => {
+    setIsBuildingCommunities(true);
+    try {
+      const response = await fetch('/api/graph/build-communities', { method: 'POST' });
+      if (response.ok) {
+        message.success('已触发图谱社区构建（后台运行中）');
+      } else {
+        message.error('触发失败');
+      }
+    } catch (err) {
+      message.error('网络错误');
+    } finally {
+      setIsBuildingCommunities(false);
     }
   };
 
@@ -89,11 +215,11 @@ const InsightPage = () => {
   const error = genError || (ragError ? { message: ragError } : null);
 
   const suggestions = [
+    "前端架构在过去一年的演变",
     "React Hooks 生命周期",
-    "比特币工作量证明",
     "Transformer 模型架构",
-    "TCP/IP 三次握手",
-    "Docker 容器化原理"
+    "Docker 容器化原理",
+    "TCP/IP 三次握手"
   ];
 
   return (
@@ -103,14 +229,46 @@ const InsightPage = () => {
         title="知识洞察"
       />
 
+      <div className="absolute top-10 right-10 z-30">
+        <LiquidButton
+          onClick={handleBuildCommunities}
+          loading={isBuildingCommunities}
+          className="!h-10 !px-4 !rounded-xl !bg-white/5 !text-[10px] !text-gray-500 hover:!text-white tracking-widest uppercase border border-white/5"
+          variant="secondary"
+        >
+          Rebuild Graph Communities
+        </LiquidButton>
+      </div>
+
       {/* SEARCH BAR */}
       <div className="mb-10 md:mb-12">
-        <div className="relative max-w-3xl flex flex-col md:block gap-4">
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex p-1 bg-white/5 rounded-2xl border border-white/5">
+            <button
+              onClick={() => setSearchMode('local')}
+              className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${
+                searchMode === 'local' ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:text-white'
+              }`}
+            >
+              局部探索 (Local)
+            </button>
+            <button
+              onClick={() => setSearchMode('global')}
+              className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${
+                searchMode === 'global' ? 'bg-purple-500 text-white shadow-lg' : 'text-gray-500 hover:text-white'
+              }`}
+            >
+              全局意义构建 (Global)
+            </button>
+          </div>
+        </div>
+
+        <div className="relative max-w-3xl mx-auto flex flex-col md:block gap-4">
           <LiquidSearchBox
             value={query}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSearch()}
-            placeholder={isMobile ? "输入主题..." : "输入一个主题开始探索..."}
+            placeholder={searchMode === 'local' ? "输入特定主题进行多跳探索..." : "提出一个宏观问题，如“前端架构如何演进？”"}
             containerClassName="w-full"
             height={isMobile ? 54 : 72}
             width="100%"
@@ -128,16 +286,18 @@ const InsightPage = () => {
               onClick={handleSearch}
               loading={loading}
               variant="primary"
-              className="!h-14 w-full md:w-auto px-8 !rounded-2xl text-lg font-bold shadow-xl shadow-blue-500/10 z-20"
+              className={`!h-14 w-full md:w-auto px-8 !rounded-2xl text-lg font-bold shadow-xl z-20 ${
+                searchMode === 'global' ? 'shadow-purple-500/10' : 'shadow-blue-500/10'
+              }`}
             >
-              立即生成
+              {searchMode === 'global' ? '全域分析' : '立即生成'}
             </LiquidButton>
           </div>
         </div>
 
       {/* SUGGESTIONS */}
-      {!graphData && !loading && (
-        <div className="mt-6 flex flex-wrap gap-2 md:gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+      {!graphData && !globalAnswer && !loading && (
+        <div className="mt-8 flex justify-center flex-wrap gap-2 md:gap-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           {suggestions.map(s => (
             <LiquidButton 
               key={s}
@@ -156,31 +316,54 @@ const InsightPage = () => {
     </div>
 
       {/* CONTENT AREA */}
-      <div className={`relative w-full rounded-[32px] overflow-hidden border border-white/10 transition-all duration-700 ${
-        graphData ? 'h-[75vh] bg-black/20 shadow-2xl' : 'h-0 opacity-0'
-      }`}>
-        {graphData && (
-          <>
-            <div className="absolute top-6 left-6 z-20 flex items-center gap-2">
-              <div className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase backdrop-blur-md border ${
-                isGraphRAG 
-                  ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' 
-                  : 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
-              }`}>
-                {isGraphRAG ? 'GraphRAG Retrieval' : 'AI Dynamic Synthesis'}
+      {(graphData || globalAnswer) && (
+        <div className={`relative w-full rounded-[32px] overflow-hidden border border-white/10 transition-all duration-700 ${
+          (graphData || globalAnswer) ? 'min-h-[60vh] bg-black/20 shadow-2xl' : 'h-0 opacity-0'
+        }`}>
+          {/* BADGE */}
+          <div className="absolute top-6 left-6 z-20 flex items-center gap-2">
+            <div className={`px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase backdrop-blur-md border ${
+              isGraphRAG 
+                ? (searchMode === 'global' ? 'bg-purple-500/20 border-purple-500/30 text-purple-400' : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400')
+                : 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
+            }`}>
+              {isGraphRAG 
+                ? (searchMode === 'global' ? 'Global Community Analysis' : 'GraphRAG Local Retrieval') 
+                : 'AI Dynamic Synthesis'}
+            </div>
+          </div>
+
+          {/* TREE VIEW */}
+          {graphData && !globalAnswer && (
+            <div className="h-[75vh]">
+              <MechanismTree data={graphData} />
+            </div>
+          )}
+
+          {/* GLOBAL ANSWER VIEW */}
+          {globalAnswer && (
+            <div className="p-12 md:p-20 max-w-4xl mx-auto animate-fade-in">
+              <div className="prose prose-invert prose-lg max-w-none">
+                <Text className="text-gray-400 uppercase tracking-widest text-xs mb-4 block">Analysis Result</Text>
+                <div className="text-white leading-relaxed whitespace-pre-wrap text-lg font-light italic">
+                  {globalAnswer}
+                </div>
               </div>
             </div>
-            <MechanismTree data={graphData} />
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
     {/* EMPTY STATE */}
-    {!graphData && !loading && (
-      <div className="py-20 flex flex-col items-center justify-center glassy-card rounded-[40px] border-dashed border-white/10">
-        <DeploymentUnitOutlined className="text-6xl text-gray-700 mb-6" />
-        <p className="text-gray-500 text-xl font-light tracking-wide">
-          您的知识地图将在此处呈现
+    {!graphData && !globalAnswer && !loading && (
+      <div className="py-24 flex flex-col items-center justify-center glassy-card rounded-[40px] border-dashed border-white/10 mx-auto max-w-2xl">
+        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-8 border border-white/10">
+          <DeploymentUnitOutlined className="text-4xl text-gray-600" />
+        </div>
+        <p className="text-gray-500 text-xl font-light tracking-wide text-center">
+          {searchMode === 'local' 
+            ? "选择或输入一个特定主题，查看其演化的机制树" 
+            : "提出一个宏观、跨领域的问题，系统将从各知识社区中提炼答案"}
         </p>
       </div>
     )}
@@ -188,18 +371,23 @@ const InsightPage = () => {
       {/* LOADING OVERLAY */}
       {loading && (
         <div className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-md flex flex-col items-center justify-center">
-          <Spin size="large" />
-          <Text className="mt-6 text-white/70 font-light tracking-widest uppercase text-sm">
-            AI 正在构建知识图谱
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full border-t-2 border-blue-500 animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full border-b-2 border-purple-500 animate-spin-slow"></div>
+            </div>
+          </div>
+          <Text className="mt-8 text-white/70 font-bold tracking-[0.2em] uppercase text-xs">
+            {searchMode === 'global' ? '提炼全域知识社区' : 'AI 正在构建知识图谱'}
           </Text>
         </div>
       )}
 
       {/* ERROR HANDLING */}
       {error && (
-        <div className="mt-10 max-w-3xl">
+        <div className="mt-10 max-w-3xl mx-auto">
           <Alert
-            message="生成失败"
+            message="执行失败"
             description={error.message}
             type="error"
             showIcon

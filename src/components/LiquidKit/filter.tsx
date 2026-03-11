@@ -123,11 +123,16 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
     const scaleG = useTransform(baseScale, (s) => s * 1.02);
     const scaleB = useTransform(baseScale, (s) => s * 1.04);
 
+    // 提升 useTransform 调用到顶级，确保在所有条件下都执行
+    const blurDeviation = typeof blur === 'object' && 'get' in blur ? blur : useTransform(() => blur as number);
+    const filterWidth = useTransform(() => (canvasWidth ? getValueOrMotion(canvasWidth) : getValueOrMotion(width)));
+    const filterHeight = useTransform(() => (canvasHeight ? getValueOrMotion(canvasHeight) : getValueOrMotion(height)));
+
     const content = (
         <filter id={id} colorInterpolationFilters="sRGB">
             <motion.feGaussianBlur
                 in={'SourceGraphic'}
-                stdDeviation={typeof blur === 'object' && 'get' in blur ? blur : useTransform(() => blur as number)}
+                stdDeviation={blurDeviation}
                 result={`blurred_source_${id}`}
             />
 
@@ -135,8 +140,8 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
                 href={displacementMapDataUrl}
                 x={0}
                 y={0}
-                width={useTransform(() => (canvasWidth ? getValueOrMotion(canvasWidth) : getValueOrMotion(width)))}
-                height={useTransform(() => (canvasHeight ? getValueOrMotion(canvasHeight) : getValueOrMotion(height)))}
+                width={filterWidth}
+                height={filterHeight}
                 result={`raw_displacement_map_${id}`}
             />
             <feGaussianBlur in={`raw_displacement_map_${id}`} stdDeviation="0.5" result={`displacement_map_${id}`} />

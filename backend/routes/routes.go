@@ -94,6 +94,62 @@ func setupGraphRAGRoutes(r *gin.Engine, s *services.GraphRAGService) {
 				"results": results,
 			})
 		})
+
+		graph.POST("/global-search", func(c *gin.Context) {
+			var req struct {
+				Query string `json:"query"`
+			}
+			if err := c.ShouldBindJSON(&req); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+
+			answer, err := s.GlobalSearch(c.Request.Context(), req.Query)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"query":  req.Query,
+				"answer": answer,
+			})
+		})
+
+		graph.POST("/build-communities", func(c *gin.Context) {
+			if err := s.BuildCommunities(c.Request.Context()); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "community building triggered"})
+		})
+
+		graph.POST("/stream", func(c *gin.Context) {
+			var req struct {
+				Query string `json:"query"`
+			}
+			if err := c.ShouldBindJSON(&req); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+
+			stream, err := s.StreamMechanismTree(c.Request.Context(), req.Query)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			defer stream.Close()
+
+			c.Header("Content-Type", "text/event-stream")
+			c.Header("Cache-Control", "no-cache")
+			c.Header("Connection", "keep-alive")
+			c.Header("Transfer-Encoding", "chunked")
+
+			c.Stream(func(w io.Writer) bool {
+				_, err := io.Copy(w, stream)
+				return err == nil && false // Always false to exit after copy
+			})
+		})
 	}
 }
 

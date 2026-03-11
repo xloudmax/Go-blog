@@ -217,6 +217,10 @@ const MobileBottomBar: React.FC = React.memo(() => {
   const centerOffset = useTransform(pillWidthSpring, (w) => (tabWidth - w) / 2);
   const verticalOffset = useTransform(pillHeightSpring, (h) => (barHeight - h) / 2);
 
+  // 提升 useTransform 调用到顶级，确保在所有条件下都执行
+  const pillX = useTransform([x, centerOffset], ([xVal, offset]) => (xVal as number) + (offset as number));
+  const sliderBorderRadius = useTransform(pillHeightSpring, (h) => h / 2);
+
   // 只有在 Tauri 环境下的 iOS 原生模式才隐藏 React 版本的底部栏
   const isNativeIOS = isIOS && isTauri;
   if (isNativeIOS) return null;
@@ -225,7 +229,7 @@ const MobileBottomBar: React.FC = React.memo(() => {
     <div className="fixed bottom-4 left-4 right-4 z-[9999] md:hidden">
       {/* 外层容器包裹背景，限制底座范围，不限制透镜溢出 */}
       <div className="mx-auto max-w-md w-full h-16 shadow-2xl relative select-none touch-none">
-        
+
         {/* 底座背景层 (可裁切) */}
         <div 
           className="absolute inset-0 overflow-hidden"
@@ -250,7 +254,7 @@ const MobileBottomBar: React.FC = React.memo(() => {
           {/* 2. 真实物理透镜滑块 (Z-10) */}
           <motion.div
             style={{ 
-              x: useTransform([x, centerOffset], ([xVal, offset]) => (xVal as number) + (offset as number)),
+              x: pillX,
               y: verticalOffset, // 动态垂直居中
               width: pillWidthSpring,
               height: pillHeightSpring,
@@ -260,7 +264,7 @@ const MobileBottomBar: React.FC = React.memo(() => {
           >
             <motion.div 
               className="w-full h-full relative overflow-hidden"
-              style={{ borderRadius: useTransform(pillHeightSpring, (h) => h / 2) }}
+              style={{ borderRadius: sliderBorderRadius }}
             >
               {/* 核心：物理折射引擎 - 背景+图标一体化放大，使用 GUI 参数 */}
               <LiquidGlass
@@ -292,14 +296,13 @@ const MobileBottomBar: React.FC = React.memo(() => {
               <motion.div 
                 className="absolute inset-0 border-[1.5px]" 
                 style={{ 
-                  borderRadius: useTransform(pillHeightSpring, (h) => h / 2),
+                  borderRadius: sliderBorderRadius,
                   borderColor: `rgba(255,255,255,${isDarkMode ? 0.2 : 0.5})`,
                   boxShadow: `inset 0 0 12px rgba(255,255,255,${isDarkMode ? 0.1 : 0.3})`
                 }} 
               />
             </motion.div>
           </motion.div>
-
           {/* 3. 透明手势交互层 (Z-20) */}
           <motion.div
             drag="x"

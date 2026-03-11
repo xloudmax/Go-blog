@@ -143,7 +143,7 @@ func (s *DeployService) ExportDataToJSON(targetDir string) error {
 		"recentPosts":  staticPosts,
 		"tags":         dashboardTags,
 	}
-	if staticPosts == nil {
+	if len(staticPosts) == 0 {
 		dashboard["popularPosts"] = []StaticPost{}
 		dashboard["recentPosts"] = []StaticPost{}
 	}

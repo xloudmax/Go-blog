@@ -5,11 +5,15 @@ import asyncio
 import logging
 from typing import Optional, List, Dict, Any, Union
 from fastapi import FastAPI, HTTPException, Body
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 import asyncpg
 from contextlib import asynccontextmanager
+import networkx as nx
+import leidenalg
+import igraph as ig
 
 # Load environment variables
 load_dotenv()
@@ -57,11 +61,27 @@ app = FastAPI(title="C404 Insight AI Service - 2025 Edition", lifespan=lifespan)
 # --- Data Models ---
 
 class MechanismNode(BaseModel):
+    id: str = ""
     title: str
     active_ingredient: str = Field(..., description="A concise (max 15 words) description of the mechanism including a verb.")
     children: Optional[List['MechanismNode']] = None
 
 MechanismNode.model_rebuild()
+
+class LLMMechanismNode(BaseModel):
+    id: str
+    title: str
+    active_ingredient: str
+    parentId: Optional[str] = None
+
+class LLMMechanismEdge(BaseModel):
+    source: str
+    target: str
+
+class LLMMechanismTree(BaseModel):
+    root_mechanism: str
+    nodes: List[LLMMechanismNode]
+    edges: List[LLMMechanismEdge]
 
 class GenerateTreeRequest(BaseModel):
     query: str
@@ -128,8 +148,20 @@ CORE RULES:
    - Constraint: Must include a functional verb or verb phrase (e.g., "Leveraging high pressure differentials to drive fluid transfer" NOT "Pressure-based system").
 
 3. OUTPUT SPECIFICATION:
-   - You MUST output a strictly valid JSON object representing the tree.
-   - The root 'title' should be the highest-level mechanism derived from the query.
+   - You MUST output a strictly valid JSON object using a FLATTENED structure to optimize for streaming.
+   - Required Format:
+     {
+       "root_mechanism": "High-level Mechanism Name",
+       "nodes": [
+         {"id": "node-1", "title": "...", "active_ingredient": "...", "parentId": null},
+         {"id": "node-2", "title": "...", "active_ingredient": "...", "parentId": "node-1"}
+       ],
+       "edges": [
+         {"source": "node-1", "target": "node-2"}
+       ]
+     }
+   - The root node MUST have 'parentId': null.
+   - All other nodes MUST have the correct 'parentId' based on the hierarchy.
 """
 
 KNOWLEDGE_EXTRACTION_PROMPT = """
@@ -151,7 +183,134 @@ Example Output:
 }
 """
 
+COMMUNITY_SUMMARY_PROMPT = """
+You are a knowledge graph community analyst. Below are the entities and relationships within a specific "community" of nodes.
+Your goal is to generate a comprehensive summary of this community.
+
+INPUT:
+- Entities: {entities}
+- Relationships: {relationships}
+
+OUTPUT RULES:
+1. TITLE: Create a descriptive title (max 5 words).
+2. SUMMARY: A high-level overview of the functional mechanism of this community.
+3. FINDINGS: List 3 key technical takeaways or active ingredients.
+
+Output strictly valid JSON:
+{{
+  "title": "...",
+  "summary": "...",
+  "findings": ["...", "...", "..."]
+}}
+"""
+
 # --- Internal Logic & Stability ---
+
+async def run_leiden_clustering():
+    """Fetches edges, runs Leiden clustering, and updates nodes."""
+    if not db_pool:
+        return 0
+    
+    async with db_pool.acquire() as conn:
+        # 1. Fetch edges
+        rows = await conn.fetch("SELECT source_id, target_id FROM knowledge_edges")
+        if not rows:
+            return 0
+            
+        g = ig.Graph()
+        nodes_set = set()
+        edges = []
+        for r in rows:
+            s, t = str(r['source_id']), str(r['target_id'])
+            nodes_set.add(s)
+            nodes_set.add(t)
+            edges.append((s, t))
+            
+        node_list = list(nodes_set)
+        node_to_idx = {node_id: i for i, node_id in enumerate(node_list)}
+        
+        g.add_vertices(len(node_list))
+        # Filter edges to only those where both nodes exist in nodes_set (sanity check)
+        valid_edges = [(node_to_idx[s], node_to_idx[t]) for s, t in edges if s in node_to_idx and t in node_to_idx]
+        g.add_edges(valid_edges)
+        
+        # 2. Run Leiden
+        partition = leidenalg.find_partition(g, leidenalg.ModularityVertexPartition)
+        
+        # 3. Update DB
+        async with conn.transaction():
+            for comm_id, node_indices in enumerate(partition):
+                node_uuids = [node_list[idx] for idx in node_indices]
+                await conn.execute(
+                    "UPDATE knowledge_nodes SET community_id = $1 WHERE id = ANY($2::uuid[])",
+                    comm_id, node_uuids
+                )
+        
+        logger.info(f"Leiden clustering completed: {len(partition)} communities identified.")
+        return len(partition)
+
+async def generate_all_community_summaries():
+    """Generates LLM summaries for all identified communities."""
+    if not db_pool or not client:
+        return
+        
+    async with db_pool.acquire() as conn:
+        # Get unique communities
+        communities = await conn.fetch("SELECT DISTINCT community_id FROM knowledge_nodes WHERE community_id IS NOT NULL")
+        
+        for row in communities:
+            comm_id = row['community_id']
+            
+            # Sample nodes and edges from this community
+            nodes = await conn.fetch(
+                "SELECT name, description FROM knowledge_nodes WHERE community_id = $1 LIMIT 20", 
+                comm_id
+            )
+            
+            # Get edges associated with nodes in this community
+            edges = await conn.fetch(
+                """
+                SELECT e.relation_type, e.description 
+                FROM knowledge_edges e
+                JOIN knowledge_nodes n1 ON e.source_id = n1.id
+                JOIN knowledge_nodes n2 ON e.target_id = n2.id
+                WHERE n1.community_id = $1 AND n2.community_id = $1
+                LIMIT 20
+                """, comm_id
+            )
+            
+            entities_str = "\n".join([f"- {n['name']}: {n['description']}" for n in nodes])
+            rels_str = "\n".join([f"- {r['relation_type']}: {r['description']}" for r in edges])
+            
+            try:
+                prompt_content = COMMUNITY_SUMMARY_PROMPT.format(
+                    entities=entities_str, 
+                    relationships=rels_str
+                )
+                
+                response = await client.chat.completions.create(
+                    model=LLM_MODEL,
+                    messages=[{"role": "system", "content": prompt_content}],
+                    response_format={"type": "json_object"}
+                )
+                
+                content = response.choices[0].message.content
+                data = json.loads(content)
+                
+                await conn.execute(
+                    """
+                    INSERT INTO communities (community_id, level, title, summary, findings)
+                    VALUES ($1, $2, $3, $4, $5)
+                    ON CONFLICT (community_id) DO UPDATE SET 
+                        title = EXCLUDED.title, 
+                        summary = EXCLUDED.summary, 
+                        findings = EXCLUDED.findings,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    comm_id, 0, data['title'], data['summary'], json.dumps(data['findings'])
+                )
+            except Exception as e:
+                logger.error(f"Failed to generate summary for community {comm_id}: {e}")
 
 def generate_deterministic_id(path: str, title: str) -> str:
     """Generates a stable ID based on the node's path in the tree and title hash."""
@@ -295,17 +454,90 @@ async def generate_mechanism_tree(request: GenerateTreeRequest):
         
         content = response.choices[0].message.content
         raw_data = json.loads(content)
-        tree = MechanismNode(**raw_data)
-        flattened = flatten_tree(tree)
+        
+        # Parse flat structure from LLM
+        flat_tree = LLMMechanismTree(**raw_data)
+        
+        # Convert to nested if needed for other systems, 
+        # but here we return flattened format for React Flow
+        
+        # Prepare components for flatten_tree (which actually constructs React Flow nodes/edges)
+        # We need to bridge LLMMechanismNode to MechanismNode if we want to use existing helpers
+        node_map = {n.id: MechanismNode(id=n.id, title=n.title, active_ingredient=n.active_ingredient, children=[]) for n in flat_tree.nodes}
+        root = None
+        for n in flat_tree.nodes:
+            if n.parentId and n.parentId in node_map:
+                node_map[n.parentId].children.append(node_map[n.id])
+            elif not n.parentId:
+                root = node_map[n.id]
+        
+        if not root and node_map:
+             # Fallback if no parentId=None, pick first
+             root = list(node_map.values())[0]
+
+        if not root:
+            return FlattenedMechanismResponse(
+                tree_metadata=TreeMetadata(query=query, root_mechanism=flat_tree.root_mechanism),
+                nodes=[], edges=[]
+            )
+
+        flattened = flatten_tree(root)
         
         return FlattenedMechanismResponse(
-            tree_metadata=TreeMetadata(query=query, root_mechanism=tree.title),
+            tree_metadata=TreeMetadata(query=query, root_mechanism=flat_tree.root_mechanism),
             nodes=flattened["nodes"],
             edges=flattened["edges"]
         )
     except Exception as e:
         logger.error(f"Error generating tree: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate/mechanism-tree/stream")
+async def generate_mechanism_tree_stream(request: GenerateTreeRequest):
+    query = request.query
+    logger.info(f"Received streaming tree query: {query}")
+
+    async def event_generator():
+        try:
+            if not client:
+                yield f"data: {json.dumps({'error': 'OpenAI client not configured'})}\n\n"
+                return
+
+            response = await retry_with_backoff(
+                client.chat.completions.create,
+                model=LLM_MODEL,
+                messages=[
+                    {"role": "system", "content": MECHANISM_TREE_PROMPT},
+                    {"role": "user", "content": f"Query: {query}"}
+                ],
+                response_format={"type": "json_object"}
+            )
+            
+            content = response.choices[0].message.content
+            raw_data = json.loads(content)
+            tree = MechanismNode(**raw_data)
+            flattened = flatten_tree(tree)
+            
+            # Stream metadata first
+            yield f"data: {json.dumps({'type': 'metadata', 'query': query, 'root_mechanism': tree.title})}\n\n"
+            await asyncio.sleep(0.1)
+
+            # Stream nodes one by one to simulate "growth"
+            for node in flattened["nodes"]:
+                yield f"data: {json.dumps({'type': 'node', 'data': node.model_dump()})}\n\n"
+                await asyncio.sleep(0.05) # Small delay for animation feel
+
+            # Stream edges
+            for edge in flattened["edges"]:
+                yield f"data: {json.dumps({'type': 'edge', 'data': edge.model_dump()})}\n\n"
+                await asyncio.sleep(0.02)
+
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            logger.error(f"Error in streaming generator: {e}")
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/extract/knowledge", response_model=KnowledgeExtractionResponse)
 async def extract_knowledge_endpoint(request: KnowledgeExtractionRequest):
@@ -354,18 +586,77 @@ async def embedding_endpoint(request: EmbeddingRequest):
         logger.error(f"Error generating embedding: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/graph/build-communities")
+async def build_communities_endpoint():
+    """Trigger background clustering and summarization."""
+    try:
+        count = await run_leiden_clustering()
+        # Background task for summaries as it might take time
+        asyncio.create_task(generate_all_community_summaries())
+        return {"status": "success", "communities_identified": count}
+    except Exception as e:
+        logger.error(f"Error building communities: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class GlobalSearchRequest(BaseModel):
+    query: str
+
+@app.post("/graph/global-search")
+async def global_search_endpoint(request: GlobalSearchRequest):
+    if not db_pool or not client:
+         return {"answer": "AI Service not fully configured (Database or OpenAI Key missing)."}
+    
+    logger.info(f"Global Search Query: {request.query}")
+    
+    async with db_pool.acquire() as conn:
+        # Search communities using Full-Text Search on Title and Summary
+        communities = await conn.fetch(
+            """
+            SELECT title, summary, findings FROM communities 
+            WHERE to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '')) @@ plainto_tsquery('simple', $1)
+            OR community_id IN (
+                SELECT community_id FROM knowledge_nodes 
+                WHERE to_tsvector('simple', name) @@ plainto_tsquery('simple', $1)
+                LIMIT 5
+            )
+            LIMIT 5
+            """, request.query
+        )
+        
+        if not communities:
+            # Fallback: get top results by general importance (highest degree or just top 3)
+            communities = await conn.fetch("SELECT title, summary, findings FROM communities LIMIT 3")
+
+        if not communities:
+             return {"answer": "No relevant knowledge communities found to answer this global query."}
+
+        context = "\n\n".join([
+            f"Community: {c['title']}\nSummary: {c['summary']}\nKey Findings: {c['findings']}" 
+            for c in communities
+        ])
+        
+        try:
+            response = await client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a global knowledge graph analyst. Use the provided high-level community summaries to answer the user's broad question. If the data provided is insufficient, state that clearly."},
+                    {"role": "user", "content": f"Query: {request.query}\n\nData Context (Community Summaries):\n{context}"}
+                ]
+            )
+            return {"answer": response.choices[0].message.content}
+        except Exception as e:
+            logger.error(f"Error in LLM global search: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/health")
 def health_check():
     return {
         "status": "ok", 
         "service": "ai_service", 
         "engine": "GraphRAG Enabled (AsyncOpenAI + asyncpg)",
-        "db_connected": db_pool is not None
+        "db_connected": db_pool is not None,
+        "features": ["MechanismTree", "KnowledgeExtraction", "LeidenClustering", "GlobalSearch"]
     }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
     import uvicorn

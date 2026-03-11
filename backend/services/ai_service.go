@@ -84,6 +84,44 @@ func (s *AIService) GenerateMechanismTree(ctx context.Context, query string) (*m
 	return &root, nil
 }
 
+// StreamMechanismTree calls the Python service's streaming endpoint and returns the response body as a reader.
+func (s *AIService) StreamMechanismTree(ctx context.Context, query string) (io.ReadCloser, error) {
+	reqBody := mechanismRequest{
+		Query: query,
+	}
+
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	u, err := url.Parse(s.pythonServiceURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid AI service URL: %w", err)
+	}
+	u.Path = "/generate/mechanism-tree/stream"
+
+	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call streaming ai service: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, fmt.Errorf("python streaming service returned error: %d - %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return resp.Body, nil
+}
+
 type embeddingRequest struct {
 	Text string `json:"text"`
 }
@@ -101,7 +139,7 @@ func (s *AIService) GetEmbedding(ctx context.Context, text string) ([]float32, e
 	}
 
 	u, _ := url.Parse(s.pythonServiceURL)
-	u.Path = "/embedding" // We'll add this to main.py if not exists, or adapt
+	u.Path = "/embedding"
 
 	req, _ := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -122,6 +160,72 @@ func (s *AIService) GetEmbedding(ctx context.Context, text string) ([]float32, e
 	}
 
 	return res.Embedding, nil
+}
+
+type globalSearchRequest struct {
+	Query string `json:"query"`
+}
+
+type globalSearchResponse struct {
+	Answer string `json:"answer"`
+}
+
+// GlobalSearch calls the Python service to perform a community-based global search.
+func (s *AIService) GlobalSearch(ctx context.Context, query string) (string, error) {
+	reqBody := globalSearchRequest{Query: query}
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	u, _ := url.Parse(s.pythonServiceURL)
+	u.Path = "/graph/global-search"
+
+	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("ai_service returned %d", resp.StatusCode)
+	}
+
+	var res globalSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return "", err
+	}
+
+	return res.Answer, nil
+}
+
+// BuildCommunities triggers Leiden clustering and community summarization in the Python service.
+func (s *AIService) BuildCommunities(ctx context.Context) error {
+	u, _ := url.Parse(s.pythonServiceURL)
+	u.Path = "/graph/build-communities"
+
+	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("ai_service returned %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 func getFallbackMockData(query string) *models.MechanismNode {
