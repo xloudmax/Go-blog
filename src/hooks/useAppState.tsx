@@ -143,6 +143,7 @@ export const useAppState = () => {
 };
 
 // 便捷的状态和操作hooks (原本在 appStateHooks.ts)
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAppUser = () => {
   const { state, actions } = useAppState();
   return {
@@ -156,6 +157,7 @@ export const useAppUser = () => {
   };
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAppUI = () => {
   const { state, actions } = useAppState();
   return {

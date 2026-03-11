@@ -463,7 +463,7 @@ export default function LiquidGlassTestPage() {
             <PanelCard title="Surface">
               <div className="grid grid-cols-3 gap-1 mb-3">
                 {(['convex', 'circle', 'concave', 'lip', 'flat'] as const).map(p => (
-                  <button key={p} onClick={() => setPgProfile(p as any)}
+                  <button key={p} onClick={() => setPgProfile(p as LiquidGlassProfile)}
                     className={`py-1 px-1.5 rounded text-[10px] font-semibold transition-all ${
                       pgProfile === p
                         ? 'bg-blue-600 text-white shadow-[0_0_8px_rgba(37,99,235,0.4)]'

@@ -22,9 +22,13 @@ export default function IOSHomePage() {
           setPingStatus('fail');
           setPingError(`Status: ${res.status}`);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         setPingStatus('fail');
-        setPingError(err.message);
+        if (err instanceof Error) {
+            setPingError(err.message);
+        } else {
+            setPingError(String(err));
+        }
       }
     };
     checkBackend();

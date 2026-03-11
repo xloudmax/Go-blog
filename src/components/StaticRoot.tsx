@@ -1,5 +1,4 @@
 // src/components/StaticRoot.tsx
-import React from 'react';
 import { ConfigProvider, App as AntdApp } from 'antd';
 import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 import App from '../App';

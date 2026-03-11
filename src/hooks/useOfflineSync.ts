@@ -74,5 +74,5 @@ export function useOfflineSync(options: { skip?: boolean } = {}) {
             const timer = setTimeout(syncOfflinePosts, 1000);
             return () => clearTimeout(timer);
         }
-    }, [isAuthenticated, createPost]);
+    }, [isAuthenticated, createPost, options.skip]);
 }

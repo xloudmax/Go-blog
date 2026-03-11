@@ -53,9 +53,9 @@ export default function PostDetailPage() {
     errorPolicy: 'all'
   });
 
-  const [staticPost, setStaticPost] = useState<any>(null);
+  const [staticPost, setStaticPost] = useState<Record<string, unknown> | null>(null);
   const [staticLoading, setStaticLoading] = useState(isStatic);
-  const [staticError, setStaticError] = useState<any>(null);
+  const [staticError, setStaticError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (isStatic && slug) {
@@ -110,12 +110,15 @@ export default function PostDetailPage() {
 
   // Sync with native mini-player (Apple Music style)
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (post && (window as any).webkit?.messageHandlers?.updateArticle) {
       const payload = {
         title: post.title,
         author: post.author.username
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).webkit.messageHandlers.updateArticle.postMessage(payload);
+      // eslint-disable-next-line no-console
       console.log('[DEBUG] Sent article update to native:', payload);
     }
   }, [post]);

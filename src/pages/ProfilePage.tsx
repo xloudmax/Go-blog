@@ -66,8 +66,12 @@ const ProfilePage: React.FC = () => {
       } else {
         message.error('更新失败，请重试');
       }
-    } catch (error: any) {
-      message.error(error.message || '更新个人资料时发生错误');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        message.error(error.message || '更新个人资料时发生错误');
+      } else {
+        message.error('更新个人资料时发生错误');
+      }
     }
   };
 

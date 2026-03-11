@@ -70,9 +70,7 @@ export default function SystemManagement() {
     const { 
         config: githubConfig, 
         updateConfig, 
-        deploy: handleDeploy, 
-        loading: gitHubLoading,
-        errors: githubErrors
+        deploy: handleDeploy
     } = useGitHubDeployment();
 
     const [editConfig, setEditConfig] = useState({ repo: '', token: '' });
@@ -98,10 +96,10 @@ export default function SystemManagement() {
                 description: 'GitHub 配置已更新',
             });
             setIsEditing(false);
-        } catch (err: any) {
+        } catch (err: unknown) {
             notification.error({
                 message: '更新失败',
-                description: err.message,
+                description: err instanceof Error ? err.message : String(err),
             });
         } finally {
             setOperationLoading(null);
@@ -128,10 +126,10 @@ export default function SystemManagement() {
                     } else {
                         throw new Error(result?.message || '部署过程出错');
                     }
-                } catch (err: any) {
+                } catch (err: unknown) {
                     notification.error({
                         message: '部署失败',
-                        description: err.message,
+                        description: err instanceof Error ? err.message : String(err),
                         duration: 10,
                     });
                 } finally {
@@ -480,7 +478,7 @@ export default function SystemManagement() {
                 <Row gutter={[16, 16]} style={{marginBottom: '24px'}}>
                     {/* 基本信息 */}
                     <Col xs={24} lg={12}>
-                        <Card title="服务器信息" variant="none">
+                        <Card title="服务器信息" variant="borderless">
                             <Descriptions column={1} layout="horizontal" size="small">
                                 <Descriptions.Item label="主机名">
                                     <Text code>{dashboard.hostname}</Text>
@@ -518,7 +516,7 @@ export default function SystemManagement() {
 
                     {/* 内存使用情况 - 图表展示 */}
                     <Col xs={24} lg={12}>
-                        <Card title="内存使用情况" variant="none">
+                        <Card title="内存使用情况" variant="borderless">
                             <ResponsiveContainer width="100%" height={200}>
                                 <BarChart data={getMemoryChartData()}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -559,7 +557,7 @@ export default function SystemManagement() {
             {dashboard && (
                 <Row gutter={[16, 16]} style={{marginBottom: '24px'}}>
                     <Col xs={12} md={6}>
-                        <Card variant="none" styles={{body: {padding: '24px'}}}>
+                        <Card variant="borderless" styles={{body: {padding: '24px'}}}>
                             <Statistic
                                 title="总用户数"
                                 value={dashboard.userCount}
@@ -569,7 +567,7 @@ export default function SystemManagement() {
                     </Col>
 
                     <Col xs={12} md={6}>
-                        <Card variant="none" styles={{body: {padding: '24px'}}}>
+                        <Card variant="borderless" styles={{body: {padding: '24px'}}}>
                             <Statistic
                                 title="总文章数"
                                 value={dashboard.postCount}
@@ -579,7 +577,7 @@ export default function SystemManagement() {
                     </Col>
 
                     <Col xs={12} md={6}>
-                        <Card variant="none" styles={{body: {padding: '24px'}}}>
+                        <Card variant="borderless" styles={{body: {padding: '24px'}}}>
                             <Statistic
                                 title="今日注册"
                                 value={dashboard.todayRegistrations}
@@ -589,7 +587,7 @@ export default function SystemManagement() {
                     </Col>
 
                     <Col xs={12} md={6}>
-                        <Card variant="none" styles={{body: {padding: '24px'}}}>
+                        <Card variant="borderless" styles={{body: {padding: '24px'}}}>
                             <Statistic
                                 title="今日文章"
                                 value={dashboard.todayPosts}
@@ -608,7 +606,7 @@ export default function SystemManagement() {
                         <span>GitHub Pages 静态导出</span>
                     </Space>
                 } 
-                variant="none"
+                variant="borderless"
                 style={{ marginBottom: '24px' }}
                 extra={
                     !isEditing ? (
@@ -691,7 +689,7 @@ export default function SystemManagement() {
             </Card>
 
             {/* 系统操作 */}
-            <Card title="系统维护操作" variant="none" style={{marginBottom: '24px'}}>
+            <Card title="系统维护操作" variant="borderless" style={{marginBottom: '24px'}}>
                 <Row gutter={[16, 16]}>
                     {/* 缓存管理 */}
                     <Col xs={24} md={12}>

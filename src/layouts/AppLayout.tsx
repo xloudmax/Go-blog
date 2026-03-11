@@ -36,7 +36,7 @@ const { Text } = Typography;
 const { useBreakpoint } = Grid;
 
 const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
-const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+const isTauri = typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
 
 export default function AppLayout() {
     const { theme: appTheme, toggle } = useContext(ThemeContext)
@@ -50,8 +50,10 @@ export default function AppLayout() {
         if (isTauri) {
             // 在首页稳定后的 3 秒，静默提前拉取文章详情页的 JS Chunk
             const timer = setTimeout(() => {
+                // eslint-disable-next-line no-console
                 console.log('🚀 [Tauri Perf] Aggressively prefetching PostDetailPage chunk...');
                 import('@/pages/PostDetailPage').catch((err) => {
+                    // eslint-disable-next-line no-console
                     console.warn('[Tauri Perf] Prefetch failed (this is harmless, likely due to a chunk update):', err);
                 });
             }, 3000);

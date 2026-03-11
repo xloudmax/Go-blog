@@ -3,7 +3,7 @@
 /**
  * 是否是 Tauri 环境
  */
-export const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+export const isTauri = typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
 
 /**
  * 是否是 iOS 环境 (通过 User Agent 检测)

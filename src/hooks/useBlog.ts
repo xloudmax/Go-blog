@@ -44,7 +44,7 @@ export const useBlogList = (initialLimit = 15) => {
 
   const [staticPosts, setStaticPosts] = useState<BlogPost[]>([]);
   const [staticLoading, setStaticLoading] = useState(isStatic);
-  const [staticError, setStaticError] = useState<any>(null);
+  const [staticError, setStaticError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (isStatic) {
@@ -206,7 +206,11 @@ export const useBlogDashboard = () => {
     skip: isStatic
   });
 
-  const [staticDashboard, setStaticDashboard] = useState<any>({
+  const [staticDashboard, setStaticDashboard] = useState<{
+    popularPosts: BlogPost[];
+    recentPosts: BlogPost[];
+    tags: string[];
+  }>({
     popularPosts: [],
     recentPosts: [],
     tags: []
@@ -225,7 +229,10 @@ export const useBlogDashboard = () => {
             });
           }
         })
-        .catch(console.error);
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error(err);
+        });
     }
   }, [isStatic]);
 
@@ -245,10 +252,12 @@ export const useBlogDashboard = () => {
   }, [tagsData?.getTags, staticDashboard.tags, isStatic]);
 
   const stats = useMemo<DashboardStats>(() => {
-    const totalViews = popularPosts.reduce((sum: number, post: BlogPost) => sum + (post.stats?.viewCount || 0), 0);
-    const totalLikes = popularPosts.reduce((sum: number, post: BlogPost) => sum + (post.stats?.likeCount || 0), 0);
-    const totalPosts = popularPosts.length + recentPosts.length;
-    const engagementRate = popularPosts.length > 0
+    const popularPostsArray = popularPosts as BlogPost[];
+    const recentPostsArray = recentPosts as BlogPost[];
+    const totalViews = popularPostsArray.reduce((sum: number, post: BlogPost) => sum + (post.stats?.viewCount || 0), 0);
+    const totalLikes = popularPostsArray.reduce((sum: number, post: BlogPost) => sum + (post.stats?.likeCount || 0), 0);
+    const totalPosts = popularPostsArray.length + recentPostsArray.length;
+    const engagementRate = popularPostsArray.length > 0
       ? (totalLikes / Math.max(totalViews, 1)) * 100
       : 0;
     const avgEngagement = totalPosts > 0 ? (totalLikes + totalViews) / totalPosts : 0;

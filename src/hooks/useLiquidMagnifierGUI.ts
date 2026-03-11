@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as dat from 'dat.gui';
 
 export interface LiquidMagnifierConfig {
@@ -53,6 +53,7 @@ export const useLiquidMagnifierGUI = (initialConfig: LiquidMagnifierConfig, fold
     return () => {
       gui.destroy();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return config;

@@ -2,7 +2,7 @@
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 
-const isTauri = !!(window as any).__TAURI_INTERNALS__;
+const isTauri = typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
 
 export interface MarkdownContent {
   title: string;
@@ -37,6 +37,7 @@ export const localFile = {
         return { title, content };
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Failed to import file', e);
     }
     return null;
@@ -65,6 +66,7 @@ export const localFile = {
         return true;
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Failed to export file', e);
     }
     return false;

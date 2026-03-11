@@ -64,7 +64,7 @@ export default function QuickRefListPage() {
                   onClick={() => navigate(`/post/${post.slug}`)}
                 >
                   <Card 
-                    variant="none"
+                    variant="borderless"
                     className="cursor-pointer h-full bg-white/5 border border-white/10 hover:border-blue-500/50 hover:bg-white/10 transition-all backdrop-blur-md"
                     styles={{ body: { padding: '20px', textAlign: 'center' } }}
                   >

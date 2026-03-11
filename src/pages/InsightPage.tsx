@@ -104,7 +104,7 @@ const InsightPage = () => {
             id: 'rag-root',
             title: `Search: ${query}`,
             active_ingredient: 'Found in Knowledge Graph',
-            children: result.results.map((r: any) => ({
+            children: result.results.map((r: { id: string; name: string; description: string }) => ({
               id: r.id,
               title: r.name,
               active_ingredient: r.description,
@@ -133,8 +133,8 @@ const InsightPage = () => {
       const decoder = new TextDecoder();
       let buffer = '';
       
-      const discoveredNodes: any[] = [];
-      const discoveredEdges: any[] = [];
+      const discoveredNodes: Record<string, unknown>[] = [];
+      const discoveredEdges: Record<string, unknown>[] = [];
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -164,13 +164,14 @@ const InsightPage = () => {
                 discoveredEdges.push(event.data);
                 setGraphData(rebuildTree(discoveredNodes, discoveredEdges));
               }
-            } catch (e) {
+            } catch {
               // Ignore partial parse
             }
           }
         }
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Search error:', err);
       setRagError('搜索过程中出现错误，请稍后再试。');
     } finally {
@@ -178,7 +179,8 @@ const InsightPage = () => {
     }
   };
 
-  const rebuildTree = (nodes: any[], edges: any[]): MechanismNode | null => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rebuildTree = (nodes: Record<string, any>[], edges: Record<string, any>[]): MechanismNode | null => {
     if (nodes.length === 0) return null;
     
     const nodeMap = new Map<string, MechanismNode>();
@@ -220,7 +222,7 @@ const InsightPage = () => {
       } else {
         message.error('触发失败');
       }
-    } catch (err) {
+    } catch {
       message.error('网络错误');
     } finally {
       setIsBuildingCommunities(false);

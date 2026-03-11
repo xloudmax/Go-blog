@@ -3,8 +3,7 @@
 import { cn } from '@/utils/cn';
 import { type HTMLMotionProps, motion, useMotionValue } from 'framer-motion';
 import React, { useCallback, useEffect } from 'react';
-import { LiquidGlassProps, useLiquidSurface } from './use-liquid-surface';
-import { LiquidFilter } from './filter';
+import { useLiquidSurface, LiquidGlassProps } from './use-liquid-surface';
 
 export const LiquidGlass: React.FC<LiquidGlassProps & HTMLMotionProps<'div'>> = React.memo(({
     children,
@@ -22,7 +21,7 @@ export const LiquidGlass: React.FC<LiquidGlassProps & HTMLMotionProps<'div'>> = 
     borderRadius,
     ...props
 }) => {
-    const { ref, filterId, finalWidth, finalHeight, finalRadius } = useLiquidSurface({
+    const { ref, filterId, filterNode, filterStyles } = useLiquidSurface({
         glassThickness,
         bezelWidth,
         blur,
@@ -36,28 +35,6 @@ export const LiquidGlass: React.FC<LiquidGlassProps & HTMLMotionProps<'div'>> = 
         height,
         borderRadius,
     });
-
-    const filterNode = (
-        <LiquidFilter 
-            id={filterId} 
-            width={finalWidth} 
-            height={finalHeight} 
-            radius={finalRadius} 
-            glassThickness={glassThickness}
-            bezelWidth={bezelWidth}
-            blur={blur}
-            bezelHeightFn={bezelHeightFn}
-            refractiveIndex={refractiveIndex}
-            specularOpacity={specularOpacity}
-            specularSaturation={specularSaturation}
-            dpr={dpr}
-        />
-    );
-
-    const filterStyles: React.CSSProperties = {
-        backdropFilter: `url(#${filterId})`,
-        WebkitBackdropFilter: `url(#${filterId})`,
-    };
 
     useEffect(() => {
         if (targetRef?.current) {

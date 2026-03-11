@@ -3,7 +3,7 @@
 import React, { useRef, useLayoutEffect } from 'react';
 import { motion, HTMLMotionProps, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
-import { useLiquidSurface, LiquidGlassProps } from './LiquidKit/glass';
+import { useLiquidSurface, type LiquidGlassProps } from './LiquidKit/use-liquid-surface';
 
 export interface LiquidButtonProps extends 
     Omit<LiquidGlassProps, 'targetRef' | 'width' | 'height' | 'borderRadius'>,

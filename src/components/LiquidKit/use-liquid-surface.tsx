@@ -2,7 +2,7 @@
 
 import { type MotionValue, useSpring } from 'framer-motion';
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef } from 'react';
-import type { LiquidFilterProps } from './filter';
+import { LiquidFilter, type LiquidFilterProps } from './filter';
 
 /**
  * Safely parse border radius from computed styles, handling edge cases like
@@ -77,22 +77,24 @@ export const useMotionSizeObservers = <T extends HTMLElement = HTMLDivElement>(
     }, [containerRef, disabled, width, height, borderRadius]);
 
     useLayoutEffect(() => {
-        if (!containerRef.current || disabled) return;
+        const ref = containerRef.current;
+        if (!ref || disabled) return;
 
         const resizeObserver = new ResizeObserver(() => {
             updateDimensions();
         });
 
-        resizeObserver.observe(containerRef.current);
+        resizeObserver.observe(ref);
         updateDimensions();
 
         return () => {
             resizeObserver.disconnect();
         };
-    }, [disabled, updateDimensions]);
+    }, [disabled, updateDimensions, containerRef]);
 
     useEffect(() => {
-        if (!containerRef.current || disabled) return;
+        const ref = containerRef.current;
+        if (!ref || disabled) return;
 
         let timeoutId: ReturnType<typeof setTimeout>;
         const mutationObserver = new MutationObserver(() => {
@@ -100,7 +102,7 @@ export const useMotionSizeObservers = <T extends HTMLElement = HTMLDivElement>(
             timeoutId = setTimeout(updateDimensions, 150);
         });
 
-        mutationObserver.observe(containerRef.current, {
+        mutationObserver.observe(ref, {
             attributes: true,
             attributeFilter: ['style', 'class'],
         });
@@ -109,7 +111,7 @@ export const useMotionSizeObservers = <T extends HTMLElement = HTMLDivElement>(
             clearTimeout(timeoutId);
             mutationObserver.disconnect();
         };
-    }, [disabled, updateDimensions]);
+    }, [disabled, updateDimensions, containerRef]);
 
     return {
         width,
@@ -141,6 +143,7 @@ export const useLiquidSurface = <T extends HTMLElement = HTMLDivElement>({
     width: widthProp,
     height: heightProp,
     borderRadius: borderRadiusProp,
+    ...props
 }: LiquidGlassProps<T>) => {
     const rawId = useId().replace(/:/g, '');
     const filterId = `glass-${rawId}`;
@@ -158,5 +161,27 @@ export const useLiquidSurface = <T extends HTMLElement = HTMLDivElement>({
     const finalHeight = usePropValues ? heightProp : observedHeight;
     const finalRadius = usePropValues ? borderRadiusProp : observedRadius;
 
-    return { filterId, ref, finalWidth, finalHeight, finalRadius };
+    const filterNode = (
+        <LiquidFilter 
+            id={filterId} 
+            width={finalWidth} 
+            height={finalHeight} 
+            radius={finalRadius} 
+            glassThickness={props.glassThickness}
+            bezelWidth={props.bezelWidth}
+            blur={props.blur}
+            bezelHeightFn={props.bezelHeightFn}
+            refractiveIndex={props.refractiveIndex}
+            specularOpacity={props.specularOpacity}
+            specularSaturation={props.specularSaturation}
+            dpr={props.dpr}
+        />
+    );
+
+    const filterStyles: React.CSSProperties = {
+        backdropFilter: `url(#${filterId})`,
+        WebkitBackdropFilter: `url(#${filterId})`,
+    };
+
+    return { filterId, filterStyles, ref, filterNode, finalWidth, finalHeight, finalRadius };
 };

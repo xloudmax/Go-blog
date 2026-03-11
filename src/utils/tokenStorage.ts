@@ -1,7 +1,7 @@
 // src/utils/tokenStorage.ts
 import { invoke } from '@tauri-apps/api/core';
 
-const isTauri = !!(window as any).__TAURI_INTERNALS__;
+const isTauri = typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
 
 // TODO:
 // - [x] Debug Tauri Keychain Hang <!-- id: 89 -->
@@ -20,6 +20,7 @@ export const tokenStorage = {
         const keychainPromise = invoke<string | null>('get_token');
         const timeoutPromise = new Promise<null>((resolve) => 
           setTimeout(() => {
+            // eslint-disable-next-line no-console
             console.warn('Tauri keychain get_token timed out after 2s, falling back to localStorage');
             resolve(null);
           }, 2000)
@@ -28,6 +29,7 @@ export const tokenStorage = {
         const token = await Promise.race([keychainPromise, timeoutPromise]);
         if (token) return token;
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error('Failed to get token from keychain', e);
       }
       // 备选方案：从 localStorage 获取
@@ -44,6 +46,7 @@ export const tokenStorage = {
       // 异步调用钥匙串存储，不等待其完成以避免阻塞 UI 跳转
       // 如果钥匙串弹出系统授权弹窗，也不会影响当前页面的跳转逻辑
       invoke('store_token', { token }).catch(e => {
+        // eslint-disable-next-line no-console
         console.error('Failed to store token in keychain (background)', e);
       });
     }
@@ -54,6 +57,7 @@ export const tokenStorage = {
     if (isTauri) {
       // 同理，登出也不应该被钥匙串操作阻塞
       invoke('delete_token').catch(e => {
+        // eslint-disable-next-line no-console
         console.error('Failed to delete token from keychain (background)', e);
       });
     }

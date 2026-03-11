@@ -383,10 +383,10 @@ const SearchPage: React.FC = () => {
                             <div className="flex items-center justify-between border-t border-gray-50 dark:border-white/5 pt-4">
                               <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 font-bold text-xs">
-                                    {String(((post.author as any).username || 'U')).charAt(0).toUpperCase()}
+                                    {String(((post.author as Record<string, unknown>)?.username || 'U')).charAt(0).toUpperCase()}
                                   </div>
                                 <div className="flex flex-col">
-                                  <Text className="text-xs font-medium">{((post.author as any)?.username as string) || 'Unknown'}</Text>
+                                  <Text className="text-xs font-medium">{((post.author as Record<string, unknown>)?.username as string) || 'Unknown'}</Text>
                                   {!!post.publishedAt && <Text className="text-[10px] text-gray-400">{dayjs(post.publishedAt as string).format('MMM D, YYYY')}</Text>}
                                 </div>
                               </div>

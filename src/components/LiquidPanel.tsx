@@ -26,14 +26,11 @@ export const LiquidPanel: React.FC<LiquidPanelProps> = ({
     onDrag: _d, 
     onDragStart: _ds, 
     onDragEnd: _de, 
-    // @ts-expect-error - onPan is not a standard HTML attribute but often passed via framer-motion props
     onPan: _p, 
-    // @ts-expect-error - onPanStart is not a standard HTML attribute
     onPanStart: _ps, 
-    // @ts-expect-error - onPanEnd is not a standard HTML attribute
     onPanEnd: _pe, 
     ...safeProps 
-  } = props as any;
+  } = props as Record<string, unknown>;
 
   return (
     <LiquidGlass
