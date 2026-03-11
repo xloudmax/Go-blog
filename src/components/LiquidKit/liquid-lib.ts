@@ -64,6 +64,8 @@ export interface LiquidConfig {
     bezelHeightFn?: (x: number) => number;
     dpr?: number;
     refractiveIndex?: number;
+    objectWidth?: number;
+    objectHeight?: number;
 }
 
 /**

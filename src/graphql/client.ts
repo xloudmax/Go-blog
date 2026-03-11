@@ -1,4 +1,5 @@
 import { ApolloClient, InMemoryCache, from, Observable } from '@apollo/client';
+import { GraphQLError } from 'graphql';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { fromPromise } from '@apollo/client/link/utils';
@@ -186,7 +187,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
       positions: [],
       originalError: undefined,
       extensions: error.extensions || {}
-    })) as unknown as any[];
+    })) as unknown as readonly GraphQLError[];
     errorHandler.handleGraphQLErrors(errors);
   }
 

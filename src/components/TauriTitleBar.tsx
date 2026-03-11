@@ -1,7 +1,13 @@
 // src/components/TauriTitleBar.tsx
 import { useEffect, useState } from 'react';
 
-const isTauri = !!(window as any).__TAURI_INTERNALS__;
+declare global {
+  interface Window {
+    __TAURI_INTERNALS__?: unknown;
+  }
+}
+
+const isTauri = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
 
 export default function TauriTitleBar() {
   const [isMac, setIsMac] = useState(false);
@@ -26,7 +32,7 @@ export default function TauriTitleBar() {
         WebkitAppRegion: 'drag',
         // 背景完全透明，不影响现有的设计
         backgroundColor: 'transparent',
-      }}
+      } as React.CSSProperties}
     />
   );
 }

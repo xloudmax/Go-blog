@@ -199,7 +199,7 @@ export const LiquidFilter: React.FC<LiquidFilterProps> = React.memo(({
             <motion.feColorMatrix
                 in={`displaced_${id}`}
                 type="saturate"
-                values={specularSaturation as any} 
+                values={getValueOrMotion(specularSaturation) as any} 
                 result={`super_saturated_bg_${id}`}
             />
 

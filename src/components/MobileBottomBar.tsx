@@ -14,7 +14,7 @@ import { useAppUser } from '@/hooks';
 import { LiquidGlass } from './LiquidKit/glass';
 import { CONVEX_CIRCLE } from './LiquidKit/liquid-lib';
 
-const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+const isTauri = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
 
 const getTauriEvent = async () => {
   if (!isTauri) return null;
@@ -113,7 +113,10 @@ const MobileBottomBar: React.FC = React.memo(() => {
           setIsIOS(true);
           tauriEvent?.emit('show-native-bar');
         }
-      } catch (e) { console.error('Platform detection failed:', e); }
+      } catch (e) { 
+        // eslint-disable-next-line no-console
+        console.error('Platform detection failed:', e); 
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -147,8 +150,8 @@ const MobileBottomBar: React.FC = React.memo(() => {
     if (!isIOS) return;
     
     // Listen for custom tab-changed events from Swift
-    const handleTabChanged = (event: any) => {
-      const idx = event.detail?.index;
+    const handleTabChanged = (event: Event) => {
+      const idx = (event as CustomEvent).detail?.index;
       if (typeof idx === 'number' && navItems[idx]) {
         navigate(navItems[idx].path);
       }
