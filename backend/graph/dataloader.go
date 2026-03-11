@@ -2,7 +2,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"repair-platform/models"
 	"time"
 
@@ -45,16 +44,17 @@ func NewDataLoader(db *gorm.DB) *DataLoader {
 		// 将查询结果映射回 keys 的顺序
 		userMap := make(map[uint]*models.User)
 		for i := range users {
-			userMap[users[i].ID] = &users[i]
+			user := users[i]
+			userMap[user.ID] = &user
 		}
 
 		for i, key := range keys {
 			if user, ok := userMap[key]; ok {
 				results[i].Data = user
 			} else {
-				// 没找到用户，不报错，返回 nil 或者根据业务需求处理
-				// 这里保持 nil
-				results[i].Error = fmt.Errorf("user not found: %d", key)
+				// 没找到用户，不返回错误，让 resolver 处理默认值
+				results[i].Data = nil
+				results[i].Error = nil
 			}
 		}
 
@@ -77,20 +77,21 @@ func NewDataLoader(db *gorm.DB) *DataLoader {
 		// 映射结果
 		statsMap := make(map[uint]*models.BlogPostStats)
 		for i := range stats {
-			statsMap[stats[i].BlogPostID] = &stats[i]
+			stat := stats[i]
+			statsMap[stat.BlogPostID] = &stat
 		}
 
 		for i, key := range keys {
 			if stat, ok := statsMap[key]; ok {
 				results[i] = &dataloader.Result[*models.BlogPostStats]{Data: stat}
 			} else {
-				// 未找到统计数据，返回默认空统计
+				// 未找到统计数据，返回默认空统计，ID 设为文章 ID 以确保非空且唯一
 				defaultStats := &models.BlogPostStats{
+					ID:         key, // 临时使用文章 ID 作为统计 ID
 					BlogPostID: key,
 					ViewCount:  0,
 					LikeCount:  0,
-					// ID 必须设置，否则前端可能会报错
-					ID: 0, // 或者是临时ID
+					UpdatedAt:  time.Now(),
 				}
 				results[i] = &dataloader.Result[*models.BlogPostStats]{Data: defaultStats}
 			}

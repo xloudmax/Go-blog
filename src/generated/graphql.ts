@@ -188,6 +188,12 @@ export type GeneralResponse = {
   success: Scalars['Boolean']['output'];
 };
 
+export type GitHubConfig = {
+  __typename?: 'GitHubConfig';
+  repo: Scalars['String']['output'];
+  token: Scalars['String']['output'];
+};
+
 export type ImageUploadResponse = {
   __typename?: 'ImageUploadResponse';
   deleteUrl?: Maybe<Scalars['String']['output']>;
@@ -247,6 +253,7 @@ export type Mutation = {
   deletePost: GeneralResponse;
   deleteUnusedCategories: GeneralResponse;
   deleteUnusedTags: GeneralResponse;
+  deployToGitHubPages: GeneralResponse;
   emailLogin: GeneralResponse;
   likeComment: BlogPostComment;
   likePost: BlogPost;
@@ -268,6 +275,7 @@ export type Mutation = {
   unlikeComment: BlogPostComment;
   unlikePost: BlogPost;
   updateComment: BlogPostComment;
+  updateGitHubConfig: GeneralResponse;
   updatePost: BlogPost;
   updateProfile: User;
   uploadImage: ImageUploadResponse;
@@ -461,6 +469,12 @@ export type MutationUpdateCommentArgs = {
 };
 
 
+export type MutationUpdateGitHubConfigArgs = {
+  repo: Scalars['String']['input'];
+  token: Scalars['String']['input'];
+};
+
+
 export type MutationUpdatePostArgs = {
   id: Scalars['ID']['input'];
   input: UpdatePostInput;
@@ -549,6 +563,7 @@ export type Query = {
   enhancedSearch: EnhancedSearchResult;
   generateMechanismTree: MechanismNode;
   getCategories: Array<CategoryInfo>;
+  getGitHubConfig: GitHubConfig;
   getNotionPages: Array<NotionPage>;
   getPopularPosts: Array<BlogPost>;
   getRecentPosts: Array<BlogPost>;

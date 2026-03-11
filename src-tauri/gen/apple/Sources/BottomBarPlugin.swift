@@ -16,6 +16,9 @@ class BottomBarManager: NSObject, WKScriptMessageHandler {
         print("[DEBUG] Swift: Setup with Webview")
         self.webview = webview
         
+        // 开启 iOS 原生的侧滑返回手势 (Safari 级别丝滑体验)
+        self.webview?.allowsBackForwardNavigationGestures = true
+        
         // Register message handler for JS -> Swift communication
         webview.configuration.userContentController.add(self, name: "updateArticle")
         

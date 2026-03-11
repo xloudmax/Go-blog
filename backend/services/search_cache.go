@@ -2,15 +2,16 @@ package services
 
 import (
 	"crypto/md5"
-	"encoding/json"
 	"fmt"
 	"repair-platform/models"
 	"time"
+
+	"github.com/goccy/go-json"
 )
 
 // SearchCacheService 搜索缓存服务
 type SearchCacheService struct {
-	cache *models.MemoryCache
+	cache models.Cache
 }
 
 // NewSearchCacheService 创建搜索缓存服务
@@ -38,7 +39,7 @@ func (s *SearchCacheService) generateCacheKey(query string, limit, offset int, u
 		"userID":   userID,
 		"userRole": userRole,
 	}
-	
+
 	jsonData, _ := json.Marshal(keyData)
 	hash := md5.Sum(jsonData)
 	return fmt.Sprintf("search:%x", hash)
@@ -47,25 +48,24 @@ func (s *SearchCacheService) generateCacheKey(query string, limit, offset int, u
 // Get 获取缓存的搜索结果
 func (s *SearchCacheService) Get(query string, limit, offset int, userID *uint, userRole string) (*CachedSearchResult, bool) {
 	key := s.generateCacheKey(query, limit, offset, userID, userRole)
-	
-	if cached, found := s.cache.Get(key); found {
-		if result, ok := cached.(*CachedSearchResult); ok {
-			// 检查是否过期
-			if time.Now().Before(result.ExpiresAt) {
-				return result, true
-			}
-			// 过期则删除
-			s.cache.Delete(key)
+
+	var result CachedSearchResult
+	if found := s.cache.Get(key, &result); found {
+		// 检查是否过期
+		if time.Now().Before(result.ExpiresAt) {
+			return &result, true
 		}
+		// 过期则删除
+		s.cache.Delete(key)
 	}
-	
+
 	return nil, false
 }
 
 // Set 设置搜索结果缓存
 func (s *SearchCacheService) Set(query string, limit, offset int, userID *uint, userRole string, result *SearchResult, ttl time.Duration) {
 	key := s.generateCacheKey(query, limit, offset, userID, userRole)
-	
+
 	cachedResult := &CachedSearchResult{
 		Posts:     result.Posts,
 		Total:     result.Total,
@@ -73,7 +73,7 @@ func (s *SearchCacheService) Set(query string, limit, offset int, userID *uint, 
 		CachedAt:  time.Now(),
 		ExpiresAt: time.Now().Add(ttl),
 	}
-	
+
 	s.cache.Set(key, cachedResult, ttl)
 }
 

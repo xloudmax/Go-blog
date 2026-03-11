@@ -34,9 +34,9 @@ const HeroArticleCard: React.FC<HeroArticleCardProps> = React.memo(({ post, onNa
 
   return (
     <motion.div 
-      className="group relative w-full h-full overflow-hidden rounded-[32px] cursor-pointer border border-white/5 bg-[#1a1a1e]"
+      className="group relative w-full h-full overflow-hidden rounded-[32px] cursor-pointer border border-white/10 bg-[#131316] ring-1 ring-inset ring-white/5"
       style={{ 
-        boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.5)',
+        boxShadow: '0 40px 80px -20px rgba(0, 0, 0, 0.6)',
         transform: 'translateZ(0)', // Force GPU acceleration
         backfaceVisibility: 'hidden',
       }}
@@ -44,12 +44,19 @@ const HeroArticleCard: React.FC<HeroArticleCardProps> = React.memo(({ post, onNa
     >
       {/* Background - Use GPU optimized classes */}
       <div 
-        className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.2s] ease-out group-hover:scale-105 will-change-transform"
-        style={{ 
-          backgroundImage: post.coverImageUrl ? `url(${post.coverImageUrl})` : activeGradient,
-          transform: 'translateZ(0)',
-        }}
+        className="absolute inset-0 transition-transform duration-[1.2s] ease-out group-hover:scale-105 will-change-transform"
+        style={{ transform: 'translateZ(0)' }}
       >
+        {post.coverImageUrl ? (
+          <img 
+            src={post.coverImageUrl} 
+            alt={post.title}
+            loading="lazy" 
+            className="absolute inset-0 w-full h-full object-cover" 
+          />
+        ) : (
+          <div className="absolute inset-0" style={{ background: activeGradient }} />
+        )}
          <div className="absolute inset-0 opacity-15 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
       </div>
 
@@ -57,8 +64,8 @@ const HeroArticleCard: React.FC<HeroArticleCardProps> = React.memo(({ post, onNa
       <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden rounded-[32px]">
         <LiquidGlass
           glassThickness={80} 
-          blur={0.2} 
-          bezelWidth={60} 
+          blur={0.25} 
+          bezelWidth={35} 
           refractiveIndex={1.4} 
           specularOpacity={0.1}
           style={{ width: '100%', height: '100%' }}

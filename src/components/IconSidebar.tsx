@@ -33,25 +33,35 @@ interface IconSidebarProps {
   onThemeToggle?: () => void;
 }
 
+const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
+
 const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isAdmin, user, logout } = useAppUser();
 
-  // 获取未读通知数量
+  // 获取未读通知数量 (静态模式跳过)
   const { data: unreadData } = useUnreadNotificationCount({
-    skip: !isAuthenticated
+    skip: isStatic || !isAuthenticated
   });
   const unreadCount = unreadData?.unreadNotificationCount || 0;
 
   // 顶部导航菜单项
-  const topMenuItems: MenuItem[] = [
+  const topMenuItems: MenuItem[] = isStatic ? [
+    {
+      key: 'posts',
+      icon: <FileTextOutlined />,
+      label: '文章列表',
+      path: '/home',
+    }
+  ] : [
     {
       key: 'posts',
       icon: <FileTextOutlined />,
       label: '文章',
       path: '/home',
     },
+    // ... (rest of standard items)
     {
       key: 'tags',
       icon: <BookOutlined />,
@@ -69,6 +79,12 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
       icon: <DeploymentUnitOutlined />,
       label: '知识洞察',
       path: '/insight',
+    },
+    {
+      key: 'reference',
+      icon: <BookOutlined />,
+      label: '知识卡片',
+      path: '/reference',
     },
     {
       key: 'liquid-glass',
@@ -255,7 +271,7 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
         )}
 
         {/* 退出登录 */}
-        {isAuthenticated && (
+        {!isStatic && isAuthenticated && (
           <Tooltip title="退出登录" placement="right">
             <div
               onClick={() => logout()}
@@ -270,7 +286,7 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
         )}
 
         {/* 用户头像 */}
-        {isAuthenticated && user && (
+        {!isStatic && isAuthenticated && user && (
           <Tooltip title={user.username || '用户'} placement="right">
             <div
               onClick={() => navigate('/profile')}

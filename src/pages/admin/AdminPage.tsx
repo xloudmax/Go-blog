@@ -76,7 +76,7 @@ export default function AdminPage() {
       />
       
       {/* 导航菜单 */}
-      <Card className="mb-5 optimized-card" bodyStyle={{ padding: '0 12px' }}>
+      <Card className="mb-5 optimized-card" styles={{ body: { padding: '0 12px' } }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ width: '100%', overflowX: 'auto' }}>
             <Menu

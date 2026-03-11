@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"repair-platform/models"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -24,20 +23,10 @@ import (
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
-	return &executableSchema{
-		schema:     cfg.Schema,
-		resolvers:  cfg.Resolvers,
-		directives: cfg.Directives,
-		complexity: cfg.Complexity,
-	}
+	return &executableSchema{SchemaData: cfg.Schema, Resolvers: cfg.Resolvers, Directives: cfg.Directives, ComplexityRoot: cfg.Complexity}
 }
 
-type Config struct {
-	Schema     *ast.Schema
-	Resolvers  ResolverRoot
-	Directives DirectiveRoot
-	Complexity ComplexityRoot
-}
+type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 type ResolverRoot interface {
 	BlogPost() BlogPostResolver
@@ -139,6 +128,11 @@ type ComplexityRoot struct {
 		Success func(childComplexity int) int
 	}
 
+	GitHubConfig struct {
+		Repo  func(childComplexity int) int
+		Token func(childComplexity int) int
+	}
+
 	ImageUploadResponse struct {
 		DeleteURL func(childComplexity int) int
 		Filename  func(childComplexity int) int
@@ -188,6 +182,7 @@ type ComplexityRoot struct {
 		DeletePost                 func(childComplexity int, id string) int
 		DeleteUnusedCategories     func(childComplexity int) int
 		DeleteUnusedTags           func(childComplexity int) int
+		DeployToGitHubPages        func(childComplexity int) int
 		EmailLogin                 func(childComplexity int, input EmailLoginInput) int
 		LikeComment                func(childComplexity int, id string) int
 		LikePost                   func(childComplexity int, id string) int
@@ -209,6 +204,7 @@ type ComplexityRoot struct {
 		UnlikeComment              func(childComplexity int, id string) int
 		UnlikePost                 func(childComplexity int, id string) int
 		UpdateComment              func(childComplexity int, id string, input UpdateCommentInput) int
+		UpdateGitHubConfig         func(childComplexity int, repo string, token string) int
 		UpdatePost                 func(childComplexity int, id string, input UpdatePostInput) int
 		UpdateProfile              func(childComplexity int, input UpdateProfileInput) int
 		UploadImage                func(childComplexity int, file graphql.Upload) int
@@ -248,6 +244,7 @@ type ComplexityRoot struct {
 		EnhancedSearch          func(childComplexity int, input SearchInput) int
 		GenerateMechanismTree   func(childComplexity int, query string) int
 		GetCategories           func(childComplexity int, limit *int, offset *int, search *string) int
+		GetGitHubConfig         func(childComplexity int) int
 		GetNotionPages          func(childComplexity int) int
 		GetPopularPosts         func(childComplexity int, limit *int) int
 		GetRecentPosts          func(childComplexity int, limit *int) int
@@ -386,6 +383,8 @@ type MutationResolver interface {
 	ClearCache(ctx context.Context) (*GeneralResponse, error)
 	RebuildSearchIndex(ctx context.Context) (*GeneralResponse, error)
 	SyncNotion(ctx context.Context, pageID *string) (*GeneralResponse, error)
+	UpdateGitHubConfig(ctx context.Context, repo string, token string) (*GeneralResponse, error)
+	DeployToGitHubPages(ctx context.Context) (*GeneralResponse, error)
 	CreateComment(ctx context.Context, input CreateCommentInput) (*BlogPostComment, error)
 	UpdateComment(ctx context.Context, id string, input UpdateCommentInput) (*BlogPostComment, error)
 	DeleteComment(ctx context.Context, id string) (*GeneralResponse, error)
@@ -431,531 +430,540 @@ type QueryResolver interface {
 	GetNotionPages(ctx context.Context) ([]*NotionPage, error)
 	Notifications(ctx context.Context, limit *int, offset *int) ([]*Notification, error)
 	UnreadNotificationCount(ctx context.Context) (int, error)
+	GetGitHubConfig(ctx context.Context) (*GitHubConfig, error)
 }
 type UserResolver interface {
 	Posts(ctx context.Context, obj *User, limit *int, offset *int) ([]*BlogPost, error)
 	PostsCount(ctx context.Context, obj *User) (int, error)
 }
 
-type executableSchema struct {
-	schema     *ast.Schema
-	resolvers  ResolverRoot
-	directives DirectiveRoot
-	complexity ComplexityRoot
-}
+type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 func (e *executableSchema) Schema() *ast.Schema {
-	if e.schema != nil {
-		return e.schema
+	if e.SchemaData != nil {
+		return e.SchemaData
 	}
 	return parsedSchema
 }
 
 func (e *executableSchema) Complexity(ctx context.Context, typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
-	ec := executionContext{nil, e, 0, 0, nil}
+	ec := newExecutionContext(nil, e, nil)
 	_ = ec
 	switch typeName + "." + field {
 
 	case "AuthPayload.expiresAt":
-		if e.complexity.AuthPayload.ExpiresAt == nil {
+		if e.ComplexityRoot.AuthPayload.ExpiresAt == nil {
 			break
 		}
 
-		return e.complexity.AuthPayload.ExpiresAt(childComplexity), true
+		return e.ComplexityRoot.AuthPayload.ExpiresAt(childComplexity), true
 	case "AuthPayload.refreshToken":
-		if e.complexity.AuthPayload.RefreshToken == nil {
+		if e.ComplexityRoot.AuthPayload.RefreshToken == nil {
 			break
 		}
 
-		return e.complexity.AuthPayload.RefreshToken(childComplexity), true
+		return e.ComplexityRoot.AuthPayload.RefreshToken(childComplexity), true
 	case "AuthPayload.token":
-		if e.complexity.AuthPayload.Token == nil {
+		if e.ComplexityRoot.AuthPayload.Token == nil {
 			break
 		}
 
-		return e.complexity.AuthPayload.Token(childComplexity), true
+		return e.ComplexityRoot.AuthPayload.Token(childComplexity), true
 	case "AuthPayload.user":
-		if e.complexity.AuthPayload.User == nil {
+		if e.ComplexityRoot.AuthPayload.User == nil {
 			break
 		}
 
-		return e.complexity.AuthPayload.User(childComplexity), true
+		return e.ComplexityRoot.AuthPayload.User(childComplexity), true
 
 	case "BlogPost.accessLevel":
-		if e.complexity.BlogPost.AccessLevel == nil {
+		if e.ComplexityRoot.BlogPost.AccessLevel == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.AccessLevel(childComplexity), true
+		return e.ComplexityRoot.BlogPost.AccessLevel(childComplexity), true
 	case "BlogPost.author":
-		if e.complexity.BlogPost.Author == nil {
+		if e.ComplexityRoot.BlogPost.Author == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Author(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Author(childComplexity), true
 	case "BlogPost.authorId":
-		if e.complexity.BlogPost.AuthorID == nil {
+		if e.ComplexityRoot.BlogPost.AuthorID == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.AuthorID(childComplexity), true
+		return e.ComplexityRoot.BlogPost.AuthorID(childComplexity), true
 	case "BlogPost.categories":
-		if e.complexity.BlogPost.Categories == nil {
+		if e.ComplexityRoot.BlogPost.Categories == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Categories(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Categories(childComplexity), true
 	case "BlogPost.content":
-		if e.complexity.BlogPost.Content == nil {
+		if e.ComplexityRoot.BlogPost.Content == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Content(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Content(childComplexity), true
 	case "BlogPost.coverImageUrl":
-		if e.complexity.BlogPost.CoverImageURL == nil {
+		if e.ComplexityRoot.BlogPost.CoverImageURL == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.CoverImageURL(childComplexity), true
+		return e.ComplexityRoot.BlogPost.CoverImageURL(childComplexity), true
 	case "BlogPost.createdAt":
-		if e.complexity.BlogPost.CreatedAt == nil {
+		if e.ComplexityRoot.BlogPost.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.CreatedAt(childComplexity), true
+		return e.ComplexityRoot.BlogPost.CreatedAt(childComplexity), true
 	case "BlogPost.excerpt":
-		if e.complexity.BlogPost.Excerpt == nil {
+		if e.ComplexityRoot.BlogPost.Excerpt == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Excerpt(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Excerpt(childComplexity), true
 	case "BlogPost.id":
-		if e.complexity.BlogPost.ID == nil {
+		if e.ComplexityRoot.BlogPost.ID == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.ID(childComplexity), true
+		return e.ComplexityRoot.BlogPost.ID(childComplexity), true
 	case "BlogPost.isLiked":
-		if e.complexity.BlogPost.IsLiked == nil {
+		if e.ComplexityRoot.BlogPost.IsLiked == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.IsLiked(childComplexity), true
+		return e.ComplexityRoot.BlogPost.IsLiked(childComplexity), true
 	case "BlogPost.lastEditedAt":
-		if e.complexity.BlogPost.LastEditedAt == nil {
+		if e.ComplexityRoot.BlogPost.LastEditedAt == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.LastEditedAt(childComplexity), true
+		return e.ComplexityRoot.BlogPost.LastEditedAt(childComplexity), true
 	case "BlogPost.notionPageId":
-		if e.complexity.BlogPost.NotionPageID == nil {
+		if e.ComplexityRoot.BlogPost.NotionPageID == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.NotionPageID(childComplexity), true
+		return e.ComplexityRoot.BlogPost.NotionPageID(childComplexity), true
 	case "BlogPost.publishedAt":
-		if e.complexity.BlogPost.PublishedAt == nil {
+		if e.ComplexityRoot.BlogPost.PublishedAt == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.PublishedAt(childComplexity), true
+		return e.ComplexityRoot.BlogPost.PublishedAt(childComplexity), true
 	case "BlogPost.slug":
-		if e.complexity.BlogPost.Slug == nil {
+		if e.ComplexityRoot.BlogPost.Slug == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Slug(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Slug(childComplexity), true
 	case "BlogPost.stats":
-		if e.complexity.BlogPost.Stats == nil {
+		if e.ComplexityRoot.BlogPost.Stats == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Stats(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Stats(childComplexity), true
 	case "BlogPost.status":
-		if e.complexity.BlogPost.Status == nil {
+		if e.ComplexityRoot.BlogPost.Status == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Status(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Status(childComplexity), true
 	case "BlogPost.tags":
-		if e.complexity.BlogPost.Tags == nil {
+		if e.ComplexityRoot.BlogPost.Tags == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Tags(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Tags(childComplexity), true
 	case "BlogPost.title":
-		if e.complexity.BlogPost.Title == nil {
+		if e.ComplexityRoot.BlogPost.Title == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Title(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Title(childComplexity), true
 	case "BlogPost.updatedAt":
-		if e.complexity.BlogPost.UpdatedAt == nil {
+		if e.ComplexityRoot.BlogPost.UpdatedAt == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.UpdatedAt(childComplexity), true
+		return e.ComplexityRoot.BlogPost.UpdatedAt(childComplexity), true
 	case "BlogPost.versions":
-		if e.complexity.BlogPost.Versions == nil {
+		if e.ComplexityRoot.BlogPost.Versions == nil {
 			break
 		}
 
-		return e.complexity.BlogPost.Versions(childComplexity), true
+		return e.ComplexityRoot.BlogPost.Versions(childComplexity), true
 
 	case "BlogPostComment.blogPost":
-		if e.complexity.BlogPostComment.BlogPost == nil {
+		if e.ComplexityRoot.BlogPostComment.BlogPost == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.BlogPost(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.BlogPost(childComplexity), true
 	case "BlogPostComment.content":
-		if e.complexity.BlogPostComment.Content == nil {
+		if e.ComplexityRoot.BlogPostComment.Content == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.Content(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.Content(childComplexity), true
 	case "BlogPostComment.createdAt":
-		if e.complexity.BlogPostComment.CreatedAt == nil {
+		if e.ComplexityRoot.BlogPostComment.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.CreatedAt(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.CreatedAt(childComplexity), true
 	case "BlogPostComment.id":
-		if e.complexity.BlogPostComment.ID == nil {
+		if e.ComplexityRoot.BlogPostComment.ID == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.ID(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.ID(childComplexity), true
 	case "BlogPostComment.isApproved":
-		if e.complexity.BlogPostComment.IsApproved == nil {
+		if e.ComplexityRoot.BlogPostComment.IsApproved == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.IsApproved(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.IsApproved(childComplexity), true
 	case "BlogPostComment.likeCount":
-		if e.complexity.BlogPostComment.LikeCount == nil {
+		if e.ComplexityRoot.BlogPostComment.LikeCount == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.LikeCount(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.LikeCount(childComplexity), true
 	case "BlogPostComment.parent":
-		if e.complexity.BlogPostComment.Parent == nil {
+		if e.ComplexityRoot.BlogPostComment.Parent == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.Parent(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.Parent(childComplexity), true
 	case "BlogPostComment.replies":
-		if e.complexity.BlogPostComment.Replies == nil {
+		if e.ComplexityRoot.BlogPostComment.Replies == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.Replies(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.Replies(childComplexity), true
 	case "BlogPostComment.reportCount":
-		if e.complexity.BlogPostComment.ReportCount == nil {
+		if e.ComplexityRoot.BlogPostComment.ReportCount == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.ReportCount(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.ReportCount(childComplexity), true
 	case "BlogPostComment.updatedAt":
-		if e.complexity.BlogPostComment.UpdatedAt == nil {
+		if e.ComplexityRoot.BlogPostComment.UpdatedAt == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.UpdatedAt(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.UpdatedAt(childComplexity), true
 	case "BlogPostComment.user":
-		if e.complexity.BlogPostComment.User == nil {
+		if e.ComplexityRoot.BlogPostComment.User == nil {
 			break
 		}
 
-		return e.complexity.BlogPostComment.User(childComplexity), true
+		return e.ComplexityRoot.BlogPostComment.User(childComplexity), true
 
 	case "BlogPostStats.commentCount":
-		if e.complexity.BlogPostStats.CommentCount == nil {
+		if e.ComplexityRoot.BlogPostStats.CommentCount == nil {
 			break
 		}
 
-		return e.complexity.BlogPostStats.CommentCount(childComplexity), true
+		return e.ComplexityRoot.BlogPostStats.CommentCount(childComplexity), true
 	case "BlogPostStats.id":
-		if e.complexity.BlogPostStats.ID == nil {
+		if e.ComplexityRoot.BlogPostStats.ID == nil {
 			break
 		}
 
-		return e.complexity.BlogPostStats.ID(childComplexity), true
+		return e.ComplexityRoot.BlogPostStats.ID(childComplexity), true
 	case "BlogPostStats.lastViewedAt":
-		if e.complexity.BlogPostStats.LastViewedAt == nil {
+		if e.ComplexityRoot.BlogPostStats.LastViewedAt == nil {
 			break
 		}
 
-		return e.complexity.BlogPostStats.LastViewedAt(childComplexity), true
+		return e.ComplexityRoot.BlogPostStats.LastViewedAt(childComplexity), true
 	case "BlogPostStats.likeCount":
-		if e.complexity.BlogPostStats.LikeCount == nil {
+		if e.ComplexityRoot.BlogPostStats.LikeCount == nil {
 			break
 		}
 
-		return e.complexity.BlogPostStats.LikeCount(childComplexity), true
+		return e.ComplexityRoot.BlogPostStats.LikeCount(childComplexity), true
 	case "BlogPostStats.shareCount":
-		if e.complexity.BlogPostStats.ShareCount == nil {
+		if e.ComplexityRoot.BlogPostStats.ShareCount == nil {
 			break
 		}
 
-		return e.complexity.BlogPostStats.ShareCount(childComplexity), true
+		return e.ComplexityRoot.BlogPostStats.ShareCount(childComplexity), true
 	case "BlogPostStats.updatedAt":
-		if e.complexity.BlogPostStats.UpdatedAt == nil {
+		if e.ComplexityRoot.BlogPostStats.UpdatedAt == nil {
 			break
 		}
 
-		return e.complexity.BlogPostStats.UpdatedAt(childComplexity), true
+		return e.ComplexityRoot.BlogPostStats.UpdatedAt(childComplexity), true
 	case "BlogPostStats.viewCount":
-		if e.complexity.BlogPostStats.ViewCount == nil {
+		if e.ComplexityRoot.BlogPostStats.ViewCount == nil {
 			break
 		}
 
-		return e.complexity.BlogPostStats.ViewCount(childComplexity), true
+		return e.ComplexityRoot.BlogPostStats.ViewCount(childComplexity), true
 
 	case "BlogPostVersion.changeLog":
-		if e.complexity.BlogPostVersion.ChangeLog == nil {
+		if e.ComplexityRoot.BlogPostVersion.ChangeLog == nil {
 			break
 		}
 
-		return e.complexity.BlogPostVersion.ChangeLog(childComplexity), true
+		return e.ComplexityRoot.BlogPostVersion.ChangeLog(childComplexity), true
 	case "BlogPostVersion.content":
-		if e.complexity.BlogPostVersion.Content == nil {
+		if e.ComplexityRoot.BlogPostVersion.Content == nil {
 			break
 		}
 
-		return e.complexity.BlogPostVersion.Content(childComplexity), true
+		return e.ComplexityRoot.BlogPostVersion.Content(childComplexity), true
 	case "BlogPostVersion.createdAt":
-		if e.complexity.BlogPostVersion.CreatedAt == nil {
+		if e.ComplexityRoot.BlogPostVersion.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.BlogPostVersion.CreatedAt(childComplexity), true
+		return e.ComplexityRoot.BlogPostVersion.CreatedAt(childComplexity), true
 	case "BlogPostVersion.createdBy":
-		if e.complexity.BlogPostVersion.CreatedBy == nil {
+		if e.ComplexityRoot.BlogPostVersion.CreatedBy == nil {
 			break
 		}
 
-		return e.complexity.BlogPostVersion.CreatedBy(childComplexity), true
+		return e.ComplexityRoot.BlogPostVersion.CreatedBy(childComplexity), true
 	case "BlogPostVersion.id":
-		if e.complexity.BlogPostVersion.ID == nil {
+		if e.ComplexityRoot.BlogPostVersion.ID == nil {
 			break
 		}
 
-		return e.complexity.BlogPostVersion.ID(childComplexity), true
+		return e.ComplexityRoot.BlogPostVersion.ID(childComplexity), true
 	case "BlogPostVersion.title":
-		if e.complexity.BlogPostVersion.Title == nil {
+		if e.ComplexityRoot.BlogPostVersion.Title == nil {
 			break
 		}
 
-		return e.complexity.BlogPostVersion.Title(childComplexity), true
+		return e.ComplexityRoot.BlogPostVersion.Title(childComplexity), true
 	case "BlogPostVersion.versionNum":
-		if e.complexity.BlogPostVersion.VersionNum == nil {
+		if e.ComplexityRoot.BlogPostVersion.VersionNum == nil {
 			break
 		}
 
-		return e.complexity.BlogPostVersion.VersionNum(childComplexity), true
+		return e.ComplexityRoot.BlogPostVersion.VersionNum(childComplexity), true
 
 	case "CategoryInfo.count":
-		if e.complexity.CategoryInfo.Count == nil {
+		if e.ComplexityRoot.CategoryInfo.Count == nil {
 			break
 		}
 
-		return e.complexity.CategoryInfo.Count(childComplexity), true
+		return e.ComplexityRoot.CategoryInfo.Count(childComplexity), true
 	case "CategoryInfo.name":
-		if e.complexity.CategoryInfo.Name == nil {
+		if e.ComplexityRoot.CategoryInfo.Name == nil {
 			break
 		}
 
-		return e.complexity.CategoryInfo.Name(childComplexity), true
+		return e.ComplexityRoot.CategoryInfo.Name(childComplexity), true
 	case "CategoryInfo.posts":
-		if e.complexity.CategoryInfo.Posts == nil {
+		if e.ComplexityRoot.CategoryInfo.Posts == nil {
 			break
 		}
 
-		return e.complexity.CategoryInfo.Posts(childComplexity), true
+		return e.ComplexityRoot.CategoryInfo.Posts(childComplexity), true
 
 	case "CommentResult.comments":
-		if e.complexity.CommentResult.Comments == nil {
+		if e.ComplexityRoot.CommentResult.Comments == nil {
 			break
 		}
 
-		return e.complexity.CommentResult.Comments(childComplexity), true
+		return e.ComplexityRoot.CommentResult.Comments(childComplexity), true
 	case "CommentResult.total":
-		if e.complexity.CommentResult.Total == nil {
+		if e.ComplexityRoot.CommentResult.Total == nil {
 			break
 		}
 
-		return e.complexity.CommentResult.Total(childComplexity), true
+		return e.ComplexityRoot.CommentResult.Total(childComplexity), true
 
 	case "EnhancedSearchResult.facets":
-		if e.complexity.EnhancedSearchResult.Facets == nil {
+		if e.ComplexityRoot.EnhancedSearchResult.Facets == nil {
 			break
 		}
 
-		return e.complexity.EnhancedSearchResult.Facets(childComplexity), true
+		return e.ComplexityRoot.EnhancedSearchResult.Facets(childComplexity), true
 	case "EnhancedSearchResult.posts":
-		if e.complexity.EnhancedSearchResult.Posts == nil {
+		if e.ComplexityRoot.EnhancedSearchResult.Posts == nil {
 			break
 		}
 
-		return e.complexity.EnhancedSearchResult.Posts(childComplexity), true
+		return e.ComplexityRoot.EnhancedSearchResult.Posts(childComplexity), true
 	case "EnhancedSearchResult.suggestions":
-		if e.complexity.EnhancedSearchResult.Suggestions == nil {
+		if e.ComplexityRoot.EnhancedSearchResult.Suggestions == nil {
 			break
 		}
 
-		return e.complexity.EnhancedSearchResult.Suggestions(childComplexity), true
+		return e.ComplexityRoot.EnhancedSearchResult.Suggestions(childComplexity), true
 	case "EnhancedSearchResult.took":
-		if e.complexity.EnhancedSearchResult.Took == nil {
+		if e.ComplexityRoot.EnhancedSearchResult.Took == nil {
 			break
 		}
 
-		return e.complexity.EnhancedSearchResult.Took(childComplexity), true
+		return e.ComplexityRoot.EnhancedSearchResult.Took(childComplexity), true
 	case "EnhancedSearchResult.total":
-		if e.complexity.EnhancedSearchResult.Total == nil {
+		if e.ComplexityRoot.EnhancedSearchResult.Total == nil {
 			break
 		}
 
-		return e.complexity.EnhancedSearchResult.Total(childComplexity), true
+		return e.ComplexityRoot.EnhancedSearchResult.Total(childComplexity), true
 
 	case "GeneralResponse.code":
-		if e.complexity.GeneralResponse.Code == nil {
+		if e.ComplexityRoot.GeneralResponse.Code == nil {
 			break
 		}
 
-		return e.complexity.GeneralResponse.Code(childComplexity), true
+		return e.ComplexityRoot.GeneralResponse.Code(childComplexity), true
 	case "GeneralResponse.message":
-		if e.complexity.GeneralResponse.Message == nil {
+		if e.ComplexityRoot.GeneralResponse.Message == nil {
 			break
 		}
 
-		return e.complexity.GeneralResponse.Message(childComplexity), true
+		return e.ComplexityRoot.GeneralResponse.Message(childComplexity), true
 	case "GeneralResponse.success":
-		if e.complexity.GeneralResponse.Success == nil {
+		if e.ComplexityRoot.GeneralResponse.Success == nil {
 			break
 		}
 
-		return e.complexity.GeneralResponse.Success(childComplexity), true
+		return e.ComplexityRoot.GeneralResponse.Success(childComplexity), true
+
+	case "GitHubConfig.repo":
+		if e.ComplexityRoot.GitHubConfig.Repo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GitHubConfig.Repo(childComplexity), true
+	case "GitHubConfig.token":
+		if e.ComplexityRoot.GitHubConfig.Token == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GitHubConfig.Token(childComplexity), true
 
 	case "ImageUploadResponse.deleteUrl":
-		if e.complexity.ImageUploadResponse.DeleteURL == nil {
+		if e.ComplexityRoot.ImageUploadResponse.DeleteURL == nil {
 			break
 		}
 
-		return e.complexity.ImageUploadResponse.DeleteURL(childComplexity), true
+		return e.ComplexityRoot.ImageUploadResponse.DeleteURL(childComplexity), true
 	case "ImageUploadResponse.filename":
-		if e.complexity.ImageUploadResponse.Filename == nil {
+		if e.ComplexityRoot.ImageUploadResponse.Filename == nil {
 			break
 		}
 
-		return e.complexity.ImageUploadResponse.Filename(childComplexity), true
+		return e.ComplexityRoot.ImageUploadResponse.Filename(childComplexity), true
 	case "ImageUploadResponse.imageUrl":
-		if e.complexity.ImageUploadResponse.ImageURL == nil {
+		if e.ComplexityRoot.ImageUploadResponse.ImageURL == nil {
 			break
 		}
 
-		return e.complexity.ImageUploadResponse.ImageURL(childComplexity), true
+		return e.ComplexityRoot.ImageUploadResponse.ImageURL(childComplexity), true
 	case "ImageUploadResponse.size":
-		if e.complexity.ImageUploadResponse.Size == nil {
+		if e.ComplexityRoot.ImageUploadResponse.Size == nil {
 			break
 		}
 
-		return e.complexity.ImageUploadResponse.Size(childComplexity), true
+		return e.ComplexityRoot.ImageUploadResponse.Size(childComplexity), true
 
 	case "InviteCode.code":
-		if e.complexity.InviteCode.Code == nil {
+		if e.ComplexityRoot.InviteCode.Code == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.Code(childComplexity), true
+		return e.ComplexityRoot.InviteCode.Code(childComplexity), true
 	case "InviteCode.createdAt":
-		if e.complexity.InviteCode.CreatedAt == nil {
+		if e.ComplexityRoot.InviteCode.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.CreatedAt(childComplexity), true
+		return e.ComplexityRoot.InviteCode.CreatedAt(childComplexity), true
 	case "InviteCode.createdBy":
-		if e.complexity.InviteCode.CreatedBy == nil {
+		if e.ComplexityRoot.InviteCode.CreatedBy == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.CreatedBy(childComplexity), true
+		return e.ComplexityRoot.InviteCode.CreatedBy(childComplexity), true
 	case "InviteCode.currentUses":
-		if e.complexity.InviteCode.CurrentUses == nil {
+		if e.ComplexityRoot.InviteCode.CurrentUses == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.CurrentUses(childComplexity), true
+		return e.ComplexityRoot.InviteCode.CurrentUses(childComplexity), true
 	case "InviteCode.description":
-		if e.complexity.InviteCode.Description == nil {
+		if e.ComplexityRoot.InviteCode.Description == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.Description(childComplexity), true
+		return e.ComplexityRoot.InviteCode.Description(childComplexity), true
 	case "InviteCode.expiresAt":
-		if e.complexity.InviteCode.ExpiresAt == nil {
+		if e.ComplexityRoot.InviteCode.ExpiresAt == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.ExpiresAt(childComplexity), true
+		return e.ComplexityRoot.InviteCode.ExpiresAt(childComplexity), true
 	case "InviteCode.id":
-		if e.complexity.InviteCode.ID == nil {
+		if e.ComplexityRoot.InviteCode.ID == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.ID(childComplexity), true
+		return e.ComplexityRoot.InviteCode.ID(childComplexity), true
 	case "InviteCode.isActive":
-		if e.complexity.InviteCode.IsActive == nil {
+		if e.ComplexityRoot.InviteCode.IsActive == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.IsActive(childComplexity), true
+		return e.ComplexityRoot.InviteCode.IsActive(childComplexity), true
 	case "InviteCode.maxUses":
-		if e.complexity.InviteCode.MaxUses == nil {
+		if e.ComplexityRoot.InviteCode.MaxUses == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.MaxUses(childComplexity), true
+		return e.ComplexityRoot.InviteCode.MaxUses(childComplexity), true
 	case "InviteCode.usedAt":
-		if e.complexity.InviteCode.UsedAt == nil {
+		if e.ComplexityRoot.InviteCode.UsedAt == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.UsedAt(childComplexity), true
+		return e.ComplexityRoot.InviteCode.UsedAt(childComplexity), true
 	case "InviteCode.usedBy":
-		if e.complexity.InviteCode.UsedBy == nil {
+		if e.ComplexityRoot.InviteCode.UsedBy == nil {
 			break
 		}
 
-		return e.complexity.InviteCode.UsedBy(childComplexity), true
+		return e.ComplexityRoot.InviteCode.UsedBy(childComplexity), true
 
 	case "MechanismNode.children":
-		if e.complexity.MechanismNode.Children == nil {
+		if e.ComplexityRoot.MechanismNode.Children == nil {
 			break
 		}
 
-		return e.complexity.MechanismNode.Children(childComplexity), true
+		return e.ComplexityRoot.MechanismNode.Children(childComplexity), true
 	case "MechanismNode.id":
-		if e.complexity.MechanismNode.ID == nil {
+		if e.ComplexityRoot.MechanismNode.ID == nil {
 			break
 		}
 
-		return e.complexity.MechanismNode.ID(childComplexity), true
+		return e.ComplexityRoot.MechanismNode.ID(childComplexity), true
 	case "MechanismNode.label":
-		if e.complexity.MechanismNode.Label == nil {
+		if e.ComplexityRoot.MechanismNode.Label == nil {
 			break
 		}
 
-		return e.complexity.MechanismNode.Label(childComplexity), true
+		return e.ComplexityRoot.MechanismNode.Label(childComplexity), true
 	case "MechanismNode.note":
-		if e.complexity.MechanismNode.Note == nil {
+		if e.ComplexityRoot.MechanismNode.Note == nil {
 			break
 		}
 
-		return e.complexity.MechanismNode.Note(childComplexity), true
+		return e.ComplexityRoot.MechanismNode.Note(childComplexity), true
 
 	case "Mutation.adminCreateUser":
-		if e.complexity.Mutation.AdminCreateUser == nil {
+		if e.ComplexityRoot.Mutation.AdminCreateUser == nil {
 			break
 		}
 
@@ -964,9 +972,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AdminCreateUser(childComplexity, args["input"].(AdminCreateUserInput)), true
+		return e.ComplexityRoot.Mutation.AdminCreateUser(childComplexity, args["input"].(AdminCreateUserInput)), true
 	case "Mutation.adminDeleteUser":
-		if e.complexity.Mutation.AdminDeleteUser == nil {
+		if e.ComplexityRoot.Mutation.AdminDeleteUser == nil {
 			break
 		}
 
@@ -975,9 +983,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AdminDeleteUser(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.AdminDeleteUser(childComplexity, args["id"].(string)), true
 	case "Mutation.adminUpdateUser":
-		if e.complexity.Mutation.AdminUpdateUser == nil {
+		if e.ComplexityRoot.Mutation.AdminUpdateUser == nil {
 			break
 		}
 
@@ -986,9 +994,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AdminUpdateUser(childComplexity, args["id"].(string), args["username"].(*string), args["email"].(*string), args["role"].(*UserRole), args["isVerified"].(*bool), args["isActive"].(*bool)), true
+		return e.ComplexityRoot.Mutation.AdminUpdateUser(childComplexity, args["id"].(string), args["username"].(*string), args["email"].(*string), args["role"].(*UserRole), args["isVerified"].(*bool), args["isActive"].(*bool)), true
 	case "Mutation.approveComment":
-		if e.complexity.Mutation.ApproveComment == nil {
+		if e.ComplexityRoot.Mutation.ApproveComment == nil {
 			break
 		}
 
@@ -997,9 +1005,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ApproveComment(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.ApproveComment(childComplexity, args["id"].(string)), true
 	case "Mutation.archivePost":
-		if e.complexity.Mutation.ArchivePost == nil {
+		if e.ComplexityRoot.Mutation.ArchivePost == nil {
 			break
 		}
 
@@ -1008,9 +1016,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ArchivePost(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.ArchivePost(childComplexity, args["id"].(string)), true
 	case "Mutation.batchUpdateCategories":
-		if e.complexity.Mutation.BatchUpdateCategories == nil {
+		if e.ComplexityRoot.Mutation.BatchUpdateCategories == nil {
 			break
 		}
 
@@ -1019,9 +1027,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.BatchUpdateCategories(childComplexity, args["input"].(BatchUpdateCategoriesInput)), true
+		return e.ComplexityRoot.Mutation.BatchUpdateCategories(childComplexity, args["input"].(BatchUpdateCategoriesInput)), true
 	case "Mutation.batchUpdateTags":
-		if e.complexity.Mutation.BatchUpdateTags == nil {
+		if e.ComplexityRoot.Mutation.BatchUpdateTags == nil {
 			break
 		}
 
@@ -1030,9 +1038,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.BatchUpdateTags(childComplexity, args["input"].(BatchUpdateTagsInput)), true
+		return e.ComplexityRoot.Mutation.BatchUpdateTags(childComplexity, args["input"].(BatchUpdateTagsInput)), true
 	case "Mutation.changePassword":
-		if e.complexity.Mutation.ChangePassword == nil {
+		if e.ComplexityRoot.Mutation.ChangePassword == nil {
 			break
 		}
 
@@ -1041,21 +1049,21 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ChangePassword(childComplexity, args["currentPassword"].(string), args["newPassword"].(string)), true
+		return e.ComplexityRoot.Mutation.ChangePassword(childComplexity, args["currentPassword"].(string), args["newPassword"].(string)), true
 	case "Mutation.clearAllNotifications":
-		if e.complexity.Mutation.ClearAllNotifications == nil {
+		if e.ComplexityRoot.Mutation.ClearAllNotifications == nil {
 			break
 		}
 
-		return e.complexity.Mutation.ClearAllNotifications(childComplexity), true
+		return e.ComplexityRoot.Mutation.ClearAllNotifications(childComplexity), true
 	case "Mutation.clearCache":
-		if e.complexity.Mutation.ClearCache == nil {
+		if e.ComplexityRoot.Mutation.ClearCache == nil {
 			break
 		}
 
-		return e.complexity.Mutation.ClearCache(childComplexity), true
+		return e.ComplexityRoot.Mutation.ClearCache(childComplexity), true
 	case "Mutation.confirmPasswordReset":
-		if e.complexity.Mutation.ConfirmPasswordReset == nil {
+		if e.ComplexityRoot.Mutation.ConfirmPasswordReset == nil {
 			break
 		}
 
@@ -1064,9 +1072,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ConfirmPasswordReset(childComplexity, args["input"].(ConfirmPasswordResetInput)), true
+		return e.ComplexityRoot.Mutation.ConfirmPasswordReset(childComplexity, args["input"].(ConfirmPasswordResetInput)), true
 	case "Mutation.createComment":
-		if e.complexity.Mutation.CreateComment == nil {
+		if e.ComplexityRoot.Mutation.CreateComment == nil {
 			break
 		}
 
@@ -1075,9 +1083,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateComment(childComplexity, args["input"].(CreateCommentInput)), true
+		return e.ComplexityRoot.Mutation.CreateComment(childComplexity, args["input"].(CreateCommentInput)), true
 	case "Mutation.createInviteCode":
-		if e.complexity.Mutation.CreateInviteCode == nil {
+		if e.ComplexityRoot.Mutation.CreateInviteCode == nil {
 			break
 		}
 
@@ -1086,9 +1094,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateInviteCode(childComplexity, args["input"].(CreateInviteCodeInput)), true
+		return e.ComplexityRoot.Mutation.CreateInviteCode(childComplexity, args["input"].(CreateInviteCodeInput)), true
 	case "Mutation.createPost":
-		if e.complexity.Mutation.CreatePost == nil {
+		if e.ComplexityRoot.Mutation.CreatePost == nil {
 			break
 		}
 
@@ -1097,9 +1105,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreatePost(childComplexity, args["input"].(CreatePostInput)), true
+		return e.ComplexityRoot.Mutation.CreatePost(childComplexity, args["input"].(CreatePostInput)), true
 	case "Mutation.deactivateInviteCode":
-		if e.complexity.Mutation.DeactivateInviteCode == nil {
+		if e.ComplexityRoot.Mutation.DeactivateInviteCode == nil {
 			break
 		}
 
@@ -1108,9 +1116,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeactivateInviteCode(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.DeactivateInviteCode(childComplexity, args["id"].(string)), true
 	case "Mutation.deleteComment":
-		if e.complexity.Mutation.DeleteComment == nil {
+		if e.ComplexityRoot.Mutation.DeleteComment == nil {
 			break
 		}
 
@@ -1119,9 +1127,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteComment(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.DeleteComment(childComplexity, args["id"].(string)), true
 	case "Mutation.deleteNotification":
-		if e.complexity.Mutation.DeleteNotification == nil {
+		if e.ComplexityRoot.Mutation.DeleteNotification == nil {
 			break
 		}
 
@@ -1130,9 +1138,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteNotification(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.DeleteNotification(childComplexity, args["id"].(string)), true
 	case "Mutation.deletePost":
-		if e.complexity.Mutation.DeletePost == nil {
+		if e.ComplexityRoot.Mutation.DeletePost == nil {
 			break
 		}
 
@@ -1141,21 +1149,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeletePost(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.DeletePost(childComplexity, args["id"].(string)), true
 	case "Mutation.deleteUnusedCategories":
-		if e.complexity.Mutation.DeleteUnusedCategories == nil {
+		if e.ComplexityRoot.Mutation.DeleteUnusedCategories == nil {
 			break
 		}
 
-		return e.complexity.Mutation.DeleteUnusedCategories(childComplexity), true
+		return e.ComplexityRoot.Mutation.DeleteUnusedCategories(childComplexity), true
 	case "Mutation.deleteUnusedTags":
-		if e.complexity.Mutation.DeleteUnusedTags == nil {
+		if e.ComplexityRoot.Mutation.DeleteUnusedTags == nil {
 			break
 		}
 
-		return e.complexity.Mutation.DeleteUnusedTags(childComplexity), true
+		return e.ComplexityRoot.Mutation.DeleteUnusedTags(childComplexity), true
+	case "Mutation.deployToGitHubPages":
+		if e.ComplexityRoot.Mutation.DeployToGitHubPages == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.DeployToGitHubPages(childComplexity), true
 	case "Mutation.emailLogin":
-		if e.complexity.Mutation.EmailLogin == nil {
+		if e.ComplexityRoot.Mutation.EmailLogin == nil {
 			break
 		}
 
@@ -1164,9 +1178,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EmailLogin(childComplexity, args["input"].(EmailLoginInput)), true
+		return e.ComplexityRoot.Mutation.EmailLogin(childComplexity, args["input"].(EmailLoginInput)), true
 	case "Mutation.likeComment":
-		if e.complexity.Mutation.LikeComment == nil {
+		if e.ComplexityRoot.Mutation.LikeComment == nil {
 			break
 		}
 
@@ -1175,9 +1189,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.LikeComment(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.LikeComment(childComplexity, args["id"].(string)), true
 	case "Mutation.likePost":
-		if e.complexity.Mutation.LikePost == nil {
+		if e.ComplexityRoot.Mutation.LikePost == nil {
 			break
 		}
 
@@ -1186,9 +1200,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.LikePost(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.LikePost(childComplexity, args["id"].(string)), true
 	case "Mutation.login":
-		if e.complexity.Mutation.Login == nil {
+		if e.ComplexityRoot.Mutation.Login == nil {
 			break
 		}
 
@@ -1197,9 +1211,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Login(childComplexity, args["input"].(LoginInput)), true
+		return e.ComplexityRoot.Mutation.Login(childComplexity, args["input"].(LoginInput)), true
 	case "Mutation.logout":
-		if e.complexity.Mutation.Logout == nil {
+		if e.ComplexityRoot.Mutation.Logout == nil {
 			break
 		}
 
@@ -1208,15 +1222,15 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Logout(childComplexity, args["refreshToken"].(*string)), true
+		return e.ComplexityRoot.Mutation.Logout(childComplexity, args["refreshToken"].(*string)), true
 	case "Mutation.markAllNotificationsAsRead":
-		if e.complexity.Mutation.MarkAllNotificationsAsRead == nil {
+		if e.ComplexityRoot.Mutation.MarkAllNotificationsAsRead == nil {
 			break
 		}
 
-		return e.complexity.Mutation.MarkAllNotificationsAsRead(childComplexity), true
+		return e.ComplexityRoot.Mutation.MarkAllNotificationsAsRead(childComplexity), true
 	case "Mutation.markNotificationAsRead":
-		if e.complexity.Mutation.MarkNotificationAsRead == nil {
+		if e.ComplexityRoot.Mutation.MarkNotificationAsRead == nil {
 			break
 		}
 
@@ -1225,9 +1239,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.MarkNotificationAsRead(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.MarkNotificationAsRead(childComplexity, args["id"].(string)), true
 	case "Mutation.mergeCategories":
-		if e.complexity.Mutation.MergeCategories == nil {
+		if e.ComplexityRoot.Mutation.MergeCategories == nil {
 			break
 		}
 
@@ -1236,9 +1250,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.MergeCategories(childComplexity, args["sourceCategory"].(string), args["targetCategory"].(string)), true
+		return e.ComplexityRoot.Mutation.MergeCategories(childComplexity, args["sourceCategory"].(string), args["targetCategory"].(string)), true
 	case "Mutation.mergeTags":
-		if e.complexity.Mutation.MergeTags == nil {
+		if e.ComplexityRoot.Mutation.MergeTags == nil {
 			break
 		}
 
@@ -1247,9 +1261,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.MergeTags(childComplexity, args["sourceTag"].(string), args["targetTag"].(string)), true
+		return e.ComplexityRoot.Mutation.MergeTags(childComplexity, args["sourceTag"].(string), args["targetTag"].(string)), true
 	case "Mutation.publishPost":
-		if e.complexity.Mutation.PublishPost == nil {
+		if e.ComplexityRoot.Mutation.PublishPost == nil {
 			break
 		}
 
@@ -1258,15 +1272,15 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PublishPost(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.PublishPost(childComplexity, args["id"].(string)), true
 	case "Mutation.rebuildSearchIndex":
-		if e.complexity.Mutation.RebuildSearchIndex == nil {
+		if e.ComplexityRoot.Mutation.RebuildSearchIndex == nil {
 			break
 		}
 
-		return e.complexity.Mutation.RebuildSearchIndex(childComplexity), true
+		return e.ComplexityRoot.Mutation.RebuildSearchIndex(childComplexity), true
 	case "Mutation.refreshToken":
-		if e.complexity.Mutation.RefreshToken == nil {
+		if e.ComplexityRoot.Mutation.RefreshToken == nil {
 			break
 		}
 
@@ -1275,9 +1289,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RefreshToken(childComplexity, args["refreshToken"].(string)), true
+		return e.ComplexityRoot.Mutation.RefreshToken(childComplexity, args["refreshToken"].(string)), true
 	case "Mutation.register":
-		if e.complexity.Mutation.Register == nil {
+		if e.ComplexityRoot.Mutation.Register == nil {
 			break
 		}
 
@@ -1286,9 +1300,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Register(childComplexity, args["input"].(RegisterInput)), true
+		return e.ComplexityRoot.Mutation.Register(childComplexity, args["input"].(RegisterInput)), true
 	case "Mutation.rejectComment":
-		if e.complexity.Mutation.RejectComment == nil {
+		if e.ComplexityRoot.Mutation.RejectComment == nil {
 			break
 		}
 
@@ -1297,9 +1311,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RejectComment(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.RejectComment(childComplexity, args["id"].(string)), true
 	case "Mutation.reportComment":
-		if e.complexity.Mutation.ReportComment == nil {
+		if e.ComplexityRoot.Mutation.ReportComment == nil {
 			break
 		}
 
@@ -1308,9 +1322,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ReportComment(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.ReportComment(childComplexity, args["id"].(string)), true
 	case "Mutation.requestPasswordReset":
-		if e.complexity.Mutation.RequestPasswordReset == nil {
+		if e.ComplexityRoot.Mutation.RequestPasswordReset == nil {
 			break
 		}
 
@@ -1319,9 +1333,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RequestPasswordReset(childComplexity, args["input"].(RequestPasswordResetInput)), true
+		return e.ComplexityRoot.Mutation.RequestPasswordReset(childComplexity, args["input"].(RequestPasswordResetInput)), true
 	case "Mutation.sendVerificationCode":
-		if e.complexity.Mutation.SendVerificationCode == nil {
+		if e.ComplexityRoot.Mutation.SendVerificationCode == nil {
 			break
 		}
 
@@ -1330,9 +1344,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SendVerificationCode(childComplexity, args["email"].(string), args["type"].(VerificationType)), true
+		return e.ComplexityRoot.Mutation.SendVerificationCode(childComplexity, args["email"].(string), args["type"].(VerificationType)), true
 	case "Mutation.syncNotion":
-		if e.complexity.Mutation.SyncNotion == nil {
+		if e.ComplexityRoot.Mutation.SyncNotion == nil {
 			break
 		}
 
@@ -1341,9 +1355,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SyncNotion(childComplexity, args["pageId"].(*string)), true
+		return e.ComplexityRoot.Mutation.SyncNotion(childComplexity, args["pageId"].(*string)), true
 	case "Mutation.unlikeComment":
-		if e.complexity.Mutation.UnlikeComment == nil {
+		if e.ComplexityRoot.Mutation.UnlikeComment == nil {
 			break
 		}
 
@@ -1352,9 +1366,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnlikeComment(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.UnlikeComment(childComplexity, args["id"].(string)), true
 	case "Mutation.unlikePost":
-		if e.complexity.Mutation.UnlikePost == nil {
+		if e.ComplexityRoot.Mutation.UnlikePost == nil {
 			break
 		}
 
@@ -1363,9 +1377,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnlikePost(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Mutation.UnlikePost(childComplexity, args["id"].(string)), true
 	case "Mutation.updateComment":
-		if e.complexity.Mutation.UpdateComment == nil {
+		if e.ComplexityRoot.Mutation.UpdateComment == nil {
 			break
 		}
 
@@ -1374,9 +1388,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateComment(childComplexity, args["id"].(string), args["input"].(UpdateCommentInput)), true
+		return e.ComplexityRoot.Mutation.UpdateComment(childComplexity, args["id"].(string), args["input"].(UpdateCommentInput)), true
+	case "Mutation.updateGitHubConfig":
+		if e.ComplexityRoot.Mutation.UpdateGitHubConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateGitHubConfig_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateGitHubConfig(childComplexity, args["repo"].(string), args["token"].(string)), true
 	case "Mutation.updatePost":
-		if e.complexity.Mutation.UpdatePost == nil {
+		if e.ComplexityRoot.Mutation.UpdatePost == nil {
 			break
 		}
 
@@ -1385,9 +1410,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdatePost(childComplexity, args["id"].(string), args["input"].(UpdatePostInput)), true
+		return e.ComplexityRoot.Mutation.UpdatePost(childComplexity, args["id"].(string), args["input"].(UpdatePostInput)), true
 	case "Mutation.updateProfile":
-		if e.complexity.Mutation.UpdateProfile == nil {
+		if e.ComplexityRoot.Mutation.UpdateProfile == nil {
 			break
 		}
 
@@ -1396,9 +1421,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateProfile(childComplexity, args["input"].(UpdateProfileInput)), true
+		return e.ComplexityRoot.Mutation.UpdateProfile(childComplexity, args["input"].(UpdateProfileInput)), true
 	case "Mutation.uploadImage":
-		if e.complexity.Mutation.UploadImage == nil {
+		if e.ComplexityRoot.Mutation.UploadImage == nil {
 			break
 		}
 
@@ -1407,9 +1432,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UploadImage(childComplexity, args["file"].(graphql.Upload)), true
+		return e.ComplexityRoot.Mutation.UploadImage(childComplexity, args["file"].(graphql.Upload)), true
 	case "Mutation.verifyEmail":
-		if e.complexity.Mutation.VerifyEmail == nil {
+		if e.ComplexityRoot.Mutation.VerifyEmail == nil {
 			break
 		}
 
@@ -1418,9 +1443,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.VerifyEmail(childComplexity, args["input"].(VerifyEmailInput)), true
+		return e.ComplexityRoot.Mutation.VerifyEmail(childComplexity, args["input"].(VerifyEmailInput)), true
 	case "Mutation.verifyEmailAndLogin":
-		if e.complexity.Mutation.VerifyEmailAndLogin == nil {
+		if e.ComplexityRoot.Mutation.VerifyEmailAndLogin == nil {
 			break
 		}
 
@@ -1429,115 +1454,115 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.VerifyEmailAndLogin(childComplexity, args["input"].(VerifyEmailInput)), true
+		return e.ComplexityRoot.Mutation.VerifyEmailAndLogin(childComplexity, args["input"].(VerifyEmailInput)), true
 
 	case "Notification.content":
-		if e.complexity.Notification.Content == nil {
+		if e.ComplexityRoot.Notification.Content == nil {
 			break
 		}
 
-		return e.complexity.Notification.Content(childComplexity), true
+		return e.ComplexityRoot.Notification.Content(childComplexity), true
 	case "Notification.createdAt":
-		if e.complexity.Notification.CreatedAt == nil {
+		if e.ComplexityRoot.Notification.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.Notification.CreatedAt(childComplexity), true
+		return e.ComplexityRoot.Notification.CreatedAt(childComplexity), true
 	case "Notification.id":
-		if e.complexity.Notification.ID == nil {
+		if e.ComplexityRoot.Notification.ID == nil {
 			break
 		}
 
-		return e.complexity.Notification.ID(childComplexity), true
+		return e.ComplexityRoot.Notification.ID(childComplexity), true
 	case "Notification.isRead":
-		if e.complexity.Notification.IsRead == nil {
+		if e.ComplexityRoot.Notification.IsRead == nil {
 			break
 		}
 
-		return e.complexity.Notification.IsRead(childComplexity), true
+		return e.ComplexityRoot.Notification.IsRead(childComplexity), true
 	case "Notification.recipient":
-		if e.complexity.Notification.Recipient == nil {
+		if e.ComplexityRoot.Notification.Recipient == nil {
 			break
 		}
 
-		return e.complexity.Notification.Recipient(childComplexity), true
+		return e.ComplexityRoot.Notification.Recipient(childComplexity), true
 	case "Notification.relatedComment":
-		if e.complexity.Notification.RelatedComment == nil {
+		if e.ComplexityRoot.Notification.RelatedComment == nil {
 			break
 		}
 
-		return e.complexity.Notification.RelatedComment(childComplexity), true
+		return e.ComplexityRoot.Notification.RelatedComment(childComplexity), true
 	case "Notification.relatedPost":
-		if e.complexity.Notification.RelatedPost == nil {
+		if e.ComplexityRoot.Notification.RelatedPost == nil {
 			break
 		}
 
-		return e.complexity.Notification.RelatedPost(childComplexity), true
+		return e.ComplexityRoot.Notification.RelatedPost(childComplexity), true
 	case "Notification.relatedUser":
-		if e.complexity.Notification.RelatedUser == nil {
+		if e.ComplexityRoot.Notification.RelatedUser == nil {
 			break
 		}
 
-		return e.complexity.Notification.RelatedUser(childComplexity), true
+		return e.ComplexityRoot.Notification.RelatedUser(childComplexity), true
 	case "Notification.title":
-		if e.complexity.Notification.Title == nil {
+		if e.ComplexityRoot.Notification.Title == nil {
 			break
 		}
 
-		return e.complexity.Notification.Title(childComplexity), true
+		return e.ComplexityRoot.Notification.Title(childComplexity), true
 	case "Notification.type":
-		if e.complexity.Notification.Type == nil {
+		if e.ComplexityRoot.Notification.Type == nil {
 			break
 		}
 
-		return e.complexity.Notification.Type(childComplexity), true
+		return e.ComplexityRoot.Notification.Type(childComplexity), true
 
 	case "NotionPage.id":
-		if e.complexity.NotionPage.ID == nil {
+		if e.ComplexityRoot.NotionPage.ID == nil {
 			break
 		}
 
-		return e.complexity.NotionPage.ID(childComplexity), true
+		return e.ComplexityRoot.NotionPage.ID(childComplexity), true
 	case "NotionPage.lastEditedAt":
-		if e.complexity.NotionPage.LastEditedAt == nil {
+		if e.ComplexityRoot.NotionPage.LastEditedAt == nil {
 			break
 		}
 
-		return e.complexity.NotionPage.LastEditedAt(childComplexity), true
+		return e.ComplexityRoot.NotionPage.LastEditedAt(childComplexity), true
 	case "NotionPage.title":
-		if e.complexity.NotionPage.Title == nil {
+		if e.ComplexityRoot.NotionPage.Title == nil {
 			break
 		}
 
-		return e.complexity.NotionPage.Title(childComplexity), true
+		return e.ComplexityRoot.NotionPage.Title(childComplexity), true
 	case "NotionPage.url":
-		if e.complexity.NotionPage.URL == nil {
+		if e.ComplexityRoot.NotionPage.URL == nil {
 			break
 		}
 
-		return e.complexity.NotionPage.URL(childComplexity), true
+		return e.ComplexityRoot.NotionPage.URL(childComplexity), true
 
 	case "PopularQuery.count":
-		if e.complexity.PopularQuery.Count == nil {
+		if e.ComplexityRoot.PopularQuery.Count == nil {
 			break
 		}
 
-		return e.complexity.PopularQuery.Count(childComplexity), true
+		return e.ComplexityRoot.PopularQuery.Count(childComplexity), true
 	case "PopularQuery.lastSearched":
-		if e.complexity.PopularQuery.LastSearched == nil {
+		if e.ComplexityRoot.PopularQuery.LastSearched == nil {
 			break
 		}
 
-		return e.complexity.PopularQuery.LastSearched(childComplexity), true
+		return e.ComplexityRoot.PopularQuery.LastSearched(childComplexity), true
 	case "PopularQuery.query":
-		if e.complexity.PopularQuery.Query == nil {
+		if e.ComplexityRoot.PopularQuery.Query == nil {
 			break
 		}
 
-		return e.complexity.PopularQuery.Query(childComplexity), true
+		return e.ComplexityRoot.PopularQuery.Query(childComplexity), true
 
 	case "Query.comment":
-		if e.complexity.Query.Comment == nil {
+		if e.ComplexityRoot.Query.Comment == nil {
 			break
 		}
 
@@ -1546,9 +1571,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Comment(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Query.Comment(childComplexity, args["id"].(string)), true
 	case "Query.comments":
-		if e.complexity.Query.Comments == nil {
+		if e.ComplexityRoot.Query.Comments == nil {
 			break
 		}
 
@@ -1557,9 +1582,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Comments(childComplexity, args["blogPostId"].(*string), args["limit"].(*int), args["offset"].(*int), args["filter"].(*CommentFilterInput), args["sort"].(*CommentSortInput)), true
+		return e.ComplexityRoot.Query.Comments(childComplexity, args["blogPostId"].(*string), args["limit"].(*int), args["offset"].(*int), args["filter"].(*CommentFilterInput), args["sort"].(*CommentSortInput)), true
 	case "Query.enhancedSearch":
-		if e.complexity.Query.EnhancedSearch == nil {
+		if e.ComplexityRoot.Query.EnhancedSearch == nil {
 			break
 		}
 
@@ -1568,9 +1593,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.EnhancedSearch(childComplexity, args["input"].(SearchInput)), true
+		return e.ComplexityRoot.Query.EnhancedSearch(childComplexity, args["input"].(SearchInput)), true
 	case "Query.generateMechanismTree":
-		if e.complexity.Query.GenerateMechanismTree == nil {
+		if e.ComplexityRoot.Query.GenerateMechanismTree == nil {
 			break
 		}
 
@@ -1579,9 +1604,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.GenerateMechanismTree(childComplexity, args["query"].(string)), true
+		return e.ComplexityRoot.Query.GenerateMechanismTree(childComplexity, args["query"].(string)), true
 	case "Query.getCategories":
-		if e.complexity.Query.GetCategories == nil {
+		if e.ComplexityRoot.Query.GetCategories == nil {
 			break
 		}
 
@@ -1590,15 +1615,21 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.GetCategories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["search"].(*string)), true
-	case "Query.getNotionPages":
-		if e.complexity.Query.GetNotionPages == nil {
+		return e.ComplexityRoot.Query.GetCategories(childComplexity, args["limit"].(*int), args["offset"].(*int), args["search"].(*string)), true
+	case "Query.getGitHubConfig":
+		if e.ComplexityRoot.Query.GetGitHubConfig == nil {
 			break
 		}
 
-		return e.complexity.Query.GetNotionPages(childComplexity), true
+		return e.ComplexityRoot.Query.GetGitHubConfig(childComplexity), true
+	case "Query.getNotionPages":
+		if e.ComplexityRoot.Query.GetNotionPages == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.GetNotionPages(childComplexity), true
 	case "Query.getPopularPosts":
-		if e.complexity.Query.GetPopularPosts == nil {
+		if e.ComplexityRoot.Query.GetPopularPosts == nil {
 			break
 		}
 
@@ -1607,9 +1638,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.GetPopularPosts(childComplexity, args["limit"].(*int)), true
+		return e.ComplexityRoot.Query.GetPopularPosts(childComplexity, args["limit"].(*int)), true
 	case "Query.getRecentPosts":
-		if e.complexity.Query.GetRecentPosts == nil {
+		if e.ComplexityRoot.Query.GetRecentPosts == nil {
 			break
 		}
 
@@ -1618,15 +1649,15 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.GetRecentPosts(childComplexity, args["limit"].(*int)), true
+		return e.ComplexityRoot.Query.GetRecentPosts(childComplexity, args["limit"].(*int)), true
 	case "Query.getSearchStats":
-		if e.complexity.Query.GetSearchStats == nil {
+		if e.ComplexityRoot.Query.GetSearchStats == nil {
 			break
 		}
 
-		return e.complexity.Query.GetSearchStats(childComplexity), true
+		return e.ComplexityRoot.Query.GetSearchStats(childComplexity), true
 	case "Query.getSearchSuggestions":
-		if e.complexity.Query.GetSearchSuggestions == nil {
+		if e.ComplexityRoot.Query.GetSearchSuggestions == nil {
 			break
 		}
 
@@ -1635,15 +1666,15 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.GetSearchSuggestions(childComplexity, args["query"].(string), args["limit"].(*int)), true
+		return e.ComplexityRoot.Query.GetSearchSuggestions(childComplexity, args["query"].(string), args["limit"].(*int)), true
 	case "Query.getTagCategoryStats":
-		if e.complexity.Query.GetTagCategoryStats == nil {
+		if e.ComplexityRoot.Query.GetTagCategoryStats == nil {
 			break
 		}
 
-		return e.complexity.Query.GetTagCategoryStats(childComplexity), true
+		return e.ComplexityRoot.Query.GetTagCategoryStats(childComplexity), true
 	case "Query.getTags":
-		if e.complexity.Query.GetTags == nil {
+		if e.ComplexityRoot.Query.GetTags == nil {
 			break
 		}
 
@@ -1652,9 +1683,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.GetTags(childComplexity, args["limit"].(*int), args["offset"].(*int), args["search"].(*string)), true
+		return e.ComplexityRoot.Query.GetTags(childComplexity, args["limit"].(*int), args["offset"].(*int), args["search"].(*string)), true
 	case "Query.getTrendingSearches":
-		if e.complexity.Query.GetTrendingSearches == nil {
+		if e.ComplexityRoot.Query.GetTrendingSearches == nil {
 			break
 		}
 
@@ -1663,9 +1694,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.GetTrendingSearches(childComplexity, args["limit"].(*int)), true
+		return e.ComplexityRoot.Query.GetTrendingSearches(childComplexity, args["limit"].(*int)), true
 	case "Query.getTrendingTags":
-		if e.complexity.Query.GetTrendingTags == nil {
+		if e.ComplexityRoot.Query.GetTrendingTags == nil {
 			break
 		}
 
@@ -1674,9 +1705,10 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.GetTrendingTags(childComplexity, args["limit"].(*int)), true
+		return e.ComplexityRoot.Query.GetTrendingTags(childComplexity, args["limit"].(*int)), true
+
 	case "Query.inviteCodes":
-		if e.complexity.Query.InviteCodes == nil {
+		if e.ComplexityRoot.Query.InviteCodes == nil {
 			break
 		}
 
@@ -1685,15 +1717,15 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.InviteCodes(childComplexity, args["limit"].(*int), args["offset"].(*int), args["isActive"].(*bool)), true
+		return e.ComplexityRoot.Query.InviteCodes(childComplexity, args["limit"].(*int), args["offset"].(*int), args["isActive"].(*bool)), true
 	case "Query.me":
-		if e.complexity.Query.Me == nil {
+		if e.ComplexityRoot.Query.Me == nil {
 			break
 		}
 
-		return e.complexity.Query.Me(childComplexity), true
+		return e.ComplexityRoot.Query.Me(childComplexity), true
 	case "Query.notifications":
-		if e.complexity.Query.Notifications == nil {
+		if e.ComplexityRoot.Query.Notifications == nil {
 			break
 		}
 
@@ -1702,9 +1734,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Notifications(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
+		return e.ComplexityRoot.Query.Notifications(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "Query.post":
-		if e.complexity.Query.Post == nil {
+		if e.ComplexityRoot.Query.Post == nil {
 			break
 		}
 
@@ -1713,9 +1745,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Post(childComplexity, args["id"].(*string), args["slug"].(*string)), true
+		return e.ComplexityRoot.Query.Post(childComplexity, args["id"].(*string), args["slug"].(*string)), true
 	case "Query.postVersions":
-		if e.complexity.Query.PostVersions == nil {
+		if e.ComplexityRoot.Query.PostVersions == nil {
 			break
 		}
 
@@ -1724,9 +1756,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.PostVersions(childComplexity, args["postId"].(string)), true
+		return e.ComplexityRoot.Query.PostVersions(childComplexity, args["postId"].(string)), true
 	case "Query.posts":
-		if e.complexity.Query.Posts == nil {
+		if e.ComplexityRoot.Query.Posts == nil {
 			break
 		}
 
@@ -1735,9 +1767,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["filter"].(*PostFilterInput), args["sort"].(*PostSortInput)), true
+		return e.ComplexityRoot.Query.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int), args["filter"].(*PostFilterInput), args["sort"].(*PostSortInput)), true
 	case "Query.searchPosts":
-		if e.complexity.Query.SearchPosts == nil {
+		if e.ComplexityRoot.Query.SearchPosts == nil {
 			break
 		}
 
@@ -1746,21 +1778,21 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.SearchPosts(childComplexity, args["query"].(string), args["limit"].(*int), args["offset"].(*int)), true
+		return e.ComplexityRoot.Query.SearchPosts(childComplexity, args["query"].(string), args["limit"].(*int), args["offset"].(*int)), true
 	case "Query.serverDashboard":
-		if e.complexity.Query.ServerDashboard == nil {
+		if e.ComplexityRoot.Query.ServerDashboard == nil {
 			break
 		}
 
-		return e.complexity.Query.ServerDashboard(childComplexity), true
+		return e.ComplexityRoot.Query.ServerDashboard(childComplexity), true
 	case "Query.unreadNotificationCount":
-		if e.complexity.Query.UnreadNotificationCount == nil {
+		if e.ComplexityRoot.Query.UnreadNotificationCount == nil {
 			break
 		}
 
-		return e.complexity.Query.UnreadNotificationCount(childComplexity), true
+		return e.ComplexityRoot.Query.UnreadNotificationCount(childComplexity), true
 	case "Query.user":
-		if e.complexity.Query.User == nil {
+		if e.ComplexityRoot.Query.User == nil {
 			break
 		}
 
@@ -1769,9 +1801,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.User(childComplexity, args["id"].(string)), true
+		return e.ComplexityRoot.Query.User(childComplexity, args["id"].(string)), true
 	case "Query.users":
-		if e.complexity.Query.Users == nil {
+		if e.ComplexityRoot.Query.Users == nil {
 			break
 		}
 
@@ -1780,295 +1812,295 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Users(childComplexity, args["limit"].(*int), args["offset"].(*int), args["search"].(*string), args["role"].(*UserRole), args["isVerified"].(*bool)), true
+		return e.ComplexityRoot.Query.Users(childComplexity, args["limit"].(*int), args["offset"].(*int), args["search"].(*string), args["role"].(*UserRole), args["isVerified"].(*bool)), true
 
 	case "SearchFacetItem.count":
-		if e.complexity.SearchFacetItem.Count == nil {
+		if e.ComplexityRoot.SearchFacetItem.Count == nil {
 			break
 		}
 
-		return e.complexity.SearchFacetItem.Count(childComplexity), true
+		return e.ComplexityRoot.SearchFacetItem.Count(childComplexity), true
 	case "SearchFacetItem.value":
-		if e.complexity.SearchFacetItem.Value == nil {
+		if e.ComplexityRoot.SearchFacetItem.Value == nil {
 			break
 		}
 
-		return e.complexity.SearchFacetItem.Value(childComplexity), true
+		return e.ComplexityRoot.SearchFacetItem.Value(childComplexity), true
 
 	case "SearchFacets.authors":
-		if e.complexity.SearchFacets.Authors == nil {
+		if e.ComplexityRoot.SearchFacets.Authors == nil {
 			break
 		}
 
-		return e.complexity.SearchFacets.Authors(childComplexity), true
+		return e.ComplexityRoot.SearchFacets.Authors(childComplexity), true
 	case "SearchFacets.categories":
-		if e.complexity.SearchFacets.Categories == nil {
+		if e.ComplexityRoot.SearchFacets.Categories == nil {
 			break
 		}
 
-		return e.complexity.SearchFacets.Categories(childComplexity), true
+		return e.ComplexityRoot.SearchFacets.Categories(childComplexity), true
 	case "SearchFacets.tags":
-		if e.complexity.SearchFacets.Tags == nil {
+		if e.ComplexityRoot.SearchFacets.Tags == nil {
 			break
 		}
 
-		return e.complexity.SearchFacets.Tags(childComplexity), true
+		return e.ComplexityRoot.SearchFacets.Tags(childComplexity), true
 
 	case "SearchResult.posts":
-		if e.complexity.SearchResult.Posts == nil {
+		if e.ComplexityRoot.SearchResult.Posts == nil {
 			break
 		}
 
-		return e.complexity.SearchResult.Posts(childComplexity), true
+		return e.ComplexityRoot.SearchResult.Posts(childComplexity), true
 	case "SearchResult.took":
-		if e.complexity.SearchResult.Took == nil {
+		if e.ComplexityRoot.SearchResult.Took == nil {
 			break
 		}
 
-		return e.complexity.SearchResult.Took(childComplexity), true
+		return e.ComplexityRoot.SearchResult.Took(childComplexity), true
 	case "SearchResult.total":
-		if e.complexity.SearchResult.Total == nil {
+		if e.ComplexityRoot.SearchResult.Total == nil {
 			break
 		}
 
-		return e.complexity.SearchResult.Total(childComplexity), true
+		return e.ComplexityRoot.SearchResult.Total(childComplexity), true
 
 	case "SearchStats.popularQueries":
-		if e.complexity.SearchStats.PopularQueries == nil {
+		if e.ComplexityRoot.SearchStats.PopularQueries == nil {
 			break
 		}
 
-		return e.complexity.SearchStats.PopularQueries(childComplexity), true
+		return e.ComplexityRoot.SearchStats.PopularQueries(childComplexity), true
 	case "SearchStats.searchTrends":
-		if e.complexity.SearchStats.SearchTrends == nil {
+		if e.ComplexityRoot.SearchStats.SearchTrends == nil {
 			break
 		}
 
-		return e.complexity.SearchStats.SearchTrends(childComplexity), true
+		return e.ComplexityRoot.SearchStats.SearchTrends(childComplexity), true
 	case "SearchStats.totalSearches":
-		if e.complexity.SearchStats.TotalSearches == nil {
+		if e.ComplexityRoot.SearchStats.TotalSearches == nil {
 			break
 		}
 
-		return e.complexity.SearchStats.TotalSearches(childComplexity), true
+		return e.ComplexityRoot.SearchStats.TotalSearches(childComplexity), true
 
 	case "SearchTrend.date":
-		if e.complexity.SearchTrend.Date == nil {
+		if e.ComplexityRoot.SearchTrend.Date == nil {
 			break
 		}
 
-		return e.complexity.SearchTrend.Date(childComplexity), true
+		return e.ComplexityRoot.SearchTrend.Date(childComplexity), true
 	case "SearchTrend.searchCount":
-		if e.complexity.SearchTrend.SearchCount == nil {
+		if e.ComplexityRoot.SearchTrend.SearchCount == nil {
 			break
 		}
 
-		return e.complexity.SearchTrend.SearchCount(childComplexity), true
+		return e.ComplexityRoot.SearchTrend.SearchCount(childComplexity), true
 	case "SearchTrend.topQueries":
-		if e.complexity.SearchTrend.TopQueries == nil {
+		if e.ComplexityRoot.SearchTrend.TopQueries == nil {
 			break
 		}
 
-		return e.complexity.SearchTrend.TopQueries(childComplexity), true
+		return e.ComplexityRoot.SearchTrend.TopQueries(childComplexity), true
 
 	case "ServerDashboard.cpuCount":
-		if e.complexity.ServerDashboard.CPUCount == nil {
+		if e.ComplexityRoot.ServerDashboard.CPUCount == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.CPUCount(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.CPUCount(childComplexity), true
 	case "ServerDashboard.goVersion":
-		if e.complexity.ServerDashboard.GoVersion == nil {
+		if e.ComplexityRoot.ServerDashboard.GoVersion == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.GoVersion(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.GoVersion(childComplexity), true
 	case "ServerDashboard.goroutines":
-		if e.complexity.ServerDashboard.Goroutines == nil {
+		if e.ComplexityRoot.ServerDashboard.Goroutines == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.Goroutines(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.Goroutines(childComplexity), true
 	case "ServerDashboard.hostname":
-		if e.complexity.ServerDashboard.Hostname == nil {
+		if e.ComplexityRoot.ServerDashboard.Hostname == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.Hostname(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.Hostname(childComplexity), true
 	case "ServerDashboard.memory":
-		if e.complexity.ServerDashboard.Memory == nil {
+		if e.ComplexityRoot.ServerDashboard.Memory == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.Memory(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.Memory(childComplexity), true
 	case "ServerDashboard.postCount":
-		if e.complexity.ServerDashboard.PostCount == nil {
+		if e.ComplexityRoot.ServerDashboard.PostCount == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.PostCount(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.PostCount(childComplexity), true
 	case "ServerDashboard.serverTime":
-		if e.complexity.ServerDashboard.ServerTime == nil {
+		if e.ComplexityRoot.ServerDashboard.ServerTime == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.ServerTime(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.ServerTime(childComplexity), true
 	case "ServerDashboard.todayPosts":
-		if e.complexity.ServerDashboard.TodayPosts == nil {
+		if e.ComplexityRoot.ServerDashboard.TodayPosts == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.TodayPosts(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.TodayPosts(childComplexity), true
 	case "ServerDashboard.todayRegistrations":
-		if e.complexity.ServerDashboard.TodayRegistrations == nil {
+		if e.ComplexityRoot.ServerDashboard.TodayRegistrations == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.TodayRegistrations(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.TodayRegistrations(childComplexity), true
 	case "ServerDashboard.uptime":
-		if e.complexity.ServerDashboard.Uptime == nil {
+		if e.ComplexityRoot.ServerDashboard.Uptime == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.Uptime(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.Uptime(childComplexity), true
 	case "ServerDashboard.userCount":
-		if e.complexity.ServerDashboard.UserCount == nil {
+		if e.ComplexityRoot.ServerDashboard.UserCount == nil {
 			break
 		}
 
-		return e.complexity.ServerDashboard.UserCount(childComplexity), true
+		return e.ComplexityRoot.ServerDashboard.UserCount(childComplexity), true
 
 	case "ServerMemoryStats.alloc":
-		if e.complexity.ServerMemoryStats.Alloc == nil {
+		if e.ComplexityRoot.ServerMemoryStats.Alloc == nil {
 			break
 		}
 
-		return e.complexity.ServerMemoryStats.Alloc(childComplexity), true
+		return e.ComplexityRoot.ServerMemoryStats.Alloc(childComplexity), true
 	case "ServerMemoryStats.heapAlloc":
-		if e.complexity.ServerMemoryStats.HeapAlloc == nil {
+		if e.ComplexityRoot.ServerMemoryStats.HeapAlloc == nil {
 			break
 		}
 
-		return e.complexity.ServerMemoryStats.HeapAlloc(childComplexity), true
+		return e.ComplexityRoot.ServerMemoryStats.HeapAlloc(childComplexity), true
 	case "ServerMemoryStats.heapSys":
-		if e.complexity.ServerMemoryStats.HeapSys == nil {
+		if e.ComplexityRoot.ServerMemoryStats.HeapSys == nil {
 			break
 		}
 
-		return e.complexity.ServerMemoryStats.HeapSys(childComplexity), true
+		return e.ComplexityRoot.ServerMemoryStats.HeapSys(childComplexity), true
 	case "ServerMemoryStats.sys":
-		if e.complexity.ServerMemoryStats.Sys == nil {
+		if e.ComplexityRoot.ServerMemoryStats.Sys == nil {
 			break
 		}
 
-		return e.complexity.ServerMemoryStats.Sys(childComplexity), true
+		return e.ComplexityRoot.ServerMemoryStats.Sys(childComplexity), true
 	case "ServerMemoryStats.totalAlloc":
-		if e.complexity.ServerMemoryStats.TotalAlloc == nil {
+		if e.ComplexityRoot.ServerMemoryStats.TotalAlloc == nil {
 			break
 		}
 
-		return e.complexity.ServerMemoryStats.TotalAlloc(childComplexity), true
+		return e.ComplexityRoot.ServerMemoryStats.TotalAlloc(childComplexity), true
 
 	case "TagCategoryStats.categories":
-		if e.complexity.TagCategoryStats.Categories == nil {
+		if e.ComplexityRoot.TagCategoryStats.Categories == nil {
 			break
 		}
 
-		return e.complexity.TagCategoryStats.Categories(childComplexity), true
+		return e.ComplexityRoot.TagCategoryStats.Categories(childComplexity), true
 	case "TagCategoryStats.tags":
-		if e.complexity.TagCategoryStats.Tags == nil {
+		if e.ComplexityRoot.TagCategoryStats.Tags == nil {
 			break
 		}
 
-		return e.complexity.TagCategoryStats.Tags(childComplexity), true
+		return e.ComplexityRoot.TagCategoryStats.Tags(childComplexity), true
 	case "TagCategoryStats.totalCategories":
-		if e.complexity.TagCategoryStats.TotalCategories == nil {
+		if e.ComplexityRoot.TagCategoryStats.TotalCategories == nil {
 			break
 		}
 
-		return e.complexity.TagCategoryStats.TotalCategories(childComplexity), true
+		return e.ComplexityRoot.TagCategoryStats.TotalCategories(childComplexity), true
 	case "TagCategoryStats.totalTags":
-		if e.complexity.TagCategoryStats.TotalTags == nil {
+		if e.ComplexityRoot.TagCategoryStats.TotalTags == nil {
 			break
 		}
 
-		return e.complexity.TagCategoryStats.TotalTags(childComplexity), true
+		return e.ComplexityRoot.TagCategoryStats.TotalTags(childComplexity), true
 
 	case "TagInfo.count":
-		if e.complexity.TagInfo.Count == nil {
+		if e.ComplexityRoot.TagInfo.Count == nil {
 			break
 		}
 
-		return e.complexity.TagInfo.Count(childComplexity), true
+		return e.ComplexityRoot.TagInfo.Count(childComplexity), true
 	case "TagInfo.name":
-		if e.complexity.TagInfo.Name == nil {
+		if e.ComplexityRoot.TagInfo.Name == nil {
 			break
 		}
 
-		return e.complexity.TagInfo.Name(childComplexity), true
+		return e.ComplexityRoot.TagInfo.Name(childComplexity), true
 	case "TagInfo.posts":
-		if e.complexity.TagInfo.Posts == nil {
+		if e.ComplexityRoot.TagInfo.Posts == nil {
 			break
 		}
 
-		return e.complexity.TagInfo.Posts(childComplexity), true
+		return e.ComplexityRoot.TagInfo.Posts(childComplexity), true
 
 	case "User.avatar":
-		if e.complexity.User.Avatar == nil {
+		if e.ComplexityRoot.User.Avatar == nil {
 			break
 		}
 
-		return e.complexity.User.Avatar(childComplexity), true
+		return e.ComplexityRoot.User.Avatar(childComplexity), true
 	case "User.bio":
-		if e.complexity.User.Bio == nil {
+		if e.ComplexityRoot.User.Bio == nil {
 			break
 		}
 
-		return e.complexity.User.Bio(childComplexity), true
+		return e.ComplexityRoot.User.Bio(childComplexity), true
 	case "User.createdAt":
-		if e.complexity.User.CreatedAt == nil {
+		if e.ComplexityRoot.User.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.User.CreatedAt(childComplexity), true
+		return e.ComplexityRoot.User.CreatedAt(childComplexity), true
 	case "User.email":
-		if e.complexity.User.Email == nil {
+		if e.ComplexityRoot.User.Email == nil {
 			break
 		}
 
-		return e.complexity.User.Email(childComplexity), true
+		return e.ComplexityRoot.User.Email(childComplexity), true
 	case "User.emailVerifiedAt":
-		if e.complexity.User.EmailVerifiedAt == nil {
+		if e.ComplexityRoot.User.EmailVerifiedAt == nil {
 			break
 		}
 
-		return e.complexity.User.EmailVerifiedAt(childComplexity), true
+		return e.ComplexityRoot.User.EmailVerifiedAt(childComplexity), true
 	case "User.id":
-		if e.complexity.User.ID == nil {
+		if e.ComplexityRoot.User.ID == nil {
 			break
 		}
 
-		return e.complexity.User.ID(childComplexity), true
+		return e.ComplexityRoot.User.ID(childComplexity), true
 	case "User.isActive":
-		if e.complexity.User.IsActive == nil {
+		if e.ComplexityRoot.User.IsActive == nil {
 			break
 		}
 
-		return e.complexity.User.IsActive(childComplexity), true
+		return e.ComplexityRoot.User.IsActive(childComplexity), true
 	case "User.isVerified":
-		if e.complexity.User.IsVerified == nil {
+		if e.ComplexityRoot.User.IsVerified == nil {
 			break
 		}
 
-		return e.complexity.User.IsVerified(childComplexity), true
+		return e.ComplexityRoot.User.IsVerified(childComplexity), true
 	case "User.lastLoginAt":
-		if e.complexity.User.LastLoginAt == nil {
+		if e.ComplexityRoot.User.LastLoginAt == nil {
 			break
 		}
 
-		return e.complexity.User.LastLoginAt(childComplexity), true
+		return e.ComplexityRoot.User.LastLoginAt(childComplexity), true
 	case "User.posts":
-		if e.complexity.User.Posts == nil {
+		if e.ComplexityRoot.User.Posts == nil {
 			break
 		}
 
@@ -2077,31 +2109,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.User.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
+		return e.ComplexityRoot.User.Posts(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "User.postsCount":
-		if e.complexity.User.PostsCount == nil {
+		if e.ComplexityRoot.User.PostsCount == nil {
 			break
 		}
 
-		return e.complexity.User.PostsCount(childComplexity), true
+		return e.ComplexityRoot.User.PostsCount(childComplexity), true
 	case "User.role":
-		if e.complexity.User.Role == nil {
+		if e.ComplexityRoot.User.Role == nil {
 			break
 		}
 
-		return e.complexity.User.Role(childComplexity), true
+		return e.ComplexityRoot.User.Role(childComplexity), true
 	case "User.updatedAt":
-		if e.complexity.User.UpdatedAt == nil {
+		if e.ComplexityRoot.User.UpdatedAt == nil {
 			break
 		}
 
-		return e.complexity.User.UpdatedAt(childComplexity), true
+		return e.ComplexityRoot.User.UpdatedAt(childComplexity), true
 	case "User.username":
-		if e.complexity.User.Username == nil {
+		if e.ComplexityRoot.User.Username == nil {
 			break
 		}
 
-		return e.complexity.User.Username(childComplexity), true
+		return e.ComplexityRoot.User.Username(childComplexity), true
 
 	}
 	return 0, false
@@ -2109,7 +2141,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
-	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
+	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputAdminCreateUserInput,
 		ec.unmarshalInputBatchUpdateCategoriesInput,
@@ -2145,9 +2177,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
 				data = ec._Query(ctx, opCtx.Operation.SelectionSet)
 			} else {
-				if atomic.LoadInt32(&ec.pendingDeferred) > 0 {
-					result := <-ec.deferredResults
-					atomic.AddInt32(&ec.pendingDeferred, -1)
+				if atomic.LoadInt32(&ec.PendingDeferred) > 0 {
+					result := <-ec.DeferredResults
+					atomic.AddInt32(&ec.PendingDeferred, -1)
 					data = result.Result
 					response.Path = result.Path
 					response.Label = result.Label
@@ -2159,8 +2191,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 			response.Data = buf.Bytes()
-			if atomic.LoadInt32(&ec.deferred) > 0 {
-				hasNext := atomic.LoadInt32(&ec.pendingDeferred) > 0
+			if atomic.LoadInt32(&ec.Deferred) > 0 {
+				hasNext := atomic.LoadInt32(&ec.PendingDeferred) > 0
 				response.HasNext = &hasNext
 			}
 
@@ -2188,44 +2220,22 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 }
 
 type executionContext struct {
-	*graphql.OperationContext
-	*executableSchema
-	deferred        int32
-	pendingDeferred int32
-	deferredResults chan graphql.DeferredResult
+	*graphql.ExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot]
 }
 
-func (ec *executionContext) processDeferredGroup(dg graphql.DeferredGroup) {
-	atomic.AddInt32(&ec.pendingDeferred, 1)
-	go func() {
-		ctx := graphql.WithFreshResponseContext(dg.Context)
-		dg.FieldSet.Dispatch(ctx)
-		ds := graphql.DeferredResult{
-			Path:   dg.Path,
-			Label:  dg.Label,
-			Result: dg.FieldSet,
-			Errors: graphql.GetErrors(ctx),
-		}
-		// null fields should bubble up
-		if dg.FieldSet.Invalids > 0 {
-			ds.Result = graphql.Null
-		}
-		ec.deferredResults <- ds
-	}()
-}
-
-func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
-	if ec.DisableIntrospection {
-		return nil, errors.New("introspection disabled")
+func newExecutionContext(
+	opCtx *graphql.OperationContext,
+	execSchema *executableSchema,
+	deferredResults chan graphql.DeferredResult,
+) executionContext {
+	return executionContext{
+		ExecutionContextState: graphql.NewExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot](
+			opCtx,
+			(*graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot])(execSchema),
+			parsedSchema,
+			deferredResults,
+		),
 	}
-	return introspection.WrapSchema(ec.Schema()), nil
-}
-
-func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
-	if ec.DisableIntrospection {
-		return nil, errors.New("introspection disabled")
-	}
-	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
 //go:embed "schema.graphql"
@@ -2680,6 +2690,22 @@ func (ec *executionContext) field_Mutation_updateComment_args(ctx context.Contex
 		return nil, err
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateGitHubConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "repo", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["repo"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "token", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["token"] = arg1
 	return args, nil
 }
 
@@ -3758,7 +3784,7 @@ func (ec *executionContext) _BlogPost_author(ctx context.Context, field graphql.
 		field,
 		ec.fieldContext_BlogPost_author,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.BlogPost().Author(ctx, obj)
+			return ec.Resolvers.BlogPost().Author(ctx, obj)
 		},
 		nil,
 		ec.marshalNUser2ᚖrepairᚑplatformᚋgraphᚐUser,
@@ -3862,7 +3888,7 @@ func (ec *executionContext) _BlogPost_stats(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_BlogPost_stats,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.BlogPost().Stats(ctx, obj)
+			return ec.Resolvers.BlogPost().Stats(ctx, obj)
 		},
 		nil,
 		ec.marshalNBlogPostStats2ᚖrepairᚑplatformᚋgraphᚐBlogPostStats,
@@ -5297,6 +5323,64 @@ func (ec *executionContext) fieldContext_GeneralResponse_code(_ context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _GitHubConfig_repo(ctx context.Context, field graphql.CollectedField, obj *GitHubConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_GitHubConfig_repo,
+		func(ctx context.Context) (any, error) {
+			return obj.Repo, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_GitHubConfig_repo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitHubConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GitHubConfig_token(ctx context.Context, field graphql.CollectedField, obj *GitHubConfig) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_GitHubConfig_token,
+		func(ctx context.Context) (any, error) {
+			return obj.Token, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_GitHubConfig_token(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GitHubConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ImageUploadResponse_imageUrl(ctx context.Context, field graphql.CollectedField, obj *ImageUploadResponse) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5926,7 +6010,7 @@ func (ec *executionContext) _Mutation_register(ctx context.Context, field graphq
 		ec.fieldContext_Mutation_register,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().Register(ctx, fc.Args["input"].(RegisterInput))
+			return ec.Resolvers.Mutation().Register(ctx, fc.Args["input"].(RegisterInput))
 		},
 		nil,
 		ec.marshalNAuthPayload2ᚖrepairᚑplatformᚋgraphᚐAuthPayload,
@@ -5977,7 +6061,7 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 		ec.fieldContext_Mutation_login,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().Login(ctx, fc.Args["input"].(LoginInput))
+			return ec.Resolvers.Mutation().Login(ctx, fc.Args["input"].(LoginInput))
 		},
 		nil,
 		ec.marshalNAuthPayload2ᚖrepairᚑplatformᚋgraphᚐAuthPayload,
@@ -6028,7 +6112,7 @@ func (ec *executionContext) _Mutation_emailLogin(ctx context.Context, field grap
 		ec.fieldContext_Mutation_emailLogin,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().EmailLogin(ctx, fc.Args["input"].(EmailLoginInput))
+			return ec.Resolvers.Mutation().EmailLogin(ctx, fc.Args["input"].(EmailLoginInput))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -6077,7 +6161,7 @@ func (ec *executionContext) _Mutation_verifyEmailAndLogin(ctx context.Context, f
 		ec.fieldContext_Mutation_verifyEmailAndLogin,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().VerifyEmailAndLogin(ctx, fc.Args["input"].(VerifyEmailInput))
+			return ec.Resolvers.Mutation().VerifyEmailAndLogin(ctx, fc.Args["input"].(VerifyEmailInput))
 		},
 		nil,
 		ec.marshalNAuthPayload2ᚖrepairᚑplatformᚋgraphᚐAuthPayload,
@@ -6128,7 +6212,7 @@ func (ec *executionContext) _Mutation_logout(ctx context.Context, field graphql.
 		ec.fieldContext_Mutation_logout,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().Logout(ctx, fc.Args["refreshToken"].(*string))
+			return ec.Resolvers.Mutation().Logout(ctx, fc.Args["refreshToken"].(*string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -6177,7 +6261,7 @@ func (ec *executionContext) _Mutation_refreshToken(ctx context.Context, field gr
 		ec.fieldContext_Mutation_refreshToken,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().RefreshToken(ctx, fc.Args["refreshToken"].(string))
+			return ec.Resolvers.Mutation().RefreshToken(ctx, fc.Args["refreshToken"].(string))
 		},
 		nil,
 		ec.marshalNAuthPayload2ᚖrepairᚑplatformᚋgraphᚐAuthPayload,
@@ -6228,7 +6312,7 @@ func (ec *executionContext) _Mutation_sendVerificationCode(ctx context.Context, 
 		ec.fieldContext_Mutation_sendVerificationCode,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().SendVerificationCode(ctx, fc.Args["email"].(string), fc.Args["type"].(VerificationType))
+			return ec.Resolvers.Mutation().SendVerificationCode(ctx, fc.Args["email"].(string), fc.Args["type"].(VerificationType))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -6277,7 +6361,7 @@ func (ec *executionContext) _Mutation_verifyEmail(ctx context.Context, field gra
 		ec.fieldContext_Mutation_verifyEmail,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().VerifyEmail(ctx, fc.Args["input"].(VerifyEmailInput))
+			return ec.Resolvers.Mutation().VerifyEmail(ctx, fc.Args["input"].(VerifyEmailInput))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -6326,7 +6410,7 @@ func (ec *executionContext) _Mutation_requestPasswordReset(ctx context.Context, 
 		ec.fieldContext_Mutation_requestPasswordReset,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().RequestPasswordReset(ctx, fc.Args["input"].(RequestPasswordResetInput))
+			return ec.Resolvers.Mutation().RequestPasswordReset(ctx, fc.Args["input"].(RequestPasswordResetInput))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -6375,7 +6459,7 @@ func (ec *executionContext) _Mutation_confirmPasswordReset(ctx context.Context, 
 		ec.fieldContext_Mutation_confirmPasswordReset,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ConfirmPasswordReset(ctx, fc.Args["input"].(ConfirmPasswordResetInput))
+			return ec.Resolvers.Mutation().ConfirmPasswordReset(ctx, fc.Args["input"].(ConfirmPasswordResetInput))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -6424,7 +6508,7 @@ func (ec *executionContext) _Mutation_updateProfile(ctx context.Context, field g
 		ec.fieldContext_Mutation_updateProfile,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateProfile(ctx, fc.Args["input"].(UpdateProfileInput))
+			return ec.Resolvers.Mutation().UpdateProfile(ctx, fc.Args["input"].(UpdateProfileInput))
 		},
 		nil,
 		ec.marshalNUser2ᚖrepairᚑplatformᚋgraphᚐUser,
@@ -6495,7 +6579,7 @@ func (ec *executionContext) _Mutation_changePassword(ctx context.Context, field 
 		ec.fieldContext_Mutation_changePassword,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ChangePassword(ctx, fc.Args["currentPassword"].(string), fc.Args["newPassword"].(string))
+			return ec.Resolvers.Mutation().ChangePassword(ctx, fc.Args["currentPassword"].(string), fc.Args["newPassword"].(string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -6544,7 +6628,7 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 		ec.fieldContext_Mutation_createPost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreatePost(ctx, fc.Args["input"].(CreatePostInput))
+			return ec.Resolvers.Mutation().CreatePost(ctx, fc.Args["input"].(CreatePostInput))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost,
@@ -6627,7 +6711,7 @@ func (ec *executionContext) _Mutation_updatePost(ctx context.Context, field grap
 		ec.fieldContext_Mutation_updatePost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdatePost(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdatePostInput))
+			return ec.Resolvers.Mutation().UpdatePost(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdatePostInput))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost,
@@ -6710,7 +6794,7 @@ func (ec *executionContext) _Mutation_deletePost(ctx context.Context, field grap
 		ec.fieldContext_Mutation_deletePost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeletePost(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().DeletePost(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -6759,7 +6843,7 @@ func (ec *executionContext) _Mutation_publishPost(ctx context.Context, field gra
 		ec.fieldContext_Mutation_publishPost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().PublishPost(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().PublishPost(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost,
@@ -6842,7 +6926,7 @@ func (ec *executionContext) _Mutation_archivePost(ctx context.Context, field gra
 		ec.fieldContext_Mutation_archivePost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ArchivePost(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().ArchivePost(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost,
@@ -6925,7 +7009,7 @@ func (ec *executionContext) _Mutation_likePost(ctx context.Context, field graphq
 		ec.fieldContext_Mutation_likePost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().LikePost(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().LikePost(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost,
@@ -7008,7 +7092,7 @@ func (ec *executionContext) _Mutation_unlikePost(ctx context.Context, field grap
 		ec.fieldContext_Mutation_unlikePost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UnlikePost(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().UnlikePost(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost,
@@ -7091,7 +7175,7 @@ func (ec *executionContext) _Mutation_uploadImage(ctx context.Context, field gra
 		ec.fieldContext_Mutation_uploadImage,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UploadImage(ctx, fc.Args["file"].(graphql.Upload))
+			return ec.Resolvers.Mutation().UploadImage(ctx, fc.Args["file"].(graphql.Upload))
 		},
 		nil,
 		ec.marshalNImageUploadResponse2ᚖrepairᚑplatformᚋgraphᚐImageUploadResponse,
@@ -7142,7 +7226,7 @@ func (ec *executionContext) _Mutation_adminCreateUser(ctx context.Context, field
 		ec.fieldContext_Mutation_adminCreateUser,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().AdminCreateUser(ctx, fc.Args["input"].(AdminCreateUserInput))
+			return ec.Resolvers.Mutation().AdminCreateUser(ctx, fc.Args["input"].(AdminCreateUserInput))
 		},
 		nil,
 		ec.marshalNUser2ᚖrepairᚑplatformᚋgraphᚐUser,
@@ -7213,7 +7297,7 @@ func (ec *executionContext) _Mutation_adminUpdateUser(ctx context.Context, field
 		ec.fieldContext_Mutation_adminUpdateUser,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().AdminUpdateUser(ctx, fc.Args["id"].(string), fc.Args["username"].(*string), fc.Args["email"].(*string), fc.Args["role"].(*UserRole), fc.Args["isVerified"].(*bool), fc.Args["isActive"].(*bool))
+			return ec.Resolvers.Mutation().AdminUpdateUser(ctx, fc.Args["id"].(string), fc.Args["username"].(*string), fc.Args["email"].(*string), fc.Args["role"].(*UserRole), fc.Args["isVerified"].(*bool), fc.Args["isActive"].(*bool))
 		},
 		nil,
 		ec.marshalNUser2ᚖrepairᚑplatformᚋgraphᚐUser,
@@ -7284,7 +7368,7 @@ func (ec *executionContext) _Mutation_adminDeleteUser(ctx context.Context, field
 		ec.fieldContext_Mutation_adminDeleteUser,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().AdminDeleteUser(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().AdminDeleteUser(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -7333,7 +7417,7 @@ func (ec *executionContext) _Mutation_createInviteCode(ctx context.Context, fiel
 		ec.fieldContext_Mutation_createInviteCode,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateInviteCode(ctx, fc.Args["input"].(CreateInviteCodeInput))
+			return ec.Resolvers.Mutation().CreateInviteCode(ctx, fc.Args["input"].(CreateInviteCodeInput))
 		},
 		nil,
 		ec.marshalNInviteCode2ᚖrepairᚑplatformᚋgraphᚐInviteCode,
@@ -7398,7 +7482,7 @@ func (ec *executionContext) _Mutation_deactivateInviteCode(ctx context.Context, 
 		ec.fieldContext_Mutation_deactivateInviteCode,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeactivateInviteCode(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().DeactivateInviteCode(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -7446,7 +7530,7 @@ func (ec *executionContext) _Mutation_clearCache(ctx context.Context, field grap
 		field,
 		ec.fieldContext_Mutation_clearCache,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().ClearCache(ctx)
+			return ec.Resolvers.Mutation().ClearCache(ctx)
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -7483,7 +7567,7 @@ func (ec *executionContext) _Mutation_rebuildSearchIndex(ctx context.Context, fi
 		field,
 		ec.fieldContext_Mutation_rebuildSearchIndex,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().RebuildSearchIndex(ctx)
+			return ec.Resolvers.Mutation().RebuildSearchIndex(ctx)
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -7521,7 +7605,7 @@ func (ec *executionContext) _Mutation_syncNotion(ctx context.Context, field grap
 		ec.fieldContext_Mutation_syncNotion,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().SyncNotion(ctx, fc.Args["pageId"].(*string))
+			return ec.Resolvers.Mutation().SyncNotion(ctx, fc.Args["pageId"].(*string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -7562,6 +7646,92 @@ func (ec *executionContext) fieldContext_Mutation_syncNotion(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateGitHubConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateGitHubConfig,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateGitHubConfig(ctx, fc.Args["repo"].(string), fc.Args["token"].(string))
+		},
+		nil,
+		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateGitHubConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_GeneralResponse_success(ctx, field)
+			case "message":
+				return ec.fieldContext_GeneralResponse_message(ctx, field)
+			case "code":
+				return ec.fieldContext_GeneralResponse_code(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GeneralResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateGitHubConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deployToGitHubPages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deployToGitHubPages,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Mutation().DeployToGitHubPages(ctx)
+		},
+		nil,
+		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deployToGitHubPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_GeneralResponse_success(ctx, field)
+			case "message":
+				return ec.fieldContext_GeneralResponse_message(ctx, field)
+			case "code":
+				return ec.fieldContext_GeneralResponse_code(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GeneralResponse", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7570,7 +7740,7 @@ func (ec *executionContext) _Mutation_createComment(ctx context.Context, field g
 		ec.fieldContext_Mutation_createComment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateComment(ctx, fc.Args["input"].(CreateCommentInput))
+			return ec.Resolvers.Mutation().CreateComment(ctx, fc.Args["input"].(CreateCommentInput))
 		},
 		nil,
 		ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment,
@@ -7635,7 +7805,7 @@ func (ec *executionContext) _Mutation_updateComment(ctx context.Context, field g
 		ec.fieldContext_Mutation_updateComment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateComment(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdateCommentInput))
+			return ec.Resolvers.Mutation().UpdateComment(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdateCommentInput))
 		},
 		nil,
 		ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment,
@@ -7700,7 +7870,7 @@ func (ec *executionContext) _Mutation_deleteComment(ctx context.Context, field g
 		ec.fieldContext_Mutation_deleteComment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeleteComment(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().DeleteComment(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -7749,7 +7919,7 @@ func (ec *executionContext) _Mutation_likeComment(ctx context.Context, field gra
 		ec.fieldContext_Mutation_likeComment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().LikeComment(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().LikeComment(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment,
@@ -7814,7 +7984,7 @@ func (ec *executionContext) _Mutation_unlikeComment(ctx context.Context, field g
 		ec.fieldContext_Mutation_unlikeComment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UnlikeComment(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().UnlikeComment(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment,
@@ -7879,7 +8049,7 @@ func (ec *executionContext) _Mutation_reportComment(ctx context.Context, field g
 		ec.fieldContext_Mutation_reportComment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ReportComment(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().ReportComment(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment,
@@ -7944,7 +8114,7 @@ func (ec *executionContext) _Mutation_approveComment(ctx context.Context, field 
 		ec.fieldContext_Mutation_approveComment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ApproveComment(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().ApproveComment(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment,
@@ -8009,7 +8179,7 @@ func (ec *executionContext) _Mutation_rejectComment(ctx context.Context, field g
 		ec.fieldContext_Mutation_rejectComment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().RejectComment(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().RejectComment(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment,
@@ -8074,7 +8244,7 @@ func (ec *executionContext) _Mutation_mergeTags(ctx context.Context, field graph
 		ec.fieldContext_Mutation_mergeTags,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().MergeTags(ctx, fc.Args["sourceTag"].(string), fc.Args["targetTag"].(string))
+			return ec.Resolvers.Mutation().MergeTags(ctx, fc.Args["sourceTag"].(string), fc.Args["targetTag"].(string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -8123,7 +8293,7 @@ func (ec *executionContext) _Mutation_mergeCategories(ctx context.Context, field
 		ec.fieldContext_Mutation_mergeCategories,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().MergeCategories(ctx, fc.Args["sourceCategory"].(string), fc.Args["targetCategory"].(string))
+			return ec.Resolvers.Mutation().MergeCategories(ctx, fc.Args["sourceCategory"].(string), fc.Args["targetCategory"].(string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -8172,7 +8342,7 @@ func (ec *executionContext) _Mutation_batchUpdateTags(ctx context.Context, field
 		ec.fieldContext_Mutation_batchUpdateTags,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().BatchUpdateTags(ctx, fc.Args["input"].(BatchUpdateTagsInput))
+			return ec.Resolvers.Mutation().BatchUpdateTags(ctx, fc.Args["input"].(BatchUpdateTagsInput))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -8221,7 +8391,7 @@ func (ec *executionContext) _Mutation_batchUpdateCategories(ctx context.Context,
 		ec.fieldContext_Mutation_batchUpdateCategories,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().BatchUpdateCategories(ctx, fc.Args["input"].(BatchUpdateCategoriesInput))
+			return ec.Resolvers.Mutation().BatchUpdateCategories(ctx, fc.Args["input"].(BatchUpdateCategoriesInput))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -8269,7 +8439,7 @@ func (ec *executionContext) _Mutation_deleteUnusedTags(ctx context.Context, fiel
 		field,
 		ec.fieldContext_Mutation_deleteUnusedTags,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().DeleteUnusedTags(ctx)
+			return ec.Resolvers.Mutation().DeleteUnusedTags(ctx)
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -8306,7 +8476,7 @@ func (ec *executionContext) _Mutation_deleteUnusedCategories(ctx context.Context
 		field,
 		ec.fieldContext_Mutation_deleteUnusedCategories,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().DeleteUnusedCategories(ctx)
+			return ec.Resolvers.Mutation().DeleteUnusedCategories(ctx)
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -8344,7 +8514,7 @@ func (ec *executionContext) _Mutation_markNotificationAsRead(ctx context.Context
 		ec.fieldContext_Mutation_markNotificationAsRead,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().MarkNotificationAsRead(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().MarkNotificationAsRead(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNNotification2ᚖrepairᚑplatformᚋgraphᚐNotification,
@@ -8406,7 +8576,7 @@ func (ec *executionContext) _Mutation_markAllNotificationsAsRead(ctx context.Con
 		field,
 		ec.fieldContext_Mutation_markAllNotificationsAsRead,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().MarkAllNotificationsAsRead(ctx)
+			return ec.Resolvers.Mutation().MarkAllNotificationsAsRead(ctx)
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -8444,7 +8614,7 @@ func (ec *executionContext) _Mutation_deleteNotification(ctx context.Context, fi
 		ec.fieldContext_Mutation_deleteNotification,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeleteNotification(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Mutation().DeleteNotification(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -8492,7 +8662,7 @@ func (ec *executionContext) _Mutation_clearAllNotifications(ctx context.Context,
 		field,
 		ec.fieldContext_Mutation_clearAllNotifications,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().ClearAllNotifications(ctx)
+			return ec.Resolvers.Mutation().ClearAllNotifications(ctx)
 		},
 		nil,
 		ec.marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraphᚐGeneralResponse,
@@ -9149,7 +9319,7 @@ func (ec *executionContext) _Query_generateMechanismTree(ctx context.Context, fi
 		ec.fieldContext_Query_generateMechanismTree,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().GenerateMechanismTree(ctx, fc.Args["query"].(string))
+			return ec.Resolvers.Query().GenerateMechanismTree(ctx, fc.Args["query"].(string))
 		},
 		nil,
 		ec.marshalNMechanismNode2ᚖrepairᚑplatformᚋmodelsᚐMechanismNode,
@@ -9199,7 +9369,7 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 		field,
 		ec.fieldContext_Query_me,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().Me(ctx)
+			return ec.Resolvers.Query().Me(ctx)
 		},
 		nil,
 		ec.marshalOUser2ᚖrepairᚑplatformᚋgraphᚐUser,
@@ -9259,7 +9429,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 		ec.fieldContext_Query_user,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().User(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Query().User(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalOUser2ᚖrepairᚑplatformᚋgraphᚐUser,
@@ -9330,7 +9500,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 		ec.fieldContext_Query_users,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Users(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["search"].(*string), fc.Args["role"].(*UserRole), fc.Args["isVerified"].(*bool))
+			return ec.Resolvers.Query().Users(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["search"].(*string), fc.Args["role"].(*UserRole), fc.Args["isVerified"].(*bool))
 		},
 		nil,
 		ec.marshalNUser2ᚕᚖrepairᚑplatformᚋgraphᚐUserᚄ,
@@ -9401,7 +9571,7 @@ func (ec *executionContext) _Query_post(ctx context.Context, field graphql.Colle
 		ec.fieldContext_Query_post,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Post(ctx, fc.Args["id"].(*string), fc.Args["slug"].(*string))
+			return ec.Resolvers.Query().Post(ctx, fc.Args["id"].(*string), fc.Args["slug"].(*string))
 		},
 		nil,
 		ec.marshalOBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost,
@@ -9484,7 +9654,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 		ec.fieldContext_Query_posts,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Posts(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["filter"].(*PostFilterInput), fc.Args["sort"].(*PostSortInput))
+			return ec.Resolvers.Query().Posts(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["filter"].(*PostFilterInput), fc.Args["sort"].(*PostSortInput))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostᚄ,
@@ -9567,7 +9737,7 @@ func (ec *executionContext) _Query_postVersions(ctx context.Context, field graph
 		ec.fieldContext_Query_postVersions,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().PostVersions(ctx, fc.Args["postId"].(string))
+			return ec.Resolvers.Query().PostVersions(ctx, fc.Args["postId"].(string))
 		},
 		nil,
 		ec.marshalNBlogPostVersion2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostVersionᚄ,
@@ -9624,7 +9794,7 @@ func (ec *executionContext) _Query_searchPosts(ctx context.Context, field graphq
 		ec.fieldContext_Query_searchPosts,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().SearchPosts(ctx, fc.Args["query"].(string), fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+			return ec.Resolvers.Query().SearchPosts(ctx, fc.Args["query"].(string), fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
 		ec.marshalNSearchResult2ᚖrepairᚑplatformᚋgraphᚐSearchResult,
@@ -9673,7 +9843,7 @@ func (ec *executionContext) _Query_enhancedSearch(ctx context.Context, field gra
 		ec.fieldContext_Query_enhancedSearch,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().EnhancedSearch(ctx, fc.Args["input"].(SearchInput))
+			return ec.Resolvers.Query().EnhancedSearch(ctx, fc.Args["input"].(SearchInput))
 		},
 		nil,
 		ec.marshalNEnhancedSearchResult2ᚖrepairᚑplatformᚋgraphᚐEnhancedSearchResult,
@@ -9726,7 +9896,7 @@ func (ec *executionContext) _Query_getSearchSuggestions(ctx context.Context, fie
 		ec.fieldContext_Query_getSearchSuggestions,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().GetSearchSuggestions(ctx, fc.Args["query"].(string), fc.Args["limit"].(*int))
+			return ec.Resolvers.Query().GetSearchSuggestions(ctx, fc.Args["query"].(string), fc.Args["limit"].(*int))
 		},
 		nil,
 		ec.marshalNString2ᚕstringᚄ,
@@ -9767,7 +9937,7 @@ func (ec *executionContext) _Query_getTrendingSearches(ctx context.Context, fiel
 		ec.fieldContext_Query_getTrendingSearches,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().GetTrendingSearches(ctx, fc.Args["limit"].(*int))
+			return ec.Resolvers.Query().GetTrendingSearches(ctx, fc.Args["limit"].(*int))
 		},
 		nil,
 		ec.marshalNString2ᚕstringᚄ,
@@ -9807,7 +9977,7 @@ func (ec *executionContext) _Query_getSearchStats(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Query_getSearchStats,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().GetSearchStats(ctx)
+			return ec.Resolvers.Query().GetSearchStats(ctx)
 		},
 		nil,
 		ec.marshalNSearchStats2ᚖrepairᚑplatformᚋgraphᚐSearchStats,
@@ -9845,7 +10015,7 @@ func (ec *executionContext) _Query_inviteCodes(ctx context.Context, field graphq
 		ec.fieldContext_Query_inviteCodes,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().InviteCodes(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["isActive"].(*bool))
+			return ec.Resolvers.Query().InviteCodes(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["isActive"].(*bool))
 		},
 		nil,
 		ec.marshalNInviteCode2ᚕᚖrepairᚑplatformᚋgraphᚐInviteCodeᚄ,
@@ -9909,7 +10079,7 @@ func (ec *executionContext) _Query_serverDashboard(ctx context.Context, field gr
 		field,
 		ec.fieldContext_Query_serverDashboard,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().ServerDashboard(ctx)
+			return ec.Resolvers.Query().ServerDashboard(ctx)
 		},
 		nil,
 		ec.marshalNServerDashboard2ᚖrepairᚑplatformᚋgraphᚐServerDashboard,
@@ -9963,7 +10133,7 @@ func (ec *executionContext) _Query_getPopularPosts(ctx context.Context, field gr
 		ec.fieldContext_Query_getPopularPosts,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().GetPopularPosts(ctx, fc.Args["limit"].(*int))
+			return ec.Resolvers.Query().GetPopularPosts(ctx, fc.Args["limit"].(*int))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostᚄ,
@@ -10046,7 +10216,7 @@ func (ec *executionContext) _Query_getRecentPosts(ctx context.Context, field gra
 		ec.fieldContext_Query_getRecentPosts,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().GetRecentPosts(ctx, fc.Args["limit"].(*int))
+			return ec.Resolvers.Query().GetRecentPosts(ctx, fc.Args["limit"].(*int))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostᚄ,
@@ -10129,7 +10299,7 @@ func (ec *executionContext) _Query_getTrendingTags(ctx context.Context, field gr
 		ec.fieldContext_Query_getTrendingTags,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().GetTrendingTags(ctx, fc.Args["limit"].(*int))
+			return ec.Resolvers.Query().GetTrendingTags(ctx, fc.Args["limit"].(*int))
 		},
 		nil,
 		ec.marshalNString2ᚕstringᚄ,
@@ -10170,7 +10340,7 @@ func (ec *executionContext) _Query_comments(ctx context.Context, field graphql.C
 		ec.fieldContext_Query_comments,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Comments(ctx, fc.Args["blogPostId"].(*string), fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["filter"].(*CommentFilterInput), fc.Args["sort"].(*CommentSortInput))
+			return ec.Resolvers.Query().Comments(ctx, fc.Args["blogPostId"].(*string), fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["filter"].(*CommentFilterInput), fc.Args["sort"].(*CommentSortInput))
 		},
 		nil,
 		ec.marshalNCommentResult2ᚖrepairᚑplatformᚋgraphᚐCommentResult,
@@ -10217,7 +10387,7 @@ func (ec *executionContext) _Query_comment(ctx context.Context, field graphql.Co
 		ec.fieldContext_Query_comment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Comment(ctx, fc.Args["id"].(string))
+			return ec.Resolvers.Query().Comment(ctx, fc.Args["id"].(string))
 		},
 		nil,
 		ec.marshalOBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment,
@@ -10282,7 +10452,7 @@ func (ec *executionContext) _Query_getTags(ctx context.Context, field graphql.Co
 		ec.fieldContext_Query_getTags,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().GetTags(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["search"].(*string))
+			return ec.Resolvers.Query().GetTags(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["search"].(*string))
 		},
 		nil,
 		ec.marshalNTagInfo2ᚕᚖrepairᚑplatformᚋgraphᚐTagInfoᚄ,
@@ -10331,7 +10501,7 @@ func (ec *executionContext) _Query_getCategories(ctx context.Context, field grap
 		ec.fieldContext_Query_getCategories,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().GetCategories(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["search"].(*string))
+			return ec.Resolvers.Query().GetCategories(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int), fc.Args["search"].(*string))
 		},
 		nil,
 		ec.marshalNCategoryInfo2ᚕᚖrepairᚑplatformᚋgraphᚐCategoryInfoᚄ,
@@ -10379,7 +10549,7 @@ func (ec *executionContext) _Query_getTagCategoryStats(ctx context.Context, fiel
 		field,
 		ec.fieldContext_Query_getTagCategoryStats,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().GetTagCategoryStats(ctx)
+			return ec.Resolvers.Query().GetTagCategoryStats(ctx)
 		},
 		nil,
 		ec.marshalNTagCategoryStats2ᚖrepairᚑplatformᚋgraphᚐTagCategoryStats,
@@ -10418,7 +10588,7 @@ func (ec *executionContext) _Query_getNotionPages(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Query_getNotionPages,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().GetNotionPages(ctx)
+			return ec.Resolvers.Query().GetNotionPages(ctx)
 		},
 		nil,
 		ec.marshalNNotionPage2ᚕᚖrepairᚑplatformᚋgraphᚐNotionPageᚄ,
@@ -10458,7 +10628,7 @@ func (ec *executionContext) _Query_notifications(ctx context.Context, field grap
 		ec.fieldContext_Query_notifications,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Notifications(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+			return ec.Resolvers.Query().Notifications(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
 		ec.marshalNNotification2ᚕᚖrepairᚑplatformᚋgraphᚐNotificationᚄ,
@@ -10520,7 +10690,7 @@ func (ec *executionContext) _Query_unreadNotificationCount(ctx context.Context, 
 		field,
 		ec.fieldContext_Query_unreadNotificationCount,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().UnreadNotificationCount(ctx)
+			return ec.Resolvers.Query().UnreadNotificationCount(ctx)
 		},
 		nil,
 		ec.marshalNInt2int,
@@ -10542,6 +10712,41 @@ func (ec *executionContext) fieldContext_Query_unreadNotificationCount(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_getGitHubConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getGitHubConfig,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().GetGitHubConfig(ctx)
+		},
+		nil,
+		ec.marshalNGitHubConfig2ᚖrepairᚑplatformᚋgraphᚐGitHubConfig,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getGitHubConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "repo":
+				return ec.fieldContext_GitHubConfig_repo(ctx, field)
+			case "token":
+				return ec.fieldContext_GitHubConfig_token(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GitHubConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10550,7 +10755,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 		ec.fieldContext_Query___type,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.introspectType(fc.Args["name"].(string))
+			return ec.IntrospectType(fc.Args["name"].(string))
 		},
 		nil,
 		ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType,
@@ -10614,7 +10819,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_Query___schema,
 		func(ctx context.Context) (any, error) {
-			return ec.introspectSchema()
+			return ec.IntrospectSchema()
 		},
 		nil,
 		ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema,
@@ -12225,7 +12430,7 @@ func (ec *executionContext) _User_posts(ctx context.Context, field graphql.Colle
 		ec.fieldContext_User_posts,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.User().Posts(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+			return ec.Resolvers.User().Posts(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
 		ec.marshalNBlogPost2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostᚄ,
@@ -12307,7 +12512,7 @@ func (ec *executionContext) _User_postsCount(ctx context.Context, field graphql.
 		field,
 		ec.fieldContext_User_postsCount,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.User().PostsCount(ctx, obj)
+			return ec.Resolvers.User().PostsCount(ctx, obj)
 		},
 		nil,
 		ec.marshalNInt2int,
@@ -13833,7 +14038,6 @@ func (ec *executionContext) unmarshalInputAdminCreateUserInput(ctx context.Conte
 			it.IsVerified = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -13874,7 +14078,6 @@ func (ec *executionContext) unmarshalInputBatchUpdateCategoriesInput(ctx context
 			it.Operation = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -13915,7 +14118,6 @@ func (ec *executionContext) unmarshalInputBatchUpdateTagsInput(ctx context.Conte
 			it.Operation = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -13956,7 +14158,6 @@ func (ec *executionContext) unmarshalInputCommentFilterInput(ctx context.Context
 			it.IsApproved = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -13990,7 +14191,6 @@ func (ec *executionContext) unmarshalInputCommentSortInput(ctx context.Context, 
 			it.Order = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14024,7 +14224,6 @@ func (ec *executionContext) unmarshalInputConfirmPasswordResetInput(ctx context.
 			it.NewPassword = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14065,7 +14264,6 @@ func (ec *executionContext) unmarshalInputCreateCommentInput(ctx context.Context
 			it.ParentID = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14110,7 +14308,6 @@ func (ec *executionContext) unmarshalInputCreateInviteCodeInput(ctx context.Cont
 			it.Description = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14207,7 +14404,6 @@ func (ec *executionContext) unmarshalInputCreatePostInput(ctx context.Context, o
 			it.PublishAt = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14234,7 +14430,6 @@ func (ec *executionContext) unmarshalInputEmailLoginInput(ctx context.Context, o
 			it.Email = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14279,7 +14474,6 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj an
 			it.Remember = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14355,7 +14549,6 @@ func (ec *executionContext) unmarshalInputPostFilterInput(ctx context.Context, o
 			it.DateTo = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14396,7 +14589,6 @@ func (ec *executionContext) unmarshalInputPostSortInput(ctx context.Context, obj
 			it.Order = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14444,7 +14636,6 @@ func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj
 			it.InviteCode = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14471,7 +14662,6 @@ func (ec *executionContext) unmarshalInputRequestPasswordResetInput(ctx context.
 			it.Email = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14540,7 +14730,6 @@ func (ec *executionContext) unmarshalInputSearchFilters(ctx context.Context, obj
 			it.MinLikes = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14602,7 +14791,6 @@ func (ec *executionContext) unmarshalInputSearchInput(ctx context.Context, obj a
 			it.SortBy = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14629,7 +14817,6 @@ func (ec *executionContext) unmarshalInputUpdateCommentInput(ctx context.Context
 			it.Content = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14719,7 +14906,6 @@ func (ec *executionContext) unmarshalInputUpdatePostInput(ctx context.Context, o
 			it.ChangeLog = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14760,7 +14946,6 @@ func (ec *executionContext) unmarshalInputUpdateProfileInput(ctx context.Context
 			it.Avatar = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14801,7 +14986,6 @@ func (ec *executionContext) unmarshalInputVerifyEmailInput(ctx context.Context, 
 			it.Type = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -14853,10 +15037,10 @@ func (ec *executionContext) _AuthPayload(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15034,10 +15218,10 @@ func (ec *executionContext) _BlogPost(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15120,10 +15304,10 @@ func (ec *executionContext) _BlogPostComment(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15186,10 +15370,10 @@ func (ec *executionContext) _BlogPostStats(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15252,10 +15436,10 @@ func (ec *executionContext) _BlogPostVersion(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15301,10 +15485,10 @@ func (ec *executionContext) _CategoryInfo(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15345,10 +15529,10 @@ func (ec *executionContext) _CommentResult(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15404,10 +15588,10 @@ func (ec *executionContext) _EnhancedSearchResult(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15447,10 +15631,54 @@ func (ec *executionContext) _GeneralResponse(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var gitHubConfigImplementors = []string{"GitHubConfig"}
+
+func (ec *executionContext) _GitHubConfig(ctx context.Context, sel ast.SelectionSet, obj *GitHubConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, gitHubConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GitHubConfig")
+		case "repo":
+			out.Values[i] = ec._GitHubConfig_repo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "token":
+			out.Values[i] = ec._GitHubConfig_token(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15498,10 +15726,10 @@ func (ec *executionContext) _ImageUploadResponse(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15578,10 +15806,10 @@ func (ec *executionContext) _InviteCode(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15626,10 +15854,10 @@ func (ec *executionContext) _MechanismNode(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15855,6 +16083,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateGitHubConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateGitHubConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deployToGitHubPages":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deployToGitHubPages(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createComment":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createComment(ctx, field)
@@ -15990,10 +16232,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16065,10 +16307,10 @@ func (ec *executionContext) _Notification(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16119,10 +16361,10 @@ func (ec *executionContext) _NotionPage(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16168,10 +16410,10 @@ func (ec *executionContext) _PopularQuery(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16739,6 +16981,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getGitHubConfig":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getGitHubConfig(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -16756,10 +17020,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16800,10 +17064,10 @@ func (ec *executionContext) _SearchFacetItem(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16849,10 +17113,10 @@ func (ec *executionContext) _SearchFacets(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16898,10 +17162,10 @@ func (ec *executionContext) _SearchResult(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16947,10 +17211,10 @@ func (ec *executionContext) _SearchStats(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16996,10 +17260,10 @@ func (ec *executionContext) _SearchTrend(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17085,10 +17349,10 @@ func (ec *executionContext) _ServerDashboard(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17144,10 +17408,10 @@ func (ec *executionContext) _ServerMemoryStats(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17198,10 +17462,10 @@ func (ec *executionContext) _TagCategoryStats(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17247,10 +17511,10 @@ func (ec *executionContext) _TagInfo(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17401,10 +17665,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17457,10 +17721,10 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17505,10 +17769,10 @@ func (ec *executionContext) ___EnumValue(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17563,10 +17827,10 @@ func (ec *executionContext) ___Field(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17618,10 +17882,10 @@ func (ec *executionContext) ___InputValue(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17673,10 +17937,10 @@ func (ec *executionContext) ___Schema(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17732,10 +17996,10 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17794,39 +18058,11 @@ func (ec *executionContext) marshalNBlogPost2repairᚑplatformᚋgraphᚐBlogPos
 }
 
 func (ec *executionContext) marshalNBlogPost2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*BlogPost) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBlogPost2ᚖrepairᚑplatformᚋgraphᚐBlogPost(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -17852,39 +18088,11 @@ func (ec *executionContext) marshalNBlogPostComment2repairᚑplatformᚋgraphᚐ
 }
 
 func (ec *executionContext) marshalNBlogPostComment2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*BlogPostComment) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBlogPostComment2ᚖrepairᚑplatformᚋgraphᚐBlogPostComment(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -17920,39 +18128,11 @@ func (ec *executionContext) marshalNBlogPostStats2ᚖrepairᚑplatformᚋgraph�
 }
 
 func (ec *executionContext) marshalNBlogPostVersion2ᚕᚖrepairᚑplatformᚋgraphᚐBlogPostVersionᚄ(ctx context.Context, sel ast.SelectionSet, v []*BlogPostVersion) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBlogPostVersion2ᚖrepairᚑplatformᚋgraphᚐBlogPostVersion(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBlogPostVersion2ᚖrepairᚑplatformᚋgraphᚐBlogPostVersion(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -17990,39 +18170,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 }
 
 func (ec *executionContext) marshalNCategoryInfo2ᚕᚖrepairᚑplatformᚋgraphᚐCategoryInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*CategoryInfo) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNCategoryInfo2ᚖrepairᚑplatformᚋgraphᚐCategoryInfo(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNCategoryInfo2ᚖrepairᚑplatformᚋgraphᚐCategoryInfo(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18110,6 +18262,20 @@ func (ec *executionContext) marshalNGeneralResponse2ᚖrepairᚑplatformᚋgraph
 	return ec._GeneralResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNGitHubConfig2repairᚑplatformᚋgraphᚐGitHubConfig(ctx context.Context, sel ast.SelectionSet, v GitHubConfig) graphql.Marshaler {
+	return ec._GitHubConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNGitHubConfig2ᚖrepairᚑplatformᚋgraphᚐGitHubConfig(ctx context.Context, sel ast.SelectionSet, v *GitHubConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GitHubConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -18191,39 +18357,11 @@ func (ec *executionContext) marshalNInviteCode2repairᚑplatformᚋgraphᚐInvit
 }
 
 func (ec *executionContext) marshalNInviteCode2ᚕᚖrepairᚑplatformᚋgraphᚐInviteCodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*InviteCode) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNInviteCode2ᚖrepairᚑplatformᚋgraphᚐInviteCode(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNInviteCode2ᚖrepairᚑplatformᚋgraphᚐInviteCode(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18268,39 +18406,11 @@ func (ec *executionContext) marshalNNotification2repairᚑplatformᚋgraphᚐNot
 }
 
 func (ec *executionContext) marshalNNotification2ᚕᚖrepairᚑplatformᚋgraphᚐNotificationᚄ(ctx context.Context, sel ast.SelectionSet, v []*Notification) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNNotification2ᚖrepairᚑplatformᚋgraphᚐNotification(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNNotification2ᚖrepairᚑplatformᚋgraphᚐNotification(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18332,39 +18442,11 @@ func (ec *executionContext) marshalNNotificationType2repairᚑplatformᚋgraph�
 }
 
 func (ec *executionContext) marshalNNotionPage2ᚕᚖrepairᚑplatformᚋgraphᚐNotionPageᚄ(ctx context.Context, sel ast.SelectionSet, v []*NotionPage) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNNotionPage2ᚖrepairᚑplatformᚋgraphᚐNotionPage(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNNotionPage2ᚖrepairᚑplatformᚋgraphᚐNotionPage(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18386,39 +18468,11 @@ func (ec *executionContext) marshalNNotionPage2ᚖrepairᚑplatformᚋgraphᚐNo
 }
 
 func (ec *executionContext) marshalNPopularQuery2ᚕᚖrepairᚑplatformᚋgraphᚐPopularQueryᚄ(ctx context.Context, sel ast.SelectionSet, v []*PopularQuery) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNPopularQuery2ᚖrepairᚑplatformᚋgraphᚐPopularQuery(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNPopularQuery2ᚖrepairᚑplatformᚋgraphᚐPopularQuery(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18460,39 +18514,11 @@ func (ec *executionContext) unmarshalNRequestPasswordResetInput2repairᚑplatfor
 }
 
 func (ec *executionContext) marshalNSearchFacetItem2ᚕᚖrepairᚑplatformᚋgraphᚐSearchFacetItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*SearchFacetItem) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNSearchFacetItem2ᚖrepairᚑplatformᚋgraphᚐSearchFacetItem(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNSearchFacetItem2ᚖrepairᚑplatformᚋgraphᚐSearchFacetItem(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18557,39 +18583,11 @@ func (ec *executionContext) marshalNSearchStats2ᚖrepairᚑplatformᚋgraphᚐS
 }
 
 func (ec *executionContext) marshalNSearchTrend2ᚕᚖrepairᚑplatformᚋgraphᚐSearchTrendᚄ(ctx context.Context, sel ast.SelectionSet, v []*SearchTrend) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNSearchTrend2ᚖrepairᚑplatformᚋgraphᚐSearchTrend(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNSearchTrend2ᚖrepairᚑplatformᚋgraphᚐSearchTrend(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18695,39 +18693,11 @@ func (ec *executionContext) marshalNTagCategoryStats2ᚖrepairᚑplatformᚋgrap
 }
 
 func (ec *executionContext) marshalNTagInfo2ᚕᚖrepairᚑplatformᚋgraphᚐTagInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*TagInfo) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTagInfo2ᚖrepairᚑplatformᚋgraphᚐTagInfo(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTagInfo2ᚖrepairᚑplatformᚋgraphᚐTagInfo(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18810,39 +18780,11 @@ func (ec *executionContext) marshalNUser2repairᚑplatformᚋgraphᚐUser(ctx co
 }
 
 func (ec *executionContext) marshalNUser2ᚕᚖrepairᚑplatformᚋgraphᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*User) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNUser2ᚖrepairᚑplatformᚋgraphᚐUser(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNUser2ᚖrepairᚑplatformᚋgraphᚐUser(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18893,39 +18835,11 @@ func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlge
 }
 
 func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Directive) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -18968,39 +18882,11 @@ func (ec *executionContext) unmarshalN__DirectiveLocation2ᚕstringᚄ(ctx conte
 }
 
 func (ec *executionContext) marshalN__DirectiveLocation2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__DirectiveLocation2string(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__DirectiveLocation2string(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -19024,39 +18910,11 @@ func (ec *executionContext) marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlg
 }
 
 func (ec *executionContext) marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.InputValue) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -19072,39 +18930,11 @@ func (ec *executionContext) marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋg
 }
 
 func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Type) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -19257,39 +19087,11 @@ func (ec *executionContext) marshalOMechanismNode2ᚕᚖrepairᚑplatformᚋmode
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNMechanismNode2ᚖrepairᚑplatformᚋmodelsᚐMechanismNode(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNMechanismNode2ᚖrepairᚑplatformᚋmodelsᚐMechanismNode(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -19439,39 +19241,11 @@ func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgq
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__EnumValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__EnumValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -19486,39 +19260,11 @@ func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋ99designsᚋgqlgen
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Field2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Field2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -19533,39 +19279,11 @@ func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋg
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -19587,39 +19305,11 @@ func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgen�
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {

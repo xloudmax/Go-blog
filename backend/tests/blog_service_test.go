@@ -363,7 +363,7 @@ func TestBlogService_GetPostByID(t *testing.T) {
 	}
 
 	t.Run("获取存在的文章", func(t *testing.T) {
-		retrievedPost, err := blogService.GetPostByID(post.ID, &user.ID, user.Role)
+		retrievedPost, err := blogService.GetPostByID(post.ID, &user.ID, user.Role, false)
 		if err != nil {
 			t.Fatalf("Failed to get post: %v", err)
 		}
@@ -378,7 +378,7 @@ func TestBlogService_GetPostByID(t *testing.T) {
 	})
 
 	t.Run("获取不存在的文章", func(t *testing.T) {
-		_, err := blogService.GetPostByID(999999, &user.ID, user.Role)
+		_, err := blogService.GetPostByID(999999, &user.ID, user.Role, false)
 		if err == nil {
 			t.Error("Expected error when getting non-existent post")
 		}

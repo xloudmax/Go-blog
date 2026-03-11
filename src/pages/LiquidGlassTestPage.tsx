@@ -634,7 +634,7 @@ export default function LiquidGlassTestPage() {
             {/* Album art blurred background */}
             {itunesTrack?.artwork && (
               <div className="absolute inset-0 overflow-hidden">
-                <img src={itunesTrack.artwork} alt="" className="w-full h-full object-cover blur-3xl opacity-30 scale-150" />
+                <img src={itunesTrack.artwork} alt="" className="w-full h-full object-cover blur-3xl opacity-30 scale-150" loading="lazy" decoding="async" />
               </div>
             )}
             <div className="absolute w-32 h-32 bg-pink-500/30 rounded-full blur-3xl -top-8 -left-8 pointer-events-none" />
@@ -652,7 +652,7 @@ export default function LiquidGlassTestPage() {
                 className="p-5 flex items-center justify-between overflow-hidden border border-white/10">
                 <div className="flex items-center gap-5 z-10">
                   {itunesTrack?.artwork ? (
-                    <img src={itunesTrack.artwork} alt="Album" className="w-20 h-20 rounded-xl shadow-lg border border-white/20 shrink-0 object-cover" />
+                    <img src={itunesTrack.artwork} alt="Album" className="w-20 h-20 rounded-xl shadow-lg border border-white/20 shrink-0 object-cover" loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-20 h-20 rounded-xl bg-gradient-to-tr from-pink-500 to-orange-400 shadow-lg border border-white/20 shrink-0" />
                   )}

@@ -164,6 +164,11 @@ type GeneralResponse struct {
 	Code    *string `json:"code,omitempty"`
 }
 
+type GitHubConfig struct {
+	Repo  string `json:"repo"`
+	Token string `json:"token"`
+}
+
 type ImageUploadResponse struct {
 	ImageURL  string  `json:"imageUrl"`
 	DeleteURL *string `json:"deleteUrl,omitempty"`

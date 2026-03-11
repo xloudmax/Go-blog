@@ -509,7 +509,7 @@ func (s *BlogService) getNextVersionNumber(postID uint) int {
 }
 
 // GetPostByID 根据ID获取文章
-func (s *BlogService) GetPostByID(postID uint, userID *uint, userRole string) (*models.BlogPost, error) {
+func (s *BlogService) GetPostByID(postID uint, userID *uint, userRole string, skipCount bool) (*models.BlogPost, error) {
 	// 确保统计记录存在
 	if err := s.ensurePostStatsExist(postID); err != nil {
 		middleware.GetLogger().Warnw("确保文章统计记录存在失败", "postID", postID, "error", err)
@@ -528,9 +528,9 @@ func (s *BlogService) GetPostByID(postID uint, userID *uint, userRole string) (*
 		return nil, models.ErrForbidden
 	}
 
-	// 更新浏览数（如果是公开访问且有统计记录）
-	if userID != nil && post.Status == "PUBLISHED" && post.Stats != nil {
-		if err := post.Stats.IncrementViewCount(s.db); err != nil {
+	// 更新浏览数（如果是公开访问且有统计记录，且未跳过计数）
+	if !skipCount && post.Status == "PUBLISHED" && post.Stats != nil {
+		if err := s.incrementViewCount(post.ID, post.Stats); err != nil {
 			middleware.GetLogger().Warnw("更新浏览数失败", "postID", postID, "error", err)
 		}
 	}
@@ -539,7 +539,7 @@ func (s *BlogService) GetPostByID(postID uint, userID *uint, userRole string) (*
 }
 
 // GetPostBySlug 根据Slug获取文章
-func (s *BlogService) GetPostBySlug(slug string, userID *uint, userRole string) (*models.BlogPost, error) {
+func (s *BlogService) GetPostBySlug(slug string, userID *uint, userRole string, skipCount bool) (*models.BlogPost, error) {
 	var post models.BlogPost
 	if err := s.db.Preload("Author").Preload("Stats").Where("slug = ?", slug).First(&post).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -558,14 +558,47 @@ func (s *BlogService) GetPostBySlug(slug string, userID *uint, userRole string) 
 		return nil, models.ErrForbidden
 	}
 
-	// 更新浏览数（如果是公开访问且有统计记录）
-	if userID != nil && post.Status == "PUBLISHED" && post.Stats != nil {
-		if err := post.Stats.IncrementViewCount(s.db); err != nil {
+	// 更新浏览数（如果是公开访问且有统计记录，且未跳过计数）
+	if !skipCount && post.Status == "PUBLISHED" && post.Stats != nil {
+		if err := s.incrementViewCount(post.ID, post.Stats); err != nil {
 			middleware.GetLogger().Warnw("更新浏览数失败", "postID", post.ID, "error", err)
 		}
 	}
 
 	return &post, nil
+}
+
+// incrementViewCount 增加浏览数（带 Redis 缓冲）
+func (s *BlogService) incrementViewCount(postID uint, stats *models.BlogPostStats) error {
+	cache := models.GetCache()
+
+	// 如果是内存缓存，直接更新数据库（使用原子操作）
+	// 注意：即便没有 Redis，原子操作也能解决绝大部分 SQLite 冲突
+	if cache.Count() >= 0 { // 这里简单判断缓存存在
+		// 尝试使用 Redis 缓冲
+		key := fmt.Sprintf("view_buffer:%d", postID)
+		count, err := cache.Incr(key)
+		if err == nil {
+			// 每 10 次访问同步一次到数据库
+			if count >= 10 {
+				// 原子增加 10
+				now := time.Now()
+				err := s.db.Model(stats).UpdateColumns(map[string]interface{}{
+					"view_count":     gorm.Expr("view_count + ?", 10),
+					"last_viewed_at": &now,
+					"updated_at":     now,
+				}).Error
+				if err == nil {
+					cache.Delete(key) // 重置缓冲
+				}
+				return err
+			}
+			return nil // 已缓冲，暂不写入 DB
+		}
+	}
+
+	// 回退到直接原子更新数据库
+	return stats.IncrementViewCount(s.db)
 }
 
 // GetPosts 获取文章列表

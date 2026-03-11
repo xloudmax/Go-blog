@@ -73,7 +73,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = React.memo(({
   if (!posts || posts.length === 0) return null;
 
   return (
-    <div className="relative w-full mx-auto mb-16 group h-[380px] md:h-[520px] overflow-hidden rounded-[32px] bg-black/5">
+    <div className="relative w-full mx-auto mb-16 group h-[380px] md:h-[520px] overflow-hidden rounded-[32px]">
       <div className="relative w-full h-full" style={{ perspective: '1200px' }}>
         <AnimatePresence initial={false} custom={direction}>
           <motion.div

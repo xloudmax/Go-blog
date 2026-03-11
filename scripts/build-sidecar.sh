@@ -26,7 +26,7 @@ echo "Building Sidecar for $TRIPLE..."
 cd backend
 
 # 构建 Go 二进制文件，直接放入 src-tauri 根目录
-CGO_ENABLED=1 go build -o "../src-tauri/blog-backend-$TRIPLE" main.go
+CGO_ENABLED=1 go build -tags sqlite_fts5 -o "../src-tauri/blog-backend-$TRIPLE" main.go
 
 echo "Sidecar build complete: src-tauri/blog-backend-$TRIPLE"
 chmod +x "../src-tauri/blog-backend-$TRIPLE"

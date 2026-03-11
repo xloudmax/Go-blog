@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useBlogList } from '@/hooks';
 import Typography from 'antd/es/typography';
 import { Spin, Card, Tag, Alert } from 'antd';
+import { getApiBaseUrl } from '@/utils/config';
 
 const { Title, Text } = Typography;
 
@@ -13,7 +14,7 @@ export default function IOSHomePage() {
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://172.26.89.207:11451";
+        const baseUrl = getApiBaseUrl();
         const res = await fetch(`${baseUrl}/health/ping`);
         if (res.ok) {
           setPingStatus('ok');
@@ -29,6 +30,8 @@ export default function IOSHomePage() {
     checkBackend();
   }, []);
 
+  const activeBaseUrl = getApiBaseUrl();
+
   return (
     <div className="p-6 pb-32">
       <Title level={2} className="!text-white mb-6">iOS Debug View</Title>
@@ -37,12 +40,8 @@ export default function IOSHomePage() {
         <Card title="Connectivity Diagnostic" className="bg-white/5 border-white/10 text-white">
           <div className="flex flex-col gap-2">
             <div className="flex justify-between">
-              <Text className="text-gray-400">Target IP:</Text>
-              <Text className="text-blue-400 font-mono text-xs">172.26.89.207</Text>
-            </div>
-            <div className="flex justify-between">
               <Text className="text-gray-400">Active API URL:</Text>
-              <Text className="text-blue-400 font-mono text-xs">{import.meta.env.VITE_API_BASE_URL || 'FALLBACK:172.26.89.207'}</Text>
+              <Text className="text-blue-400 font-mono text-xs">{activeBaseUrl}</Text>
             </div>
             <div className="flex justify-between items-center">
               <Text className="text-gray-400">Backend Ping:</Text>

@@ -27,6 +27,7 @@ export const LiquidSearchBox: React.FC<LiquidSearchBoxProps> = React.memo(({
   blur = 0.3,
   className = "",
   children,
+  onSearch,
   ...props
 }) => {
   const borderRadius = typeof height === "number" ? height / 2 : "35px";
@@ -53,8 +54,8 @@ export const LiquidSearchBox: React.FC<LiquidSearchBoxProps> = React.memo(({
           style={{ zIndex: 10 }}
           placeholder="Search with Liquid Glass..."
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && props.onSearch) {
-              props.onSearch(String(props.value || ''));
+            if (e.key === 'Enter' && onSearch) {
+              onSearch(String(props.value || ''));
             }
           }}
           {...props}

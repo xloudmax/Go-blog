@@ -58,7 +58,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitl
             maxWidth: "420px",
             margin: "0 auto",
           }}
-          bodyStyle={{ padding: '40px 32px' }}
+          styles={{ body: { padding: '40px 32px' } }}
         >
           <div className="text-center mb-10">
             <Title level={2} className="mb-2 tracking-tight" style={{ 

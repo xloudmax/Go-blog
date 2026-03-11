@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // IDType 表示ID的类型
@@ -40,8 +41,8 @@ func NewIDResolver() *IDResolver {
 	return &IDResolver{
 		// UUID格式: 8-4-4-4-12个十六进制字符
 		uuidRegex: regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`),
-		// Slug格式: 字母、数字、连字符，不能以连字符开头或结尾
-		slugRegex: regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$`),
+		// Slug格式: 允许各种字符，只要不是全空格即可
+		slugRegex: regexp.MustCompile(`^.+$`),
 		// 纯数字格式
 		numericRegex: regexp.MustCompile(`^[1-9]\d*$`),
 	}
@@ -81,12 +82,13 @@ func (r *IDResolver) ParseID(id string) (*IDInfo, error) {
 		return info, nil
 	}
 
-	// 检查是否为Slug
-	if r.slugRegex.MatchString(id) && len(id) >= 2 && len(id) <= 100 {
-		// 额外检查：不能全是数字（这种情况已被数字ID处理）
-		// 不能包含特殊字符（除了连字符）
+	// 检查是否为Slug (放宽限制，只要长度在 1-2048 个字符即可)
+	runeCount := utf8.RuneCountInString(id)
+	if r.slugRegex.MatchString(id) && runeCount >= 1 && runeCount <= 2048 {
+		// 不再强制转为小写，因为中文字符或 Base64 可能会受到影响，但根据业务需求，slug 通常是大小写不敏感的
+		// 我们保留原始大小写，如果业务需要小写，可以在具体查询中处理
 		info.Type = IDTypeSlug
-		info.SlugValue = strings.ToLower(id) // 标准化为小写
+		info.SlugValue = id
 		return info, nil
 	}
 

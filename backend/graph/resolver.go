@@ -15,6 +15,7 @@ type Resolver struct {
 	SearchService *services.SearchService
 	NotionService *services.NotionService
 	AIService     *services.AIService
+	DeployService *services.DeployService
 }
 
 // NewResolver 创建一个新的resolver实例
@@ -24,5 +25,6 @@ func NewResolver(db *gorm.DB, notionService *services.NotionService, aiService *
 		SearchService: services.NewSearchService(db),
 		NotionService: notionService,
 		AIService:     aiService,
+		DeployService: services.NewDeployService(db),
 	}
 }

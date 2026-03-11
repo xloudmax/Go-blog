@@ -28,5 +28,7 @@ models:
         resolver: true
       stats:
         resolver: true
+      versions:
+        resolver: true
   MechanismNode:
     model: repair-platform/models.MechanismNode

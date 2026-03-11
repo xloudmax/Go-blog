@@ -461,7 +461,7 @@ export default function EditorPage() {
                 <div className="p-4 bg-white rounded-lg">
                     <h1 className="text-3xl font-bold mb-4">{newFileTitle || '未命名文章'}</h1>
                     {coverImage && (
-                        <img src={coverImage} alt="封面" className="w-full h-auto rounded-lg mb-4" />
+                        <img src={coverImage} alt="封面" className="w-full h-auto rounded-lg mb-4" loading="lazy" decoding="async" />
                     )}
                     <div className="flex flex-wrap gap-2 mb-4">
                         {tags.map(tag => (

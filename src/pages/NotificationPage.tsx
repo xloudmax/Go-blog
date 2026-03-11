@@ -252,6 +252,8 @@ export default function NotificationPage() {
                           <img
                             src={notification.relatedUser.avatar}
                             alt={notification.relatedUser.username}
+                            loading="lazy"
+                            decoding="async"
                             style={{
                               width: '24px',
                               height: '24px',

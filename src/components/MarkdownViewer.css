@@ -123,12 +123,14 @@ html:not(.dark) .markdown-body li {
 
 /* 深色模式下的样式 */
 html.dark .markdown-viewer-card {
-  background-color: var(--color-bg);
+  background-color: var(--color-bg-secondary) !important;
+  border-color: var(--color-bg-secondary) !important;
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* 确保 markdown 内容在深色模式下也有合适的背景 */
 html.dark .markdown-body {
-  background-color: var(--color-bg) !important;
+  background-color: var(--color-bg-secondary) !important;
   color: var(--color-text) !important;
   color-scheme: dark;
   --focus-outlineColor: var(--color-primary);
@@ -139,7 +141,7 @@ html.dark .markdown-body {
   --fgColor-attention: #d29922;
   --fgColor-danger: #f85149;
   --fgColor-done: #ab7df8;
-  --bgColor-default: var(--color-bg);
+  --bgColor-default: var(--color-bg-secondary);
   --bgColor-muted: var(--color-bg-secondary);
   --bgColor-neutral-muted: #656c7633;
   --bgColor-attention-muted: #bb800926;
@@ -264,3 +266,17 @@ html.dark .markdown-body tr {
 html.dark .markdown-body tr:nth-child(2n) {
   background-color: var(--color-bg-secondary) !important;
 }
+
+/* Mobile specific prose refinements */
+.markdown-body.mobile-prose {
+  font-size: 15px !important;
+  line-height: 1.625 !important;
+}
+
+.markdown-body.mobile-prose p {
+  margin-bottom: 1rem !important;
+}
+
+.markdown-body.mobile-prose h1 { font-size: 1.75em !important; margin-top: 1.5em !important; margin-bottom: 0.75em !important; }
+.markdown-body.mobile-prose h2 { font-size: 1.5em !important; margin-top: 1.25em !important; margin-bottom: 0.5em !important; }
+.markdown-body.mobile-prose h3 { font-size: 1.25em !important; margin-top: 1em !important; margin-bottom: 0.4em !important; }

@@ -1,8 +1,4 @@
-/* 导入字体 */
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/inter/700.css';
+/* 字体由 unplugin-fonts 自动预加载 */
 
 /* 导入变量 */
 @import './styles/design-system.css';

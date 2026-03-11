@@ -41,6 +41,9 @@ import {
     ResponsiveContainer,
     Cell
 } from 'recharts';
+import { useGitHubDeployment } from '../../api/graphql';
+import { GithubOutlined, SaveOutlined, RocketOutlined, LockOutlined } from '@ant-design/icons';
+import { Input } from 'antd';
 
 const {Text} = Typography;
 
@@ -62,6 +65,81 @@ export default function SystemManagement() {
     // 本地状态
     const [operationLoading, setOperationLoading] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(false);
+
+    // GitHub 部署 Hook
+    const { 
+        config: githubConfig, 
+        updateConfig, 
+        deploy: handleDeploy, 
+        loading: gitHubLoading,
+        errors: githubErrors
+    } = useGitHubDeployment();
+
+    const [editConfig, setEditConfig] = useState({ repo: '', token: '' });
+    const [isEditing, setIsEditing] = useState(false);
+
+    // 同步配置
+    useEffect(() => {
+        if (githubConfig && !isEditing) {
+            setEditConfig({
+                repo: githubConfig.repo || '',
+                token: githubConfig.token || '',
+            });
+        }
+    }, [githubConfig, isEditing]);
+
+    // 保存配置
+    const handleSaveConfig = async () => {
+        setOperationLoading('github_config');
+        try {
+            await updateConfig(editConfig.repo, editConfig.token);
+            notification.success({
+                message: '成功',
+                description: 'GitHub 配置已更新',
+            });
+            setIsEditing(false);
+        } catch (err: any) {
+            notification.error({
+                message: '更新失败',
+                description: err.message,
+            });
+        } finally {
+            setOperationLoading(null);
+        }
+    };
+
+    // 执行部署
+    const handleDeployAction = () => {
+        Modal.confirm({
+            title: '确认部署到 GitHub Pages',
+            icon: <RocketOutlined style={{ color: '#1890ff' }} />,
+            content: '这将生成静态站点并推送到指定的 GitHub 仓库（gh-pages 分支）。确定要继续吗？',
+            okText: '开始部署',
+            cancelText: '取消',
+            async onOk() {
+                setOperationLoading('deploy');
+                try {
+                    const result = await handleDeploy();
+                    if (result?.success) {
+                        notification.success({
+                            message: '部署成功',
+                            description: result.message || '静态站点已成功发布到 GitHub Pages',
+                        });
+                    } else {
+                        throw new Error(result?.message || '部署过程出错');
+                    }
+                } catch (err: any) {
+                    notification.error({
+                        message: '部署失败',
+                        description: err.message,
+                        duration: 10,
+                    });
+                } finally {
+                    setOperationLoading(null);
+                }
+            },
+        });
+    };
 
     // 自动刷新
     useEffect(() => {
@@ -402,7 +480,7 @@ export default function SystemManagement() {
                 <Row gutter={[16, 16]} style={{marginBottom: '24px'}}>
                     {/* 基本信息 */}
                     <Col xs={24} lg={12}>
-                        <Card title="服务器信息" bordered={false}>
+                        <Card title="服务器信息" variant="none">
                             <Descriptions column={1} layout="horizontal" size="small">
                                 <Descriptions.Item label="主机名">
                                     <Text code>{dashboard.hostname}</Text>
@@ -440,7 +518,7 @@ export default function SystemManagement() {
 
                     {/* 内存使用情况 - 图表展示 */}
                     <Col xs={24} lg={12}>
-                        <Card title="内存使用情况" bordered={false}>
+                        <Card title="内存使用情况" variant="none">
                             <ResponsiveContainer width="100%" height={200}>
                                 <BarChart data={getMemoryChartData()}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -481,7 +559,7 @@ export default function SystemManagement() {
             {dashboard && (
                 <Row gutter={[16, 16]} style={{marginBottom: '24px'}}>
                     <Col xs={12} md={6}>
-                        <Card>
+                        <Card variant="none" styles={{body: {padding: '24px'}}}>
                             <Statistic
                                 title="总用户数"
                                 value={dashboard.userCount}
@@ -491,7 +569,7 @@ export default function SystemManagement() {
                     </Col>
 
                     <Col xs={12} md={6}>
-                        <Card>
+                        <Card variant="none" styles={{body: {padding: '24px'}}}>
                             <Statistic
                                 title="总文章数"
                                 value={dashboard.postCount}
@@ -501,7 +579,7 @@ export default function SystemManagement() {
                     </Col>
 
                     <Col xs={12} md={6}>
-                        <Card>
+                        <Card variant="none" styles={{body: {padding: '24px'}}}>
                             <Statistic
                                 title="今日注册"
                                 value={dashboard.todayRegistrations}
@@ -511,7 +589,7 @@ export default function SystemManagement() {
                     </Col>
 
                     <Col xs={12} md={6}>
-                        <Card>
+                        <Card variant="none" styles={{body: {padding: '24px'}}}>
                             <Statistic
                                 title="今日文章"
                                 value={dashboard.todayPosts}
@@ -522,8 +600,98 @@ export default function SystemManagement() {
                 </Row>
             )}
 
+            {/* GitHub Pages 部署 */}
+            <Card 
+                title={
+                    <Space>
+                        <GithubOutlined />
+                        <span>GitHub Pages 静态导出</span>
+                    </Space>
+                } 
+                variant="none"
+                style={{ marginBottom: '24px' }}
+                extra={
+                    !isEditing ? (
+                        <LiquidButton 
+                            variant="secondary" 
+                            size="small" 
+                            onClick={() => setIsEditing(true)}
+                            className="!h-8 !px-3"
+                        >
+                            编辑配置
+                        </LiquidButton>
+                    ) : (
+                        <Space>
+                            <LiquidButton 
+                                variant="secondary" 
+                                size="small" 
+                                onClick={() => setIsEditing(false)}
+                                className="!h-8 !px-3"
+                            >
+                                取消
+                            </LiquidButton>
+                            <LiquidButton 
+                                variant="primary" 
+                                size="small" 
+                                onClick={handleSaveConfig}
+                                loading={operationLoading === 'github_config'}
+                                className="!h-8 !px-3"
+                            >
+                                <SaveOutlined /> 保存
+                            </LiquidButton>
+                        </Space>
+                    )
+                }
+            >
+                <Row gutter={24}>
+                    <Col xs={24} lg={12}>
+                        <div style={{ marginBottom: '16px' }}>
+                            <Text type="secondary" style={{ display: 'block', marginBottom: '8px' }}>
+                                GitHub 仓库 (格式: 用户/仓库)
+                            </Text>
+                            <Input 
+                                placeholder="例如: username/blog" 
+                                value={editConfig.repo}
+                                onChange={e => setEditConfig({ ...editConfig, repo: e.target.value })}
+                                disabled={!isEditing}
+                                prefix={<GithubOutlined style={{ color: '#8c8c8c' }} />}
+                            />
+                        </div>
+                        <div style={{ marginBottom: '16px' }}>
+                            <Text type="secondary" style={{ display: 'block', marginBottom: '8px' }}>
+                                Personal Access Token
+                            </Text>
+                            <Input.Password 
+                                placeholder="GitHub Token (需具有 repo 权限)" 
+                                value={isEditing ? editConfig.token : '********************'}
+                                onChange={e => setEditConfig({ ...editConfig, token: e.target.value })}
+                                disabled={!isEditing}
+                                prefix={<LockOutlined style={{ color: '#8c8c8c' }} />}
+                            />
+                        </div>
+                    </Col>
+                    <Col xs={24} lg={12}>
+                        <div style={{ padding: '16px', borderRadius: '8px', background: 'rgba(24, 144, 255, 0.05)', height: '100%' }}>
+                            <Typography.Title level={5}>一键静态部署</Typography.Title>
+                            <p style={{ margin: '8px 0 16px', color: '#666' }}>
+                                点击下方按钮将当前所有公开文章导出为静态 JSON 并生成 HTML 站点，自动推送到 GitHub Pages。
+                            </p>
+                            <LiquidButton
+                                variant="primary"
+                                loading={operationLoading === 'deploy'}
+                                onClick={handleDeployAction}
+                                disabled={!githubConfig?.repo || !githubConfig?.token || !!operationLoading}
+                                className="!rounded-full flex items-center justify-center gap-2 !w-full !h-12"
+                            >
+                                <RocketOutlined /> {operationLoading === 'deploy' ? '部署中，请稍候...' : '立即同步到 GitHub Pages'}
+                            </LiquidButton>
+                        </div>
+                    </Col>
+                </Row>
+            </Card>
+
             {/* 系统操作 */}
-            <Card title="系统维护操作" bordered={false} style={{marginBottom: '24px'}}>
+            <Card title="系统维护操作" variant="none" style={{marginBottom: '24px'}}>
                 <Row gutter={[16, 16]}>
                     {/* 缓存管理 */}
                     <Col xs={24} md={12}>

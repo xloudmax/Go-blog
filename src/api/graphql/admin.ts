@@ -1,3 +1,4 @@
+import { useMemo, useCallback } from 'react';
 import { gql, useMutation, useQuery } from '@apollo/client';
 import type {
   UserRole,
@@ -204,6 +205,38 @@ export const GET_NOTION_PAGES_QUERY = gql`
       title
       lastEditedAt
       url
+    }
+  }
+`;
+
+// GitHub 部署配置
+export const UPDATE_GITHUB_CONFIG_MUTATION = gql`
+  mutation UpdateGitHubConfig($repo: String!, $token: String!) {
+    updateGitHubConfig(repo: $repo, token: $token) {
+      success
+      message
+      code
+    }
+  }
+`;
+
+// 执行 GitHub Pages 部署
+export const DEPLOY_TO_GITHUB_PAGES_MUTATION = gql`
+  mutation DeployToGitHubPages {
+    deployToGitHubPages {
+      success
+      message
+      code
+    }
+  }
+`;
+
+// 获取 GitHub 配置
+export const GET_GITHUB_CONFIG_QUERY = gql`
+  query GetGitHubConfig {
+    getGitHubConfig {
+      repo
+      token
     }
   }
 `;
@@ -759,4 +792,61 @@ export const useNotionPages = () => {
     error,
     refetch,
   };
+};
+
+// GitHub 部署 Hook
+export const useGitHubDeployment = () => {
+    const { data, loading: loadingConfig, error: configError, refetch } = useQuery(GET_GITHUB_CONFIG_QUERY, {
+        context: { endpoint: 'admin' },
+        fetchPolicy: 'network-only',
+    });
+
+    const [updateConfigMutation, { loading: updatingConfig, error: updateConfigError }] = useMutation(UPDATE_GITHUB_CONFIG_MUTATION, {
+        context: { endpoint: 'admin' },
+    });
+
+    const [deployMutation, { loading: deploying, error: deployError }] = useMutation(DEPLOY_TO_GITHUB_PAGES_MUTATION, {
+        context: { endpoint: 'admin' },
+    });
+
+    const updateConfig = useCallback(async (repo: string, token: string) => {
+        const result = await updateConfigMutation({
+            variables: { repo, token },
+        });
+        if (result.data?.updateGitHubConfig?.success) {
+            await refetch();
+        }
+        return result.data?.updateGitHubConfig;
+    }, [updateConfigMutation, refetch]);
+
+    const deploy = useCallback(async () => {
+        const result = await deployMutation();
+        return result.data?.deployToGitHubPages;
+    }, [deployMutation]);
+
+    return useMemo(() => ({
+        config: data?.getGitHubConfig || { repo: '', token: '' },
+        updateConfig,
+        deploy,
+        loading: {
+            loadingConfig,
+            updatingConfig,
+            deploying,
+        },
+        errors: {
+            config: configError,
+            updateConfig: updateConfigError,
+            deploy: deployError,
+        }
+    }), [
+        data?.getGitHubConfig, 
+        loadingConfig, 
+        updatingConfig, 
+        deploying, 
+        configError, 
+        updateConfigError, 
+        deployError, 
+        updateConfig, 
+        deploy
+    ]);
 };

@@ -14,8 +14,10 @@ import {
   DatePicker,
   Slider,
   Drawer,
-  Empty
+  Empty,
+  Grid
 } from 'antd';
+// ... rest of imports
 import { LiquidButton } from '@/components/LiquidButton';
 import {
   SearchOutlined,
@@ -36,6 +38,7 @@ import { ThemeContext } from '@/components/ThemeProvider';
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+const { useBreakpoint } = Grid;
 
 import { LiquidSearchBox } from '@/components/LiquidSearchBox';
 import { PageHeader } from '@/components/PageHeader';
@@ -44,14 +47,18 @@ import { PageContainer } from '@/components/PageContainer';
 const SearchPage: React.FC = () => {
   const { theme } = useContext(ThemeContext);
   const isDarkMode = theme === 'dark';
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const [searchQuery, setSearchQuery] = useState('');
+  // ... rest of state
   const [filters, setFilters] = useState<SearchFilters>({});
   const [sortBy, setSortBy] = useState<SearchSortBy>('RELEVANCE');
   const [limit] = useState(10);
   const [offset, setOffset] = useState(0);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
+  // ... (keeping existing logic)
   // 使用增强搜索功能
   const { results: enhancedResults, loading: enhancedLoading, search: performEnhancedSearch, error: enhancedError } = useEnhancedSearchHook();
 
@@ -254,10 +261,13 @@ const SearchPage: React.FC = () => {
             value={searchQuery}
             onChange={handleSearchChange}
             onSearch={() => handleSearch(searchQuery)}
-            blur={10}
-            height={60}
+            blur={isMobile ? 0 : 10}
+            height={isMobile ? 50 : 60}
+            width={isMobile ? '100% ' : '100%'}
+            scale={isMobile ? 15 : 20}
+            bezelWidth={isMobile ? 10 : 15}
             className="w-full shadow-lg"
-            inputClassName="text-base md:text-xl font-semibold"
+            inputClassName={isMobile ? "text-base font-medium" : "text-base md:text-xl font-semibold"}
           />
         </div>
       
@@ -341,6 +351,8 @@ const SearchPage: React.FC = () => {
                               <img
                                 src={post.coverImageUrl as string}
                                 alt={post.title as string}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               />
                             </div>

@@ -310,10 +310,17 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 		excerpt = &post.Excerpt
 	}
 
-	// 转换统计信息，确保stats总是存在且包含ID
-	// 如果 Stats 为 nil，则留空，让 DataLoader 解析器去处理
+	// 转换统计信息，确保stats总是存在
 	var stats *BlogPostStats
-	if post.Stats != nil && post.Stats.ID != 0 {
+	if post.Stats != nil {
+		sUpdatedAt := post.Stats.UpdatedAt
+		if sUpdatedAt.IsZero() {
+			sUpdatedAt = post.Stats.CreatedAt
+			if sUpdatedAt.IsZero() {
+				sUpdatedAt = time.Now()
+			}
+		}
+
 		stats = &BlogPostStats{
 			ID:           strconv.FormatUint(uint64(post.Stats.ID), 10),
 			ViewCount:    post.Stats.ViewCount,
@@ -321,7 +328,17 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 			ShareCount:   post.Stats.ShareCount,
 			CommentCount: post.Stats.CommentCount,
 			LastViewedAt: post.Stats.LastViewedAt,
-			UpdatedAt:    post.Stats.UpdatedAt,
+			UpdatedAt:    sUpdatedAt,
+		}
+	} else {
+		// 返回默认统计以避免 GraphQL 非空约束报错
+		stats = &BlogPostStats{
+			ID:           strconv.FormatUint(uint64(post.ID), 10) + "_stats",
+			ViewCount:    0,
+			LikeCount:    0,
+			ShareCount:   0,
+			CommentCount: 0,
+			UpdatedAt:    time.Now(),
 		}
 	}
 
@@ -332,6 +349,23 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 	var author *User
 	if post.Author.ID != 0 {
 		author = convertToGraphQLUser(&post.Author)
+	} else {
+		// 返回幽灵作者以满足 GraphQL 非空约束
+		author = &User{
+			ID:       "0",
+			Username: "Ghost",
+			Email:    "ghost@c404.cc",
+			Role:     UserRoleUser,
+		}
+	}
+
+	// 确保 UpdatedAt 不为零值，避免 GraphQL 序列化为 null 导致非空约束报错
+	updatedAt := post.UpdatedAt
+	if updatedAt.IsZero() {
+		updatedAt = post.CreatedAt
+		if updatedAt.IsZero() {
+			updatedAt = time.Now()
+		}
 	}
 
 	return &BlogPost{
@@ -349,10 +383,11 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 		PublishedAt:   post.PublishedAt,
 		LastEditedAt:  post.LastEditedAt,
 		CreatedAt:     post.CreatedAt,
-		UpdatedAt:     post.UpdatedAt,
+		UpdatedAt:     updatedAt,
 		Author:        author,
 		Stats:         stats,
 		IsLiked:       isLiked,
+		Versions:      []*BlogPostVersion{}, // 默认为空切片，满足非空约束且配合 resolver
 	}
 }
 

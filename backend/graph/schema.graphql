@@ -436,6 +436,8 @@ type Mutation {
   clearCache: GeneralResponse!
   rebuildSearchIndex: GeneralResponse!
   syncNotion(pageId: String): GeneralResponse!
+  updateGitHubConfig(repo: String!, token: String!): GeneralResponse!
+  deployToGitHubPages: GeneralResponse!
 }
 
 # 搜索统计信息类型
@@ -654,6 +656,15 @@ extend type Query {
 
   # 获取未读通知数量
   unreadNotificationCount: Int!
+
+  # 获取 GitHub 配置（管理员）
+  getGitHubConfig: GitHubConfig!
+}
+
+# GitHub 配置类型
+type GitHubConfig {
+  repo: String!
+  token: String!
 }
 
 extend type Mutation {

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @MainActor
 class ArticleState: ObservableObject {
@@ -148,9 +149,11 @@ struct NativeBottomBarContent: View {
                     .padding(.horizontal, 8)
                     .background {
                         if #available(iOS 26.0, *) {
-                            Rectangle().glassEffect(.regular.interactive())
+                            Rectangle()
+                                .glassEffect(.regular.interactive())
                         } else {
-                            Rectangle().fill(.ultraThinMaterial)
+                            Rectangle()
+                                .fill(.ultraThinMaterial)
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
@@ -164,10 +167,13 @@ struct NativeBottomBarContent: View {
         }
     }
 
+    @State private var dragOffset: CGFloat = 0
+
     @ViewBuilder
     private func barHStack() -> some View {
         GeometryReader { geometry in
             let tabWidth = geometry.size.width / CGFloat(NativeTab.allCases.count)
+            let maxOffset = geometry.size.width - tabWidth
             
             ZStack(alignment: .leading) {
                 // The Sliding Selection Pill (The "Slider")
@@ -183,14 +189,18 @@ struct NativeBottomBarContent: View {
                                 .fill(.ultraThinMaterial)
                         }
                     }
-                    .offset(x: CGFloat(selectedIndex) * tabWidth + 8, y: geometry.size.height / 2 - 24)
+                    .offset(x: min(max(0, CGFloat(selectedIndex) * tabWidth + dragOffset), maxOffset) + 8, y: geometry.size.height / 2 - 24)
                     .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
 
                 HStack(spacing: 0) {
                     ForEach(NativeTab.allCases, id: \.self) { tab in
                         Button {
+                            if selectedIndex != tab.rawValue {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            }
                             withAnimation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0)) {
                                 selectedIndex = tab.rawValue
+                                dragOffset = 0
                             }
                             onTabSelected(tab.rawValue)
                         } label: {
@@ -209,6 +219,33 @@ struct NativeBottomBarContent: View {
                     }
                 }
             }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 5)
+                    .onChanged { value in
+                        withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.8)) {
+                            dragOffset = value.translation.width
+                        }
+                    }
+                    .onEnded { value in
+                        let predictedOffset = CGFloat(selectedIndex) * tabWidth + value.predictedEndTranslation.width
+                        let predictedIndex = Int(round(predictedOffset / tabWidth))
+                        let newIndex = min(max(0, predictedIndex), NativeTab.allCases.count - 1)
+                        
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0)) {
+                            selectedIndex = newIndex
+                            dragOffset = 0
+                        }
+                        
+                        if selectedIndex == newIndex {
+                            // Only trigger webview update if it actually snapped to a different tab or completed drag
+                            onTabSelected(newIndex)
+                        } else {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onTabSelected(newIndex)
+                        }
+                    }
+            )
         }
         .frame(height: 56)
     }

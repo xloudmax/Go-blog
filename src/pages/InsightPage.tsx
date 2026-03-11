@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGenerateMechanismTreeLazyQuery } from '../generated/graphql';
 import { MechanismTree } from '../components/MechanismTree';
-import { Spin, Alert, message, Typography } from 'antd';
+import { Spin, Alert, message, Typography, Grid } from 'antd';
 import { LiquidButton } from '../components/LiquidButton';
 import { DeploymentUnitOutlined } from '@ant-design/icons';
 // import { ThemeContext } from '@/components/ThemeProvider';
@@ -10,9 +10,13 @@ import { PageHeader } from '../components/PageHeader';
 import { PageContainer } from '../components/PageContainer';
 
 const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 const InsightPage = () => {
   // const { theme } = useContext(ThemeContext);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [query, setQuery] = useState('');
   const [generateTree, { data, loading, error }] = useGenerateMechanismTreeLazyQuery({
     fetchPolicy: 'network-only',
@@ -48,12 +52,12 @@ const InsightPage = () => {
             value={query}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSearch()}
-            placeholder={window.innerWidth < 640 ? "输入主题..." : "输入一个主题开始探索..."}
+            placeholder={isMobile ? "输入主题..." : "输入一个主题开始探索..."}
             containerClassName="w-full"
-            height={window.innerWidth < 640 ? 64 : 72}
+            height={isMobile ? 54 : 72}
             width="100%"
-            scale={4}
-            bezelWidth={7}
+            scale={isMobile ? 3 : 4}
+            bezelWidth={isMobile ? 5 : 7}
             refractiveIndex={1.5}
             specularOpacity={0.6}
             blur={0}

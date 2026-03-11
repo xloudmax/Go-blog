@@ -6,6 +6,7 @@ import ReactDOM from 'react-dom/client'
 import Root from './components/Root'
 import './styles/modern-blog.css'
 import './index.css'
+import 'unfonts.css'
 
 // Tauri 桌面端优化：禁用全局右键菜单（输入框除外）
 if (window.__TAURI_INTERNALS__) {

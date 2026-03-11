@@ -4,9 +4,22 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"reflect"
 	"sync"
 	"time"
 )
+
+// Cache 定义统一缓存接口
+type Cache interface {
+	Set(key string, value interface{}, duration time.Duration)
+	Get(key string, target interface{}) bool
+	Delete(key string)
+	Exists(key string) bool
+	Clear()
+	Stop()
+	Count() int
+	Incr(key string) (int64, error)
+}
 
 // MemoryCache 内存缓存结构体
 type MemoryCache struct {
@@ -60,23 +73,43 @@ func (c *MemoryCache) Set(key string, value interface{}, duration time.Duration)
 	c.mutex.Unlock()
 }
 
-// Get 获取缓存项
-func (c *MemoryCache) Get(key string) (interface{}, bool) {
+// Get 获取缓存项并填充到 target
+func (c *MemoryCache) Get(key string, target interface{}) bool {
 	c.mutex.RLock()
 	item, found := c.data[key]
 	if !found {
 		c.mutex.RUnlock()
-		return nil, false
+		return false
 	}
 
 	if item.Expiration > 0 && time.Now().UnixNano() > item.Expiration {
 		c.mutex.RUnlock()
 		c.Delete(key)
-		return nil, false
+		return false
 	}
 
 	c.mutex.RUnlock()
-	return item.Value, true
+
+	// 使用反射将值拷贝到 target
+	if target != nil && item.Value != nil {
+		targetVal := reflect.ValueOf(target)
+		if targetVal.Kind() != reflect.Ptr {
+			return false // target 必须是指针
+		}
+
+		val := reflect.ValueOf(item.Value)
+		// 如果 item.Value 本身也是指针，我们需要解引用或者处理类型一致性
+		if val.Type().AssignableTo(targetVal.Elem().Type()) {
+			targetVal.Elem().Set(val)
+		} else if val.Kind() == reflect.Ptr && val.Elem().Type().AssignableTo(targetVal.Elem().Type()) {
+			targetVal.Elem().Set(val.Elem())
+		} else {
+			// 如果类型实在不匹配，可以记录日志或返回 false
+			return false
+		}
+	}
+
+	return true
 }
 
 // Delete 删除缓存项
@@ -88,8 +121,7 @@ func (c *MemoryCache) Delete(key string) {
 
 // Exists 检查缓存项是否存在
 func (c *MemoryCache) Exists(key string) bool {
-	_, found := c.Get(key)
-	return found
+	return c.Get(key, nil)
 }
 
 // Clear 清空所有缓存
@@ -117,6 +149,35 @@ func (c *MemoryCache) DeleteExpired() {
 		}
 	}
 	c.mutex.Unlock()
+}
+
+// Incr 原子增加计数器
+func (c *MemoryCache) Incr(key string) (int64, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	item, found := c.data[key]
+	if !found {
+		c.data[key] = &CacheItem{
+			Value:      int64(1),
+			Expiration: 0,
+		}
+		return 1, nil
+	}
+
+	val, ok := item.Value.(int64)
+	if !ok {
+		// 尝试从 int 转换
+		if v, ok := item.Value.(int); ok {
+			val = int64(v)
+		} else {
+			return 0, fmt.Errorf("value is not an integer")
+		}
+	}
+
+	newVal := val + 1
+	item.Value = newVal
+	return newVal, nil
 }
 
 // Stop 停止清理器
@@ -152,7 +213,7 @@ type VerificationCode struct {
 
 // EmailVerificationService 邮箱验证服务
 type EmailVerificationService struct {
-	cache *MemoryCache
+	cache Cache
 }
 
 // Stop 停止邮箱验证码缓存的清理器
@@ -163,14 +224,17 @@ func (evs *EmailVerificationService) Stop() {
 }
 
 // Cache 暴露内部缓存（用于兼容旧路径）
-func (evs *EmailVerificationService) Cache() *MemoryCache {
+func (evs *EmailVerificationService) Cache() Cache {
 	return evs.cache
 }
 
 // NewEmailVerificationService 创建邮箱验证服务
-func NewEmailVerificationService() *EmailVerificationService {
+func NewEmailVerificationService(c Cache) *EmailVerificationService {
+	if c == nil {
+		c = NewMemoryCache(5 * time.Minute)
+	}
 	return &EmailVerificationService{
-		cache: NewMemoryCache(5 * time.Minute), // 每5分钟清理一次
+		cache: c,
 	}
 }
 
@@ -207,13 +271,9 @@ func (evs *EmailVerificationService) GenerateVerificationCode(email, codeType st
 func (evs *EmailVerificationService) VerifyCode(email, code, codeType string) bool {
 	key := fmt.Sprintf("%s:%s", email, codeType)
 
-	value, found := evs.cache.Get(key)
+	var verificationCode VerificationCode
+	found := evs.cache.Get(key, &verificationCode)
 	if !found {
-		return false
-	}
-
-	verificationCode, ok := value.(*VerificationCode)
-	if !ok {
 		return false
 	}
 
@@ -240,13 +300,9 @@ func (evs *EmailVerificationService) InvalidateCode(email, codeType string) {
 func (evs *EmailVerificationService) HasPendingCode(email, codeType string) bool {
 	key := fmt.Sprintf("%s:%s", email, codeType)
 
-	value, found := evs.cache.Get(key)
+	var verificationCode VerificationCode
+	found := evs.cache.Get(key, &verificationCode)
 	if !found {
-		return false
-	}
-
-	verificationCode, ok := value.(*VerificationCode)
-	if !ok {
 		return false
 	}
 
@@ -255,7 +311,7 @@ func (evs *EmailVerificationService) HasPendingCode(email, codeType string) bool
 
 // 全局缓存实例
 var (
-	GlobalCache          *MemoryCache
+	GlobalCache          Cache
 	EmailVerificationSvc *EmailVerificationService
 	once                 sync.Once
 )
@@ -263,13 +319,28 @@ var (
 // InitCache 初始化缓存
 func InitCache() {
 	once.Do(func() {
-		GlobalCache = NewMemoryCache(10 * time.Minute)
-		EmailVerificationSvc = NewEmailVerificationService()
+		// 默认使用内存缓存。如果需要 Redis，在 main 中通过 SetGlobalCache 重新初始化。
+		if GlobalCache == nil {
+			GlobalCache = NewMemoryCache(10 * time.Minute)
+		}
+		if EmailVerificationSvc == nil {
+			EmailVerificationSvc = NewEmailVerificationService(GlobalCache)
+		}
 	})
 }
 
+// SetGlobalCache 设置全局缓存实例 (由 main 调用)
+func SetGlobalCache(c Cache) {
+	GlobalCache = c
+}
+
+// SetEmailVerificationService 设置邮箱验证服务实例 (由 main 调用)
+func SetEmailVerificationService(s *EmailVerificationService) {
+	EmailVerificationSvc = s
+}
+
 // GetCache 获取全局缓存实例
-func GetCache() *MemoryCache {
+func GetCache() Cache {
 	if GlobalCache == nil {
 		InitCache()
 	}

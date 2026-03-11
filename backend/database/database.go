@@ -9,6 +9,7 @@ import (
 	"repair-platform/models"
 	"time"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
@@ -30,12 +31,21 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	// 配置数据库连接选项
 	dbConfig := cfg.GetDatabaseConfig()
 	dsn := dbConfig["dsn"].(string)
+	driver := dbConfig["driver"].(string)
 
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
+	var dialector gorm.Dialector
+	if driver == "postgres" {
+		dialector = postgres.Open(dsn)
+	} else {
+		dialector = sqlite.Open(dsn)
+	}
+
+	db, err := gorm.Open(dialector, &gorm.Config{
 		Logger: newLogger,
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true, // 使用单数表名
 		},
+		PrepareStmt: true, // 开启预编译语句缓存，最高提升20%性能
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
@@ -47,15 +57,22 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to get sql.DB: %w", err)
 	}
 
-	// 强制开启 WAL 模式 (Write-Ahead Logging) 提升并发读写性能
-	db.Exec("PRAGMA journal_mode=WAL;")
-	db.Exec("PRAGMA synchronous=NORMAL;")
-	db.Exec("PRAGMA busy_timeout=5000;")
+	if driver == "postgres" {
+		// PostgreSQL 高并发连接池配置
+		sqlDB.SetMaxOpenConns(100)
+		sqlDB.SetMaxIdleConns(20)
+		sqlDB.SetConnMaxLifetime(time.Hour)
+	} else {
+		// 强制开启 WAL 模式 (Write-Ahead Logging) 提升并发读写性能
+		db.Exec("PRAGMA journal_mode=WAL;")
+		db.Exec("PRAGMA synchronous=NORMAL;")
+		db.Exec("PRAGMA busy_timeout=5000;")
 
-	// SQLite 推荐配置
-	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(1)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+		// SQLite 推荐配置
+		sqlDB.SetMaxOpenConns(1)
+		sqlDB.SetMaxIdleConns(1)
+		sqlDB.SetConnMaxLifetime(time.Hour)
+	}
 
 	// 运行数据库迁移和索引创建
 	if err := RunMigrations(db); err != nil {
@@ -119,6 +136,7 @@ func autoMigrate(db *gorm.DB) error {
 		&models.Notification{},
 		&models.Tag{},
 		&models.Category{},
+		&models.Setting{},
 	)
 }
 

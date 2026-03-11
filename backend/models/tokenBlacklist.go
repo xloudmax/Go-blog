@@ -17,7 +17,7 @@ import (
 // 3. 密码重置后撤销所有旧token
 // 4. 检测到可疑活动
 type TokenBlacklist struct {
-	cache *MemoryCache
+	cache Cache
 	mutex sync.RWMutex
 }
 
@@ -91,7 +91,7 @@ func (tb *TokenBlacklist) addTokenHash(tokenString string, reason string, durati
 
 	// 存储黑名单项
 	blacklistEntry := map[string]interface{}{
-		"reason":       reason,
+		"reason":         reason,
 		"blacklisted_at": time.Now(),
 	}
 
@@ -112,8 +112,7 @@ func (tb *TokenBlacklist) IsBlacklisted(tokenString string) bool {
 	tb.mutex.RLock()
 	defer tb.mutex.RUnlock()
 
-	_, exists := tb.cache.Get(tokenHash)
-	return exists
+	return tb.cache.Get(tokenHash, nil)
 }
 
 // GetBlacklistInfo 获取黑名单信息（用于调试）
@@ -124,13 +123,9 @@ func (tb *TokenBlacklist) GetBlacklistInfo(tokenString string) (map[string]inter
 	tb.mutex.RLock()
 	defer tb.mutex.RUnlock()
 
-	info, exists := tb.cache.Get(tokenHash)
+	var infoMap map[string]interface{}
+	exists := tb.cache.Get(tokenHash, &infoMap)
 	if !exists {
-		return nil, false
-	}
-
-	infoMap, ok := info.(map[string]interface{})
-	if !ok {
 		return nil, false
 	}
 
@@ -147,9 +142,9 @@ func (tb *TokenBlacklist) RevokeAllUserTokens(userID uint, reason string) {
 	key := fmt.Sprintf("user_revoke_%d", userID)
 
 	revokeInfo := map[string]interface{}{
-		"reason":       reason,
-		"revoked_at":   time.Now(),
-		"user_id":      userID,
+		"reason":     reason,
+		"revoked_at": time.Now(),
+		"user_id":    userID,
 	}
 
 	// 保留30天（足够长以覆盖所有可能的token）
@@ -162,13 +157,9 @@ func (tb *TokenBlacklist) IsUserRevoked(userID uint, tokenIssuedAt time.Time) bo
 	defer tb.mutex.RUnlock()
 
 	key := fmt.Sprintf("user_revoke_%d", userID)
-	info, exists := tb.cache.Get(key)
+	var infoMap map[string]interface{}
+	exists := tb.cache.Get(key, &infoMap)
 	if !exists {
-		return false
-	}
-
-	infoMap, ok := info.(map[string]interface{})
-	if !ok {
 		return false
 	}
 

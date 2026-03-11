@@ -1,10 +1,11 @@
-import { useContext, Suspense, lazy } from 'react'
-import { Routes, Route, Link } from 'react-router-dom'
+import { useContext, Suspense, lazy, useEffect } from 'react'
+import { Routes, Route, Link, Outlet } from 'react-router-dom'
 import {
   Layout,
   Typography,
   Grid
 } from 'antd';
+// ... (rest of imports remains the same)
 import { ThemeContext } from '../components/ThemeProvider'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
 import IconSidebar from '@/components/IconSidebar'
@@ -14,7 +15,7 @@ import { MeshGradientBackground } from '@/components/MeshGradientBackground'
 import BackToTop from '@/components/BackToTop'
 import TauriTitleBar from '@/components/TauriTitleBar'
 
-// Lazy load pages for code splitting
+// ... (lazy imports)
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const PostDetailPage = lazy(() => import('@/pages/PostDetailPage'));
 const EditorPage = lazy(() => import('@/pages/EditorPage'));
@@ -28,18 +29,37 @@ const TagsPage = lazy(() => import('@/pages/TagsPage'));
 const NotificationPage = lazy(() => import('@/pages/NotificationPage'));
 const InsightPage = lazy(() => import('@/pages/InsightPage'));
 const LiquidGlassTestPage = lazy(() => import('@/pages/LiquidGlassTestPage'));
+const QuickRefListPage = lazy(() => import('@/pages/QuickRefListPage'));
 
 const { Content, Footer } = Layout;
 const { Text } = Typography;
 const { useBreakpoint } = Grid;
 
+const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
+const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
 
 export default function AppLayout() {
     const { theme: appTheme, toggle } = useContext(ThemeContext)
     const screens = useBreakpoint();
     
-    // 使用自定义 Hook 处理离线文章同步
-    useOfflineSync();
+    // 使用自定义 Hook 处理离线文章同步 (静态模式跳过)
+    if (!isStatic) {
+        useOfflineSync();
+    }
+
+    // 桌面端 (Tauri) 极致预加载优化
+    useEffect(() => {
+        if (isTauri) {
+            // 在首页稳定后的 3 秒，静默提前拉取文章详情页的 JS Chunk
+            const timer = setTimeout(() => {
+                console.log('🚀 [Tauri Perf] Aggressively prefetching PostDetailPage chunk...');
+                import('@/pages/PostDetailPage').catch((err) => {
+                    console.warn('[Tauri Perf] Prefetch failed (this is harmless, likely due to a chunk update):', err);
+                });
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     // Determine sidebar width based on screen size (0 on mobile, 72px on desktop)
     const isMobile = !screens.md;
@@ -64,7 +84,9 @@ export default function AppLayout() {
 
             <Layout className="min-h-screen" style={{
                 marginLeft: isMobile ? 0 : '72px',
-                marginBottom: isMobile ? '140px' : 0, // accommodate Apple Music style native bar + mini player
+                // For Native iOS (Tauri), we need 140px to accommodate native bar + mini player.
+                // For Web browser mobile, we only need ~90px for the React MobileBottomBar.
+                marginBottom: isMobile ? (isTauri ? '140px' : '90px') : 0, 
                 backgroundColor: 'transparent',
                 display: 'flex',
                 flexDirection: 'column'
@@ -76,35 +98,38 @@ export default function AppLayout() {
                 }}>
                     <Suspense fallback={<PageLoading />}>
                         <div className="page-enter-active min-h-full">
-                            <Routes>
-                                <Route path="/home" element={<HomePage />} />
-                                <Route path="/search" element={<SearchPage />} />
-                                <Route path="/insight" element={<InsightPage />} />
-                                <Route path="/tags" element={<TagsPage />} />
-                                <Route path="/notifications" element={<NotificationPage />} />
-                                <Route path="/profile" element={<ProfilePage />} />
-                                <Route path="/liquid-glass" element={<LiquidGlassTestPage />} />
-                                <Route path="/post/:slug" element={<PostDetailPage />} />
-                                <Route path="/login" element={<LoginPage />} />
-                                <Route path="/register" element={<RegisterPage />} />
-                                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                                <Route path="/editor/posts" element={<EditorPage />} />
-                                <Route path="/editor/posts/:file" element={<EditorPage />} />
-                                <Route path="/admin/*" element={<AdminPage />} />
-                                <Route
-                                    path="*"
-                                    element={
-                                        <div className="flex items-center justify-center min-h-screen">
-                                            <div className="text-center">
-                                                <p className="text-lg mb-4">页面未找到</p>
-                                                <Link to="/home" className="text-blue-600 hover:text-blue-800">
-                                                    返回文章列表
-                                                </Link>
+                            {isStatic ? <Outlet /> : (
+                                <Routes>
+                                    <Route path="/home" element={<HomePage />} />
+                                    <Route path="/search" element={<SearchPage />} />
+                                    <Route path="/insight" element={<InsightPage />} />
+                                    <Route path="/reference" element={<QuickRefListPage />} />
+                                    <Route path="/tags" element={<TagsPage />} />
+                                    <Route path="/notifications" element={<NotificationPage />} />
+                                    <Route path="/profile" element={<ProfilePage />} />
+                                    <Route path="/liquid-glass" element={<LiquidGlassTestPage />} />
+                                    <Route path="/post/:slug" element={<PostDetailPage />} />
+                                    <Route path="/login" element={<LoginPage />} />
+                                    <Route path="/register" element={<RegisterPage />} />
+                                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                                    <Route path="/editor/posts" element={<EditorPage />} />
+                                    <Route path="/editor/posts/:file" element={<EditorPage />} />
+                                    <Route path="/admin/*" element={<AdminPage />} />
+                                    <Route
+                                        path="*"
+                                        element={
+                                            <div className="flex items-center justify-center min-h-screen">
+                                                <div className="text-center">
+                                                    <p className="text-lg mb-4">页面未找到</p>
+                                                    <Link to="/home" className="text-blue-600 hover:text-blue-800">
+                                                        返回文章列表
+                                                    </Link>
+                                                </div>
                                             </div>
-                                        </div>
-                                    }
-                                />
-                            </Routes>
+                                        }
+                                    />
+                                </Routes>
+                            )}
                         </div>
                     </Suspense>
                 </Content>

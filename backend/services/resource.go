@@ -31,7 +31,7 @@ type UserQuery struct {
 }
 
 // FindBlogPost 通过ID或Slug查找博客文章
-func (rs *ResourceService) FindBlogPost(identifier string, userID *uint, userRole string) *BlogPostQuery {
+func (rs *ResourceService) FindBlogPost(identifier string, userID *uint, userRole string, skipCount bool) *BlogPostQuery {
 	// 解析ID
 	idInfo, err := utils.ParseID(identifier)
 	if err != nil {
@@ -46,12 +46,12 @@ func (rs *ResourceService) FindBlogPost(identifier string, userID *uint, userRol
 	switch idInfo.Type {
 	case utils.IDTypeNumeric:
 		// 通过数字ID查找
-		post, err := blogService.GetPostByID(uint(idInfo.NumericValue), userID, userRole)
+		post, err := blogService.GetPostByID(uint(idInfo.NumericValue), userID, userRole, skipCount)
 		return &BlogPostQuery{Post: post, Error: err}
 
 	case utils.IDTypeSlug:
 		// 通过Slug查找
-		post, err := blogService.GetPostBySlug(idInfo.SlugValue, userID, userRole)
+		post, err := blogService.GetPostBySlug(idInfo.SlugValue, userID, userRole, skipCount)
 		return &BlogPostQuery{Post: post, Error: err}
 
 	default:
@@ -63,7 +63,7 @@ func (rs *ResourceService) FindBlogPost(identifier string, userID *uint, userRol
 }
 
 // FindBlogPostStrict 严格查找博客文章（仅限数字ID）
-func (rs *ResourceService) FindBlogPostStrict(identifier string, userID *uint, userRole string) *BlogPostQuery {
+func (rs *ResourceService) FindBlogPostStrict(identifier string, userID *uint, userRole string, skipCount bool) *BlogPostQuery {
 	numericID, err := utils.ParseNumericID(identifier)
 	if err != nil {
 		return &BlogPostQuery{
@@ -73,7 +73,7 @@ func (rs *ResourceService) FindBlogPostStrict(identifier string, userID *uint, u
 	}
 
 	blogService := NewBlogService(rs.db)
-	post, err := blogService.GetPostByID(uint(numericID), userID, userRole)
+	post, err := blogService.GetPostByID(uint(numericID), userID, userRole, skipCount)
 	return &BlogPostQuery{Post: post, Error: err}
 }
 
@@ -119,11 +119,11 @@ func (rs *ResourceService) FindUserStrict(identifier string) *UserQuery {
 func (rs *ResourceService) isEmailFormat(s string) bool {
 	// 简单的邮箱格式检查
 	return len(s) > 3 &&
-		   len(s) <= 254 &&
-		   containsChar(s, '@') &&
-		   containsChar(s, '.') &&
-		   !startsOrEndsWithChar(s, '@') &&
-		   !startsOrEndsWithChar(s, '.')
+		len(s) <= 254 &&
+		containsChar(s, '@') &&
+		containsChar(s, '.') &&
+		!startsOrEndsWithChar(s, '@') &&
+		!startsOrEndsWithChar(s, '.')
 }
 
 // containsChar 检查字符串是否包含指定字符
@@ -146,11 +146,11 @@ func startsOrEndsWithChar(s string, c rune) bool {
 }
 
 // BatchFindBlogPosts 批量查找博客文章
-func (rs *ResourceService) BatchFindBlogPosts(identifiers []string, userID *uint, userRole string) map[string]*BlogPostQuery {
+func (rs *ResourceService) BatchFindBlogPosts(identifiers []string, userID *uint, userRole string, skipCount bool) map[string]*BlogPostQuery {
 	results := make(map[string]*BlogPostQuery)
 
 	for _, identifier := range identifiers {
-		results[identifier] = rs.FindBlogPost(identifier, userID, userRole)
+		results[identifier] = rs.FindBlogPost(identifier, userID, userRole, skipCount)
 	}
 
 	return results
@@ -180,14 +180,14 @@ func NewResolverHelper(db *gorm.DB) *ResolverHelper {
 }
 
 // ResolveBlogPost 解析博客文章（用于GraphQL resolver）
-func (rh *ResolverHelper) ResolveBlogPost(id string, userID *uint, userRole string) (*models.BlogPost, error) {
-	query := rh.resourceService.FindBlogPost(id, userID, userRole)
+func (rh *ResolverHelper) ResolveBlogPost(id string, userID *uint, userRole string, skipCount bool) (*models.BlogPost, error) {
+	query := rh.resourceService.FindBlogPost(id, userID, userRole, skipCount)
 	return query.Post, query.Error
 }
 
 // ResolveBlogPostStrict 严格解析博客文章（仅数字ID）
-func (rh *ResolverHelper) ResolveBlogPostStrict(id string, userID *uint, userRole string) (*models.BlogPost, error) {
-	query := rh.resourceService.FindBlogPostStrict(id, userID, userRole)
+func (rh *ResolverHelper) ResolveBlogPostStrict(id string, userID *uint, userRole string, skipCount bool) (*models.BlogPost, error) {
+	query := rh.resourceService.FindBlogPostStrict(id, userID, userRole, skipCount)
 	return query.Post, query.Error
 }
 

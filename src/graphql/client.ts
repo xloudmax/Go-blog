@@ -7,6 +7,7 @@ import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 import { cacheConfig } from './cache-config';
 import errorHandler from '@/services/errorHandler';
 import { tokenStorage } from '@/utils/tokenStorage';
+import { getApiBaseUrl } from '@/utils/config';
 
 // 加载Apollo Client错误信息（开发环境）
 if (import.meta.env.DEV || process.env.NODE_ENV !== "production") {
@@ -22,10 +23,13 @@ tokenStorage.get().then(t => {
   if (t) cachedToken = t;
 });
 
+// 获取 API 基础地址
+const apiBaseUrl = getApiBaseUrl();
+
 // 创建HTTP链接
 const uploadLink = createUploadLink({
   // Ensure we don't end up with double slashes if the env var ends with one
-  uri: `${(import.meta.env.VITE_API_BASE_URL || "http://172.26.89.207:11451").replace(/\/$/, '')}/graphql`,
+  uri: `${apiBaseUrl.replace(/\/$/, '')}/graphql`,
 });
 
 // 认证链接 - 自动添加JWT token到请求头
@@ -82,7 +86,7 @@ const getNewToken = async () => {
   `;
 
   try {
-    const response = await fetch(`${(import.meta.env.VITE_API_BASE_URL || "http://172.26.89.207:11451").replace(/\/$/, '')}/graphql`, {
+    const response = await fetch(`${apiBaseUrl.replace(/\/$/, '')}/graphql`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

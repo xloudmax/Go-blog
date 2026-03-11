@@ -54,32 +54,30 @@ func (BlogPostLike) TableName() string {
 	return "blog_post_likes"
 }
 
-// IncrementViewCount 增加浏览次数
+// IncrementViewCount 增加浏览次数（原子操作）
 func (stats *BlogPostStats) IncrementViewCount(db *gorm.DB) error {
 	now := time.Now()
-	stats.ViewCount++
-	stats.LastViewedAt = &now
-	return db.Save(stats).Error
+	// 使用 UpdateColumn 避免触发钩子并实现原子增加，解决 SQLite 并发冲突问题
+	return db.Model(stats).UpdateColumns(map[string]interface{}{
+		"view_count":     gorm.Expr("view_count + ?", 1),
+		"last_viewed_at": &now,
+		"updated_at":     now,
+	}).Error
 }
 
-// IncrementLikeCount 增加点赞数
+// IncrementLikeCount 增加点赞数（原子操作）
 func (stats *BlogPostStats) IncrementLikeCount(db *gorm.DB) error {
-	stats.LikeCount++
-	return db.Save(stats).Error
+	return db.Model(stats).UpdateColumn("like_count", gorm.Expr("like_count + ?", 1)).Error
 }
 
-// DecrementLikeCount 减少点赞数
+// DecrementLikeCount 减少点赞数（原子操作）
 func (stats *BlogPostStats) DecrementLikeCount(db *gorm.DB) error {
-	if stats.LikeCount > 0 {
-		stats.LikeCount--
-	}
-	return db.Save(stats).Error
+	return db.Model(stats).UpdateColumn("like_count", gorm.Expr("CASE WHEN like_count > 0 THEN like_count - 1 ELSE 0 END")).Error
 }
 
-// IncrementShareCount 增加分享次数
+// IncrementShareCount 增加分享次数（原子操作）
 func (stats *BlogPostStats) IncrementShareCount(db *gorm.DB) error {
-	stats.ShareCount++
-	return db.Save(stats).Error
+	return db.Model(stats).UpdateColumn("share_count", gorm.Expr("share_count + ?", 1)).Error
 }
 
 // CreateBlogPostVersion 创建博客文章版本

@@ -24,13 +24,22 @@ const getTauriEvent = async () => {
   }
 };
 
-const getNavItems = (userAvatar?: string, isAuthenticated?: boolean) => [
-  { key: 'home', icon: <HomeOutlined />, label: '首页', path: '/home' },
-  { key: 'search', icon: <SearchOutlined />, label: '搜索', path: '/search' },
-  { key: 'insight', icon: <DeploymentUnitOutlined />, label: 'Insight', path: '/insight' },
-  { key: 'tags', icon: <AppstoreOutlined />, label: '分类', path: '/tags' },
-  { key: 'profile', icon: userAvatar ? <div className="w-6 h-6 rounded-full bg-cover border border-white/20" style={{ backgroundImage: `url(${userAvatar})` }} /> : <UserOutlined />, label: '我的', path: isAuthenticated ? '/profile' : '/login' },
-];
+const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
+
+const getNavItems = (userAvatar?: string, isAuthenticated?: boolean) => {
+  if (isStatic) {
+    return [
+      { key: 'home', icon: <HomeOutlined />, label: '首页', path: '/home' },
+    ];
+  }
+  return [
+    { key: 'home', icon: <HomeOutlined />, label: '首页', path: '/home' },
+    { key: 'search', icon: <SearchOutlined />, label: '搜索', path: '/search' },
+    { key: 'insight', icon: <DeploymentUnitOutlined />, label: 'Insight', path: '/insight' },
+    { key: 'tags', icon: <AppstoreOutlined />, label: '分类', path: '/tags' },
+    { key: 'profile', icon: userAvatar ? <div className="w-6 h-6 rounded-full bg-cover border border-white/20" style={{ backgroundImage: `url(${userAvatar})` }} /> : <UserOutlined />, label: '我的', path: isAuthenticated ? '/profile' : '/login' },
+  ];
+};
 
 interface NavItem {
   key: string;
@@ -195,7 +204,9 @@ const MobileBottomBar: React.FC = React.memo(() => {
   const centerOffset = useTransform(pillWidthSpring, (w) => (tabWidth - w) / 2);
   const verticalOffset = useTransform(pillHeightSpring, (h) => (barHeight - h) / 2);
 
-  if (isIOS) return null;
+  // 只有在 Tauri 环境下的 iOS 原生模式才隐藏 React 版本的底部栏
+  const isNativeIOS = isIOS && isTauri;
+  if (isNativeIOS) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-[9999] md:hidden">

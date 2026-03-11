@@ -27,6 +27,7 @@ func RunMigrations(db *gorm.DB) error {
 		&models.Notification{},       // 添加通知模型
 		&models.Tag{},                // 添加标签模型
 		&models.Category{},           // 添加分类模型
+		&models.Setting{},            // 添加设置模型
 	)
 	if err != nil {
 		return err

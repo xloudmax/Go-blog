@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Typography,
@@ -9,7 +9,8 @@ import {
   Alert,
   Divider,
   Tooltip,
-  notification
+  notification,
+  Grid
 } from 'antd';
 import { LiquidButton } from '../components/LiquidButton';
 import {
@@ -39,15 +40,44 @@ export default function PostDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAppUser();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
+
+  // Static export support
+  const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
 
   // 获取文章详情
-  const { data, loading, error, refetch } = useQuery(POST_QUERY, {
-    variables: { slug },
-    skip: !slug,
-    errorPolicy: 'all'
-  });
+  const { data: apolloData, loading: apolloLoading, error: apolloError, refetch } = isStatic
+    ? { data: null, loading: false, error: null, refetch: () => {} }
+    : useQuery(POST_QUERY, {
+        variables: { slug },
+        skip: !slug,
+        errorPolicy: 'all'
+      });
 
-  const post = data?.post;
+  const [staticPost, setStaticPost] = useState<any>(null);
+  const [staticLoading, setStaticLoading] = useState(isStatic);
+  const [staticError, setStaticError] = useState<any>(null);
+
+  useEffect(() => {
+    if (isStatic && slug) {
+      setStaticLoading(true);
+      fetch(`./static/posts/${slug}.json`)
+        .then(res => res.json())
+        .then(data => {
+          setStaticPost(data);
+          setStaticLoading(false);
+        })
+        .catch(err => {
+          setStaticError(err);
+          setStaticLoading(false);
+        });
+    }
+  }, [isStatic, slug]);
+
+  const loading = isStatic ? staticLoading : apolloLoading;
+  const error = isStatic ? staticError : apolloError;
+  const post = isStatic ? staticPost : apolloData?.post;
 
   // 使用优化后的点赞 Hook
   const { isLiked, likeCount, handleLike } = useLike({
@@ -205,8 +235,13 @@ export default function PostDetailPage() {
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      className="!px-2"
     >
-      <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '3rem 0' }}>
+      <div style={{ 
+        maxWidth: '80rem', 
+        margin: '0 auto', 
+        padding: isMobile ? '1rem 0.25rem' : '3rem 0' 
+      }}>
         {/* 标准页面标题和导航 */}
         <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* React 19 Metadata Hoisting */}
@@ -236,8 +271,13 @@ export default function PostDetailPage() {
               <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
                   <Title
-                    level={1}
-                    style={{ margin: 0, color: 'var(--color-text)' }}
+                    level={isMobile ? 2 : 1}
+                    style={{ 
+                      margin: 0, 
+                      color: 'var(--color-text)',
+                      fontSize: isMobile ? '1.75rem' : undefined,
+                      lineHeight: isMobile ? 1.2 : undefined
+                    }}
                   >
                     {post.title}
                   </Title>
@@ -249,7 +289,12 @@ export default function PostDetailPage() {
                 </div>
 
                 {post.excerpt && (
-                  <Paragraph style={{ fontSize: '18px', marginBottom: '1rem', color: 'var(--color-text-secondary)' }}>
+                  <Paragraph style={{ 
+                    fontSize: isMobile ? '16px' : '18px', 
+                    marginBottom: '1rem', 
+                    color: 'var(--color-text-secondary)',
+                    lineHeight: 1.6
+                  }}>
                     {post.excerpt}
                   </Paragraph>
                 )}
@@ -263,10 +308,10 @@ export default function PostDetailPage() {
                       size="large"
                     />
                     <div>
-                      <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-text)' }}>
+                      <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: 500, color: 'var(--color-text)' }}>
                         {post.author.username}
                       </div>
-                      <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: isMobile ? '12px' : '14px', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <CalendarOutlined />
                         {post.publishedAt ? formatDate(post.publishedAt) : formatDate(post.createdAt)}
                       </div>

@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 
@@ -34,6 +35,19 @@ func main() {
 	// 初始化日志
 	initLogger(cfg)
 	logger := middleware.GetLogger()
+
+	// 初始化缓存 (如果启用了 Redis)
+	if cfg.CacheEnabled && cfg.RedisHost != "" {
+		redisCache, err := models.NewRedisCache(cfg.RedisHost, cfg.RedisPort, cfg.RedisPass, cfg.RedisDB)
+		if err != nil {
+			logger.Warnw("Redis连接失败，将回退到内存缓存", "error", err)
+		} else {
+			logger.Infow("Redis缓存已初始化", "host", cfg.RedisHost)
+			models.SetGlobalCache(redisCache)
+			// 更新邮箱验证服务也使用 Redis 以支持多实例同步
+			models.SetEmailVerificationService(models.NewEmailVerificationService(redisCache))
+		}
+	}
 
 	// 确保日志同步、缓存清理
 	defer func() {
@@ -54,6 +68,8 @@ func main() {
 	// 初始化 Gin 引擎，避免默认日志重复输出
 	r := gin.New()
 	r.Use(gin.Recovery())
+	// 启用 Gzip 压缩，显著减少 API 响应传输体积
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	// 注册日志中间件
 	r.Use(middleware.LoggingMiddleware())
@@ -105,7 +121,7 @@ func ensureAdminAccount(db *gorm.DB) {
 	now := time.Now()
 	// 查找 admin
 	err := db.Where("username = ?", "admin").First(&admin).Error
-	
+
 	// 无论是否存在，都执行强制同步逻辑
 	targetAdmin := models.User{
 		Username:        "admin",
@@ -143,7 +159,7 @@ func initLogger(cfg *config.Config) {
 func setupCORS(r *gin.Engine, cfg *config.Config) {
 	r.Use(func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
-		
+
 		// 极致兼容模式：如果请求带了 Origin，我们就原样回显
 		// 这在开发环境下最稳健，且完美支持带 Cookie/Authorization 的请求
 		if origin != "" {

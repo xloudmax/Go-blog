@@ -53,6 +53,10 @@ type Config struct {
 	// 缓存配置
 	CacheEnabled bool
 	CacheTTL     string
+	RedisHost    string
+	RedisPort    string
+	RedisPass    string
+	RedisDB      int
 
 	// AI 服务配置
 	AIServiceURL     string
@@ -66,7 +70,7 @@ type Config struct {
 func LoadConfig() *Config {
 	// 检测是否运行在 Tauri 环境
 	isTauri := os.Getenv("TAURI_ENV_PLATFORM") != "" || os.Getenv("TAURI_PLATFORM") != ""
-	
+
 	defaultDB := "blog_platform.db"
 	defaultUploads := "uploads"
 
@@ -119,7 +123,11 @@ func LoadConfig() *Config {
 
 		// 缓存配置
 		CacheEnabled: getEnvAsBool("CACHE_ENABLED", true),
-		CacheTTL:     getEnv("CacheTTL", "900s"),
+		CacheTTL:     getEnv("CACHE_TTL", "900s"),
+		RedisHost:    getEnv("REDIS_HOST", ""), // 空代表使用本地 go-cache
+		RedisPort:    getEnv("REDIS_PORT", "6379"),
+		RedisPass:    getEnv("REDIS_PASSWORD", ""),
+		RedisDB:      getEnvAsInt("REDIS_DB", 0),
 
 		// AI 服务配置
 		AIServiceURL:     getEnv("AI_SERVICE_URL", "http://localhost:8000"),
@@ -192,7 +200,11 @@ func (c *Config) GetDatabaseConfig() map[string]interface{} {
 		config["driver"] = "sqlite"
 	} else {
 		config["dsn"] = c.DatabaseURL
-		config["driver"] = "sqlite"
+		if strings.HasPrefix(c.DatabaseURL, "postgres://") || strings.HasPrefix(c.DatabaseURL, "host=") {
+			config["driver"] = "postgres"
+		} else {
+			config["driver"] = "sqlite"
+		}
 	}
 
 	return config

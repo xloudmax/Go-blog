@@ -28,25 +28,54 @@ export const useBlogList = (initialLimit = 15) => {
     order: 'DESC'
   });
 
-  const { data, loading, error, refetch } = usePostsQuery({
-    variables: {
-      limit,
-      offset,
-      filter,
-      sort
-    },
-    notifyOnNetworkStatusChange: true // Ensure loading state updates on refetch
-  });
+  // Static export support: Fetch from JSON files instead of GraphQL
+  const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
+
+  const { data, loading: apolloLoading, error: apolloError, refetch } = isStatic 
+    ? { data: null, loading: false, error: null, refetch: () => {} }
+    : usePostsQuery({
+        variables: {
+          limit,
+          offset,
+          filter,
+          sort
+        },
+        notifyOnNetworkStatusChange: true
+      });
+
+  const [staticPosts, setStaticPosts] = useState<BlogPost[]>([]);
+  const [staticLoading, setStaticLoading] = useState(isStatic);
+  const [staticError, setStaticError] = useState<any>(null);
+
+  useEffect(() => {
+    if (isStatic) {
+      setStaticLoading(true);
+      fetch('./static/posts.json')
+        .then(res => res.json())
+        .then(data => {
+          setStaticPosts(data);
+          setStaticLoading(false);
+        })
+        .catch(err => {
+          setStaticError(err);
+          setStaticLoading(false);
+        });
+    }
+  }, [isStatic]);
+
+  const loading = isStatic ? staticLoading : apolloLoading;
+  const error = isStatic ? staticError : apolloError;
 
   // 缓存上一份有效数据，防止 loading 时页面跳动
   const lastPostsRef = useRef<BlogPost[]>([]);
   const posts = useMemo(() => {
+    if (isStatic) return staticPosts;
     if (data?.posts) {
       lastPostsRef.current = data.posts as BlogPost[];
       return data.posts as BlogPost[];
     }
     return lastPostsRef.current;
-  }, [data?.posts]);
+  }, [data?.posts, staticPosts, isStatic]);
   
   // 简单的分页处理
   const goToPage = useCallback((page: number) => {
@@ -162,23 +191,58 @@ export const useBlogSearch = (initialLimit = 15) => {
 
 // 博客仪表盘hook
 export const useBlogDashboard = () => {
-  const { data: popularData, loading: loadingPopular } = usePopularPostsQuery({
-    variables: { limit: 5 }
-  });
-  const { data: recentData, loading: loadingRecent } = useRecentPostsQuery({
-    variables: { limit: 5 }
-  });
-  const { data: tagsData, loading: loadingTags } = useGetTagsQuery({
-    variables: { limit: 20 }
+  // Static export support
+  const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
+
+  const { data: popularData, loading: loadingPopular } = isStatic 
+    ? { data: null, loading: false }
+    : usePopularPostsQuery({
+        variables: { limit: 5 }
+      });
+  const { data: recentData, loading: loadingRecent } = isStatic
+    ? { data: null, loading: false }
+    : useRecentPostsQuery({
+        variables: { limit: 5 }
+      });
+  const { data: tagsData, loading: loadingTags } = isStatic
+    ? { data: null, loading: false }
+    : useGetTagsQuery({
+        variables: { limit: 20 }
+      });
+
+  const [staticDashboard, setStaticDashboard] = useState<any>({
+    popularPosts: [],
+    recentPosts: [],
+    tags: []
   });
 
-  const popularPosts = useMemo(() => popularData?.getPopularPosts || [], [popularData?.getPopularPosts]);
-  const recentPosts = useMemo(() => recentData?.getRecentPosts || [], [recentData?.getRecentPosts]);
-  const tags = useMemo(() => tagsData?.getTags || [], [tagsData?.getTags]);
+  useEffect(() => {
+    if (isStatic) {
+      fetch('./static/dashboard.json')
+        .then(res => res.json())
+        .then(data => setStaticDashboard(data))
+        .catch(console.error);
+    }
+  }, [isStatic]);
+
+  const popularPosts = useMemo(() => {
+    if (isStatic) return staticDashboard.popularPosts;
+    return popularData?.getPopularPosts || [];
+  }, [popularData?.getPopularPosts, staticDashboard.popularPosts, isStatic]);
+
+  const recentPosts = useMemo(() => {
+    if (isStatic) return staticDashboard.recentPosts;
+    return recentData?.getRecentPosts || [];
+  }, [recentData?.getRecentPosts, staticDashboard.recentPosts, isStatic]);
+
+  const tags = useMemo(() => {
+    if (isStatic) return staticDashboard.tags;
+    return tagsData?.getTags || [];
+  }, [tagsData?.getTags, staticDashboard.tags, isStatic]);
 
   const stats = useMemo<DashboardStats>(() => {
-    const totalViews = popularPosts.reduce((sum, post) => sum + (post.stats?.viewCount || 0), 0);
-    const totalLikes = popularPosts.reduce((sum, post) => sum + (post.stats?.likeCount || 0), 0);
+    const totalViews = popularPosts.reduce((sum: number, post: BlogPost) => sum + (post.stats?.viewCount || 0), 0);
+    const totalLikes = popularPosts.reduce((sum: number, post: BlogPost) => sum + (post.stats?.likeCount || 0), 0);
     const totalPosts = popularPosts.length + recentPosts.length;
     const engagementRate = popularPosts.length > 0
       ? (totalLikes / Math.max(totalViews, 1)) * 100
