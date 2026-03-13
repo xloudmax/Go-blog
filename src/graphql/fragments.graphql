@@ -39,6 +39,7 @@ fragment BlogPostInfo on BlogPost {
   lastEditedAt
   createdAt
   updatedAt
+  version
   isLiked
   notionPageId
 }

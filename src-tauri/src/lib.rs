@@ -124,11 +124,40 @@ pub fn run() {
                 // 3. 启动 Go Sidecar (仅桌面)
                 println!("TAURI: Attempting to spawn sidecar 'c404-backend'...");
                 
-                // 动态获取当前工作目录，以支持跨机器开发
-                let project_dir = std::env::current_dir().unwrap_or_default();
-                let workspace_root = project_dir.parent().unwrap_or(&project_dir);
-                let db_path = workspace_root.join("backend/blog_platform.db");
-                let uploads_path = workspace_root.join("backend/uploads");
+                // 动态解析路径
+                let (db_path, uploads_path) = if cfg!(dev) {
+                    // 开发环境下：指向项目根目录以便同步数据
+                    let project_dir = std::env::current_dir().unwrap_or_default();
+                    let workspace_root = project_dir.parent().unwrap_or(&project_dir);
+                    (
+                        workspace_root.join("backend/blog_platform.db"),
+                        workspace_root.join("backend/uploads")
+                    )
+                } else {
+                    // 生产环境下：使用系统的应用数据目录
+                    let app_dir = app.path().app_data_dir().unwrap_or_default();
+                    if !app_dir.exists() {
+                        let _ = std::fs::create_dir_all(&app_dir);
+                    }
+                    (
+                        app_dir.join("blog.db"),
+                        app_dir.join("uploads")
+                    )
+                };
+
+                // 尝试从 .env 读取 JWT_SECRET
+                let jwt_secret = if cfg!(dev) {
+                    let env_path = workspace_root.join("backend/.env");
+                    std::fs::read_to_string(env_path).ok()
+                        .and_then(|content| {
+                            content.lines()
+                                .find(|line| line.starts_with("JWT_SECRET="))
+                                .map(|line| line.replace("JWT_SECRET=", ""))
+                        })
+                        .unwrap_or_else(|| "dev_unsafe_secret_do_not_use_in_prod".to_string())
+                } else {
+                    "production_secret_should_be_set_via_system_env".to_string()
+                };
 
                 let sidecar_command = app.shell()
                     .sidecar("c404-backend")
@@ -136,7 +165,7 @@ pub fn run() {
                     .env("PORT", "11451")
                     .env("DATABASE_URL", db_path.to_str().unwrap_or_default())
                     .env("BASE_PATH", uploads_path.to_str().unwrap_or_default())
-                    .env("JWT_SECRET", "temporary-secret-will-be-replaced");
+                    .env("JWT_SECRET", jwt_secret);
 
                 match sidecar_command.spawn() {
                     Ok((mut rx, child)) => {

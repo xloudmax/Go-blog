@@ -162,7 +162,8 @@ export default function EditorPage() {
                     categories: post.categories || [],
                     coverImageUrl: coverImage.trim() || undefined,
                     excerpt: excerpt.trim() || undefined,
-                    status: status // 支持更新状态
+                    status: status, // 支持更新状态
+                    version: post.version // 携带乐观锁版本号
                 };
 
                 const result = await updatePost(post.id, updateData);
