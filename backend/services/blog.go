@@ -229,19 +229,6 @@ func (s *BlogService) UpdatePost(postID uint, input *models.UpdatePostInput, use
 		if input.Content != nil {
 			updateData["content"] = *input.Content
 			updateData["last_edited_at"] = time.Now()
-			
-			// 创建版本历史
-			if post.Content != *input.Content {
-				version := &models.BlogPostVersion{
-					BlogPostID:  post.ID,
-					VersionNum:  s.getNextVersionNumber(postID),
-					Title:       post.Title,
-					Content:     post.Content,
-					ChangeLog:   "Content updated",
-					CreatedByID: userID,
-				}
-				tx.Create(version)
-			}
 		}
 		if input.Excerpt != nil {
 			updateData["excerpt"] = *input.Excerpt
@@ -274,13 +261,15 @@ func (s *BlogService) UpdatePost(postID uint, input *models.UpdatePostInput, use
 		if input.Content != nil && *input.Content != post.Content {
 			version := &models.BlogPostVersion{
 				BlogPostID:  post.ID,
-				VersionNum:  s.getNextVersionNumber(postID),
+				VersionNum:  s.getNextVersionNumber(tx, postID),
 				Title:       post.Title,
 				Content:     post.Content,
 				ChangeLog:   input.ChangeLog,
 				CreatedByID: userID,
 			}
-			tx.Create(version)
+			if err := tx.Create(version).Error; err != nil {
+				return err
+			}
 		}
 
 		// 7. 更新标签和分类（如果提供）
@@ -535,9 +524,9 @@ func (s *BlogService) UnlikePost(postID uint, userID uint) (*models.BlogPost, er
 }
 
 // getNextVersionNumber 获取下一个版本号
-func (s *BlogService) getNextVersionNumber(postID uint) int {
+func (s *BlogService) getNextVersionNumber(db *gorm.DB, postID uint) int {
 	var count int64
-	s.db.Model(&models.BlogPostVersion{}).Where("blog_post_id = ?", postID).Count(&count)
+	db.Model(&models.BlogPostVersion{}).Where("blog_post_id = ?", postID).Count(&count)
 	return int(count) + 1
 }
 

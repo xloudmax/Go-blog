@@ -20,7 +20,7 @@ func setupFTSDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.User{}, &models.BlogPost{}, &models.BlogPostStats{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.BlogPost{}, &models.BlogPostStats{}, &models.SearchQuery{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	// create FTS virtual table
