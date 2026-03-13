@@ -170,6 +170,7 @@ var (
 	// 限流和重复操作错误
 	ErrRateLimited      = NewBusinessError("RATE_LIMITED", "操作过于频繁，请稍后再试")
 	ErrDuplicateRequest = NewConflictError("DUPLICATE_REQUEST", "请勿重复操作")
+	ErrEditConflict     = NewConflictError("EDIT_CONFLICT", "文章已被他人修改，请刷新页面后再试")
 
 	// 系统错误
 	ErrDatabaseError    = NewDatabaseError("DATABASE_ERROR", "数据库操作失败")

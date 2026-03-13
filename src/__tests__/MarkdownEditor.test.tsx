@@ -4,6 +4,37 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ThemeProvider from '../components/ThemeProvider';
 import MarkdownEditor from '../components/MarkdownEditor';
 
+// Mock Liquid components to avoid canvas issues in JSDOM
+vi.mock('../components/LiquidButton', () => ({
+  LiquidButton: ({ children, onClick, className, variant }: any) => (
+    <button 
+      onClick={onClick} 
+      className={`${className} ${variant === 'primary' ? 'primary-button' : ''}`}
+    >
+      {children}
+    </button>
+  ),
+}));
+
+vi.mock('@/components/LiquidButton', () => ({
+  LiquidButton: ({ children, onClick, className, variant }: any) => (
+    <button 
+      onClick={onClick} 
+      className={`${className} ${variant === 'primary' ? 'primary-button' : ''}`}
+    >
+      {children}
+    </button>
+  ),
+}));
+
+vi.mock('../components/LiquidKit/filter', () => ({
+  LiquidFilter: ({ children }: any) => <>{children}</>,
+}));
+
+vi.mock('@/components/LiquidKit/filter', () => ({
+  LiquidFilter: ({ children }: any) => <>{children}</>,
+}));
+
 // Mock the @uiw/react-md-editor component
 vi.mock('@uiw/react-md-editor', () => {
   const MockMDEditor = ({ value, onChange }: { value: string; onChange: (value?: string) => void }) => (

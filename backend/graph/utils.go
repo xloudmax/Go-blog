@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"repair-platform/models"
+	"repair-platform/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -230,9 +231,17 @@ func deleteVerificationCode(email, codeType string) {
 
 // parseID 解析字符串 ID 为 uint
 func parseID(id string) (uint, error) {
+	// 尝试通过全局解析器解析
+	idInfo, err := utils.ParseID(id)
+	if err == nil && idInfo.Type == utils.IDTypeNumeric {
+		return uint(idInfo.NumericValue), nil
+	}
+
+	// 如果不是数字 ID，但可能是 Slug（在某些场景下需要原样返回或忽略）
+	// 此处保持向后兼容，如果确实需要数字但解析失败，则报错
 	parsed, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		return 0, ErrInvalidInput
+		return 0, fmt.Errorf("无效的数字ID格式: %s (%w)", id, ErrInvalidInput)
 	}
 	return uint(parsed), nil
 }
@@ -312,12 +321,15 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 
 	// 转换统计信息，确保stats总是存在
 	var stats *BlogPostStats
-	if post.Stats != nil {
+	if post.Stats != nil && post.Stats.ID != 0 {
 		sUpdatedAt := post.Stats.UpdatedAt
 		if sUpdatedAt.IsZero() {
 			sUpdatedAt = post.Stats.CreatedAt
 			if sUpdatedAt.IsZero() {
-				sUpdatedAt = time.Now()
+				sUpdatedAt = post.CreatedAt // 回退到文章创建时间
+				if sUpdatedAt.IsZero() {
+					sUpdatedAt = time.Now()
+				}
 			}
 		}
 
@@ -328,17 +340,18 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 			ShareCount:   post.Stats.ShareCount,
 			CommentCount: post.Stats.CommentCount,
 			LastViewedAt: post.Stats.LastViewedAt,
-			UpdatedAt:    sUpdatedAt,
+			UpdatedAt:    &sUpdatedAt,
 		}
 	} else {
 		// 返回默认统计以避免 GraphQL 非空约束报错
+		now := time.Now()
 		stats = &BlogPostStats{
 			ID:           strconv.FormatUint(uint64(post.ID), 10) + "_stats",
 			ViewCount:    0,
 			LikeCount:    0,
 			ShareCount:   0,
 			CommentCount: 0,
-			UpdatedAt:    time.Now(),
+			UpdatedAt:    &now,
 		}
 	}
 
@@ -387,6 +400,7 @@ func convertToGraphQLBlogPostWithUser(post *models.BlogPost, currentUser *models
 		Author:        author,
 		Stats:         stats,
 		IsLiked:       isLiked,
+		Version:       post.Version,
 		Versions:      []*BlogPostVersion{}, // 默认为空切片，满足非空约束且配合 resolver
 	}
 }

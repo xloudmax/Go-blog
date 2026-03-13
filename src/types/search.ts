@@ -47,11 +47,16 @@ export interface SearchInput {
   sortBy?: SearchSortBy;
 }
 
-import { BlogPost } from '@/generated/graphql';
+import { BlogPost, User } from '@/generated/graphql';
 
 // 搜索结果
 export interface EnhancedSearchResult {
-  posts: BlogPost[];
+  posts: Array<Pick<BlogPost, 
+    'id' | 'title' | 'slug' | 'excerpt' | 'tags' | 'categories' | 'coverImageUrl' | 
+    'status' | 'publishedAt' | 'createdAt' | 'isLiked' | 'stats'
+  > & {
+    author: Pick<User, 'id' | 'username' | 'role'> & { avatar?: string | null };
+  }>;
   total: number;
   took: string;
   suggestions?: string[];

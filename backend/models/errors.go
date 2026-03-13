@@ -26,6 +26,7 @@ var (
 	ErrAlreadyLiked            = utils.ErrAlreadyLiked
 	ErrNotLiked                = utils.ErrNotLiked
 	ErrRateLimited             = utils.ErrRateLimited
+	ErrEditConflict            = utils.ErrEditConflict
 
 	// 验证错误
 	ErrInvalidUsername         = utils.ErrInvalidUsername

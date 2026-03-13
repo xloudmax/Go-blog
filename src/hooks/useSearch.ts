@@ -41,7 +41,7 @@ export const useEnhancedSearchHook = (): UseEnhancedSearchReturn => {
   
   const performSearch = useCallback(async (input: SearchInput) => {
     try {
-      await search(input as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      await search(input);
     } catch {
       // 错误已经在 GraphQL 层处理
     }
@@ -49,7 +49,7 @@ export const useEnhancedSearchHook = (): UseEnhancedSearchReturn => {
   
   return {
     search: performSearch,
-    results: results as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    results: results || null,
     loading,
     error,
     fetchMore,

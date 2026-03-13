@@ -32,7 +32,7 @@
         {
           "args": [],
           "sidecar": true,
-          "name": "blog-backend"
+          "name": "c404-backend"
         }
       ]
     }

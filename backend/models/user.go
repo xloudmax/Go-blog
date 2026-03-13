@@ -112,6 +112,8 @@ type UpdatePostInput struct {
 	Excerpt       *string  `json:"excerpt,omitempty"` // Added Excerpt
 	AccessLevel   *string  `json:"access_level,omitempty"`
 	Status        *string  `json:"status,omitempty"`
+	Version       *int     `json:"version,omitempty"`
+	ChangeLog     string   `json:"change_log,omitempty"`
 }
 
 // SetPassword 为用户设置加密后的密码

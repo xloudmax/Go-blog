@@ -1,7 +1,8 @@
 import type {
   UseTrendingSearchesReturn,
   UseSearchStatsReturn,
-  SearchStats as TypedSearchStats
+  SearchStats as TypedSearchStats,
+  SearchInput
 } from '@/types';
 
 // Import generated operations
@@ -80,15 +81,7 @@ export const useEnhancedSearch = () => {
     errorPolicy: 'all',
   });
 
-  const search = (params: { query: string; limit?: number; offset?: number; filters?: Record<string, unknown>; sortBy?: string }) => {
-    const input = {
-      query: params.query,
-      limit: params.limit || 10,
-      offset: params.offset || 0,
-      filters: params.filters || null,
-      sortBy: params.sortBy || null,
-    };
-
+  const search = (input: SearchInput) => {
     return enhancedSearch({
       variables: { input },
     });

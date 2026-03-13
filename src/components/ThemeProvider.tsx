@@ -31,9 +31,14 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         }
 
         // 如果没有保存的主题，先尝试跟随系统
-        if (typeof window !== 'undefined' && window.matchMedia) {
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                return 'dark'
+        if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+            try {
+                const mq = window.matchMedia('(prefers-color-scheme: dark)');
+                if (mq && mq.matches) {
+                    return 'dark'
+                }
+            } catch (e) {
+                console.error('matchMedia error:', e);
             }
         }
 
@@ -49,19 +54,28 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
     // 昼夜监听：监听系统主题变化
     useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        
-        const handleChange = (e: MediaQueryListEvent) => {
-            // 如果本地没有手动设置过主题，则跟随系统
-            if (!localStorage.getItem('theme')) {
-                setTheme(e.matches ? 'dark' : 'light');
-            }
-        };
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            return;
+        }
 
-        mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
+        try {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            if (!mediaQuery) return;
+            
+            const handleChange = (e: MediaQueryListEvent) => {
+                // 如果本地没有手动设置过主题，则跟随系统
+                if (!localStorage.getItem('theme')) {
+                    setTheme(e.matches ? 'dark' : 'light');
+                }
+            };
+
+            mediaQuery.addEventListener?.('change', handleChange);
+            return () => mediaQuery.removeEventListener?.('change', handleChange);
+        } catch (e) {
+            console.error('matchMedia effect error:', e);
+        }
     }, []);
-
+ 
     // 当 theme 改变时，写入 localStorage 并同步到 DOM
     useEffect(() => {
         // 如果是从 toggle 触发的，theme 已经更新。这里我们确保同步到 DOM

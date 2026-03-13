@@ -122,10 +122,21 @@ pub fn run() {
                 })?;
 
                 // 3. 启动 Go Sidecar (仅桌面)
+                println!("TAURI: Attempting to spawn sidecar 'c404-backend'...");
+                
+                // 动态获取当前工作目录，以支持跨机器开发
+                let project_dir = std::env::current_dir().unwrap_or_default();
+                let workspace_root = project_dir.parent().unwrap_or(&project_dir);
+                let db_path = workspace_root.join("backend/blog_platform.db");
+                let uploads_path = workspace_root.join("backend/uploads");
+
                 let sidecar_command = app.shell()
-                    .sidecar("blog-backend")
+                    .sidecar("c404-backend")
                     .unwrap()
-                    .env("PORT", "11451");
+                    .env("PORT", "11451")
+                    .env("DATABASE_URL", db_path.to_str().unwrap_or_default())
+                    .env("BASE_PATH", uploads_path.to_str().unwrap_or_default())
+                    .env("JWT_SECRET", "temporary-secret-will-be-replaced");
 
                 match sidecar_command.spawn() {
                     Ok((mut rx, child)) => {

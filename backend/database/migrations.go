@@ -113,18 +113,6 @@ func createSearchIndexes(db *gorm.DB) error {
 
 		// 创建时间索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_created_at ON blog_post(created_at DESC)",
-	}
-
-	for _, indexSQL := range indexes {
-		if err := db.Exec(indexSQL).Error; err != nil {
-			// 记录警告但不中断，某些复杂的索引语法可能在特定版本的数据库中不兼容
-			fmt.Printf("Warning: Failed to create index [%s]: %v\n", indexSQL, err)
-			continue
-		}
-	}
-
-	return nil
-}
 
 		// 发布时间索引
 		"CREATE INDEX IF NOT EXISTS idx_blog_post_published_at ON blog_post(published_at DESC)",
@@ -148,7 +136,8 @@ func createSearchIndexes(db *gorm.DB) error {
 
 	for _, indexSQL := range indexes {
 		if err := db.Exec(indexSQL).Error; err != nil {
-			// 记录错误但不中断，某些索引可能已存在
+			// 记录警告但不中断，某些复杂的索引语法可能在特定版本的数据库中不兼容
+			fmt.Printf("Warning: Failed to create index [%s]: %v\n", indexSQL, err)
 			continue
 		}
 	}

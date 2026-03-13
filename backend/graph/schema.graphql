@@ -74,6 +74,7 @@ type BlogPost {
   lastEditedAt: Time
   createdAt: Time!
   updatedAt: Time!
+  version: Int! # 乐观锁版本号
   notionPageId: String # Notion Page ID, if synced from Notion
   
   # 关联数据
@@ -100,7 +101,7 @@ type BlogPostStats {
   shareCount: Int!
   commentCount: Int!
   lastViewedAt: Time
-  updatedAt: Time!
+  updatedAt: Time
 }
 
 type InviteCode {
@@ -225,6 +226,7 @@ input UpdatePostInput {
   coverImageUrl: String
   accessLevel: AccessLevel
   status: PostStatus
+  version: Int # 乐观锁版本号
   changeLog: String
 }
 

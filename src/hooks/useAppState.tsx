@@ -74,8 +74,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
           await refetchUser();
         }
         return result;
-      } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-        setErrorState(error.message || '登录失败');
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : '登录失败';
+        setErrorState(message);
         throw error;
       }
     },

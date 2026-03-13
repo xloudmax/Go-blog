@@ -4,10 +4,24 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
+// Mock global APIs missing in JSDOM
+if (typeof global.ImageData === 'undefined') {
+  // @ts-expect-error: ImageData is not defined in JSDOM environment
+  global.ImageData = class ImageData {
+    data: Uint8ClampedArray;
+    width: number;
+    height: number;
+    constructor(data: Uint8ClampedArray, width: number, height: number) {
+      this.data = data;
+      this.width = width;
+      this.height = height;
+    }
+  };
+}
+
 // Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
+if (typeof window !== 'undefined') {
+  vi.stubGlobal('matchMedia', vi.fn().mockImplementation(query => ({
     matches: false,
     media: query,
     onchange: null,
@@ -16,8 +30,45 @@ Object.defineProperty(window, 'matchMedia', {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
-  })),
-});
+  })));
+}
+
+// Mock Canvas methods missing in JSDOM
+if (typeof HTMLCanvasElement !== 'undefined') {
+  const mockContext = {
+    putImageData: vi.fn(),
+    getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray() }),
+    createImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray() }),
+    drawImage: vi.fn(),
+    fillRect: vi.fn(),
+    clearRect: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    stroke: vi.fn(),
+    fill: vi.fn(),
+    scale: vi.fn(),
+    translate: vi.fn(),
+    rotate: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    measureText: vi.fn().mockReturnValue({ width: 0 }),
+    transform: vi.fn(),
+    setTransform: vi.fn(),
+  };
+
+  Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockReturnValue(mockContext),
+  });
+
+  Object.defineProperty(HTMLCanvasElement.prototype, 'toDataURL', {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockReturnValue('data:image/png;base64,'),
+  });
+}
 
 // Mock localStorage
 const localStorageMock = (() => {

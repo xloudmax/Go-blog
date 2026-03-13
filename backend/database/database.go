@@ -45,7 +45,7 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true, // 使用单数表名
 		},
-		PrepareStmt: true, // 开启预编译语句缓存，最高提升20%性能
+		PrepareStmt: false, // 关闭预编译语句缓存，避免 SQLite 下的 database locks
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)

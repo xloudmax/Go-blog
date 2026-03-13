@@ -12,7 +12,7 @@ export default function QuickRefListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   
-  const { posts, loading, filterByTags, filterBySearch } = useBlogList();
+  const { posts, loading, filterByTags, filterBySearch, loadMore, hasMore } = useBlogList(50);
 
   // Initialize filter to only show QuickRef tags
   useEffect(() => {
@@ -48,34 +48,50 @@ export default function QuickRefListPage() {
           </div>
         </div>
 
-        {loading ? (
+        {loading && posts.length === 0 ? (
           <div className="flex justify-center py-20"><Spin size="large" /></div>
         ) : posts.length === 0 ? (
           <Empty description="暂无速查表数据" className="py-20" />
         ) : (
-          <Row gutter={[16, 16]}>
-            {posts.map((post, index) => (
-              <Col xs={12} sm={8} md={6} lg={4} key={post.id}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: (index % 20) * 0.02, duration: 0.3 }}
-                  whileHover={{ y: -5, scale: 1.05 }}
-                  onClick={() => navigate(`/post/${post.slug}`)}
-                >
-                  <Card 
-                    variant="borderless"
-                    className="cursor-pointer h-full bg-white/5 border border-white/10 hover:border-blue-500/50 hover:bg-white/10 transition-all backdrop-blur-md"
-                    styles={{ body: { padding: '20px', textAlign: 'center' } }}
+          <>
+            <Row gutter={[16, 16]}>
+              {posts.map((post, index) => (
+                <Col xs={12} sm={8} md={6} lg={4} key={post.id}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: (index % 20) * 0.02, duration: 0.3 }}
+                    whileHover={{ y: -5, scale: 1.05 }}
+                    onClick={() => navigate(`/post/${post.slug}`)}
                   >
-                    <Text className="text-white font-medium text-lg capitalize block truncate">
-                      {post.title}
-                    </Text>
-                  </Card>
-                </motion.div>
-              </Col>
-            ))}
-          </Row>
+                    <Card 
+                      variant="borderless"
+                      className="cursor-pointer h-full bg-white/5 border border-white/10 hover:border-blue-500/50 hover:bg-white/10 transition-all backdrop-blur-md"
+                      styles={{ body: { padding: '20px', textAlign: 'center' } }}
+                    >
+                      <Text className="text-white font-medium text-lg capitalize block truncate">
+                        {post.title}
+                      </Text>
+                    </Card>
+                  </motion.div>
+                </Col>
+              ))}
+            </Row>
+
+            {hasMore && (
+              <div className="mt-12 text-center">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={loadMore}
+                  disabled={loading}
+                  className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full border border-white/20 backdrop-blur-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {loading ? '加载中...' : '查看更多'}
+                </motion.button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </PageContainer>

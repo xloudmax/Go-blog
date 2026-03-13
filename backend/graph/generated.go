@@ -66,6 +66,7 @@ type ComplexityRoot struct {
 		Tags          func(childComplexity int) int
 		Title         func(childComplexity int) int
 		UpdatedAt     func(childComplexity int) int
+		Version       func(childComplexity int) int
 		Versions      func(childComplexity int) int
 	}
 
@@ -590,6 +591,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BlogPost.UpdatedAt(childComplexity), true
+	case "BlogPost.version":
+		if e.ComplexityRoot.BlogPost.Version == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BlogPost.Version(childComplexity), true
 	case "BlogPost.versions":
 		if e.ComplexityRoot.BlogPost.Versions == nil {
 			break
@@ -3748,6 +3755,35 @@ func (ec *executionContext) fieldContext_BlogPost_updatedAt(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _BlogPost_version(ctx context.Context, field graphql.CollectedField, obj *BlogPost) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BlogPost_version,
+		func(ctx context.Context) (any, error) {
+			return obj.Version, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BlogPost_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BlogPost",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BlogPost_notionPageId(ctx context.Context, field graphql.CollectedField, obj *BlogPost) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4067,6 +4103,8 @@ func (ec *executionContext) fieldContext_BlogPostComment_blogPost(_ context.Cont
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -4578,9 +4616,9 @@ func (ec *executionContext) _BlogPostStats_updatedAt(ctx context.Context, field 
 			return obj.UpdatedAt, nil
 		},
 		nil,
-		ec.marshalNTime2timeᚐTime,
+		ec.marshalOTime2ᚖtimeᚐTime,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -4942,6 +4980,8 @@ func (ec *executionContext) fieldContext_CategoryInfo_posts(_ context.Context, f
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -5095,6 +5135,8 @@ func (ec *executionContext) fieldContext_EnhancedSearchResult_posts(_ context.Co
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -6675,6 +6717,8 @@ func (ec *executionContext) fieldContext_Mutation_createPost(ctx context.Context
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -6758,6 +6802,8 @@ func (ec *executionContext) fieldContext_Mutation_updatePost(ctx context.Context
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -6890,6 +6936,8 @@ func (ec *executionContext) fieldContext_Mutation_publishPost(ctx context.Contex
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -6973,6 +7021,8 @@ func (ec *executionContext) fieldContext_Mutation_archivePost(ctx context.Contex
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -7056,6 +7106,8 @@ func (ec *executionContext) fieldContext_Mutation_likePost(ctx context.Context, 
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -7139,6 +7191,8 @@ func (ec *executionContext) fieldContext_Mutation_unlikePost(ctx context.Context
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -8862,6 +8916,8 @@ func (ec *executionContext) fieldContext_Notification_relatedPost(_ context.Cont
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -9618,6 +9674,8 @@ func (ec *executionContext) fieldContext_Query_post(ctx context.Context, field g
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -9701,6 +9759,8 @@ func (ec *executionContext) fieldContext_Query_posts(ctx context.Context, field 
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -10180,6 +10240,8 @@ func (ec *executionContext) fieldContext_Query_getPopularPosts(ctx context.Conte
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -10263,6 +10325,8 @@ func (ec *executionContext) fieldContext_Query_getRecentPosts(ctx context.Contex
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -11072,6 +11136,8 @@ func (ec *executionContext) fieldContext_SearchResult_posts(_ context.Context, f
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -12057,6 +12123,8 @@ func (ec *executionContext) fieldContext_TagInfo_posts(_ context.Context, field 
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -12477,6 +12545,8 @@ func (ec *executionContext) fieldContext_User_posts(ctx context.Context, field g
 				return ec.fieldContext_BlogPost_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_BlogPost_updatedAt(ctx, field)
+			case "version":
+				return ec.fieldContext_BlogPost_version(ctx, field)
 			case "notionPageId":
 				return ec.fieldContext_BlogPost_notionPageId(ctx, field)
 			case "author":
@@ -14827,7 +14897,7 @@ func (ec *executionContext) unmarshalInputUpdatePostInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "slug", "excerpt", "content", "tags", "categories", "coverImageUrl", "accessLevel", "status", "changeLog"}
+	fieldsInOrder := [...]string{"title", "slug", "excerpt", "content", "tags", "categories", "coverImageUrl", "accessLevel", "status", "version", "changeLog"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14897,6 +14967,13 @@ func (ec *executionContext) unmarshalInputUpdatePostInput(ctx context.Context, o
 				return it, err
 			}
 			it.Status = data
+		case "version":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Version = data
 		case "changeLog":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("changeLog"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -15122,6 +15199,11 @@ func (ec *executionContext) _BlogPost(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "updatedAt":
 			out.Values[i] = ec._BlogPost_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "version":
+			out.Values[i] = ec._BlogPost_version(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
@@ -15389,9 +15471,6 @@ func (ec *executionContext) _BlogPostStats(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._BlogPostStats_lastViewedAt(ctx, field, obj)
 		case "updatedAt":
 			out.Values[i] = ec._BlogPostStats_updatedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -20,6 +20,7 @@ import {
   useDeleteNotification,
   useClearAllNotifications,
 } from '@/api/graphql/notification';
+import type { Notification } from '@/generated/graphql';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -91,7 +92,7 @@ export default function NotificationPage() {
   };
 
   // 处理通知点击
-  const handleNotificationClick = async (notification: { id: string; isRead: boolean; relatedPost?: { slug: string } }) => {
+  const handleNotificationClick = async (notification: Notification) => {
     // 标记为已读
     if (!notification.isRead) {
       try {
@@ -191,8 +192,7 @@ export default function NotificationPage() {
             onChange: (newPage) => setPage(newPage),
             showSizeChanger: false,
           }}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          renderItem={(notification: any) => (
+          renderItem={(notification: Notification) => (
             <List.Item
               style={{
                 padding: '0',

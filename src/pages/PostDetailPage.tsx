@@ -110,14 +110,12 @@ export default function PostDetailPage() {
 
   // Sync with native mini-player (Apple Music style)
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (post && (window as any).webkit?.messageHandlers?.updateArticle) {
+    if (post && window.webkit?.messageHandlers?.updateArticle) {
       const payload = {
         title: post.title,
         author: post.author.username
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).webkit.messageHandlers.updateArticle.postMessage(payload);
+      window.webkit.messageHandlers.updateArticle.postMessage(payload);
       // eslint-disable-next-line no-console
       console.log('[DEBUG] Sent article update to native:', payload);
     }

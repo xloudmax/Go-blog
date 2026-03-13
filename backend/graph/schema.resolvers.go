@@ -71,15 +71,17 @@ func (r *blogPostResolver) Author(ctx context.Context, obj *BlogPost) (*User, er
 
 // Versions is the resolver for the versions field.
 func (r *blogPostResolver) Versions(ctx context.Context, obj *BlogPost) ([]*BlogPostVersion, error) {
-	// 解析文章ID
-	postID, err := strconv.ParseUint(obj.ID, 10, 64)
+	// 解析文章ID (支持数字和Slug)
+	helper := services.NewResolverHelper(r.Resolver.DB)
+	post, err := helper.ResolveBlogPost(obj.ID, nil, "", true)
 	if err != nil {
 		return []*BlogPostVersion{}, nil
 	}
+	postID := post.ID
 
 	// 获取版本历史
 	var versions []models.BlogPostVersion
-	err = r.Resolver.DB.Where("blog_post_id = ?", uint(postID)).
+	err = r.Resolver.DB.Where("blog_post_id = ?", postID).
 		Preload("CreatedBy").
 		Order("version_num DESC").
 		Find(&versions).Error
@@ -109,17 +111,22 @@ func (r *blogPostResolver) Versions(ctx context.Context, obj *BlogPost) ([]*Blog
 
 // Stats is the resolver for the stats field.
 func (r *blogPostResolver) Stats(ctx context.Context, obj *BlogPost) (*BlogPostStats, error) {
-	fmt.Printf("[DEBUG] Stats resolver called for Post ID: %s\n", obj.ID)
 	if obj.Stats != nil {
-		fmt.Printf("[DEBUG] Stats already in obj for Post %s, UpdatedAt: %v\n", obj.ID, obj.Stats.UpdatedAt)
+		// 关键：即使对象中已有统计信息，也要确保 UpdatedAt 不为零值
+		if obj.Stats.UpdatedAt != nil && obj.Stats.UpdatedAt.IsZero() {
+			now := time.Now()
+			obj.Stats.UpdatedAt = &now
+		}
 		return obj.Stats, nil
 	}
 
 	// Parse PostID
-	postID, err := strconv.ParseUint(obj.ID, 10, 64)
+	helper := services.NewResolverHelper(r.Resolver.DB)
+	post, err := helper.ResolveBlogPost(obj.ID, nil, "", true)
 	if err != nil {
 		return nil, fmt.Errorf("invalid post id: %v", err)
 	}
+	postID := post.ID
 
 	loader := GetDataLoaderFromContext(ctx)
 	if loader == nil {
@@ -128,10 +135,14 @@ func (r *blogPostResolver) Stats(ctx context.Context, obj *BlogPost) (*BlogPostS
 		err := r.Resolver.DB.Where("blog_post_id = ?", uint(postID)).First(&stats).Error
 		if err != nil {
 			// Return default stats if not found
+			now := time.Now()
 			return &BlogPostStats{
-				ID:        strconv.FormatUint(uint64(postID), 10) + "_stats",
-				ViewCount: 0,
-				LikeCount: 0,
+				ID:           strconv.FormatUint(uint64(postID), 10) + "_stats",
+				ViewCount:    0,
+				LikeCount:    0,
+				ShareCount:   0,
+				CommentCount: 0,
+				UpdatedAt:    &now,
 			}, nil
 		}
 		// 确保 UpdatedAt 不为零值
@@ -150,18 +161,19 @@ func (r *blogPostResolver) Stats(ctx context.Context, obj *BlogPost) (*BlogPostS
 			ShareCount:   stats.ShareCount,
 			CommentCount: stats.CommentCount,
 			LastViewedAt: stats.LastViewedAt,
-			UpdatedAt:    updatedAt,
+			UpdatedAt:    &updatedAt,
 		}, nil
 	}
 
 	stats, err := loader.LoadStats(ctx, uint(postID))
 	if err != nil || stats == nil {
 		// 容灾处理：返回默认统计
+		now := time.Now()
 		return &BlogPostStats{
 			ID:        strconv.FormatUint(uint64(postID), 10) + "_stats",
 			ViewCount: 0,
 			LikeCount: 0,
-			UpdatedAt: time.Now(),
+			UpdatedAt: &now,
 		}, nil
 	}
 
@@ -181,7 +193,7 @@ func (r *blogPostResolver) Stats(ctx context.Context, obj *BlogPost) (*BlogPostS
 		ShareCount:   stats.ShareCount,
 		CommentCount: stats.CommentCount,
 		LastViewedAt: stats.LastViewedAt,
-		UpdatedAt:    updatedAt,
+		UpdatedAt:    &updatedAt,
 	}, nil
 }
 
@@ -834,6 +846,12 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id string, input Upda
 
 	if input.ChangeLog != nil {
 		updateInput.ChangeLog = *input.ChangeLog
+	} else {
+		updateInput.ChangeLog = "Updated via API"
+	}
+
+	if input.Version != nil {
+		updateInput.Version = input.Version
 	}
 
 	// 处理标签和分类
@@ -1532,11 +1550,13 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input CreateCommen
 		return nil, fmt.Errorf("未授权访问: %w", err)
 	}
 
-	// 转换博客文章ID
-	blogPostID, err := strconv.ParseUint(input.BlogPostID, 10, 32)
+	// 解析文章ID (支持slug)
+	helper := services.NewResolverHelper(r.Resolver.DB)
+	post, err := helper.ResolveBlogPost(input.BlogPostID, &user.ID, user.Role, true)
 	if err != nil {
-		return nil, fmt.Errorf("无效的文章ID: %w", err)
+		return nil, fmt.Errorf("解析文章失败: %w", err)
 	}
+	blogPostID := uint64(post.ID)
 
 	// 转换父评论ID（如果提供）
 	var parentID *uint
@@ -1839,18 +1859,21 @@ func (r *mutationResolver) BatchUpdateTags(ctx context.Context, input BatchUpdat
 		return nil, err
 	}
 
-	// 转换 postIDs 为 uint
+	// 转换 postIDs 为 uint (支持slug)
+	helper := services.NewResolverHelper(r.Resolver.DB)
+	adminUser, _ := getUserFromContext(ctx, r.Resolver.DB) // requireAdmin ensures this is not nil
+
 	postIDs := make([]uint, len(input.PostIds))
 	for i, id := range input.PostIds {
-		postID, err := strconv.ParseUint(id, 10, 32)
+		post, err := helper.ResolveBlogPost(id, &adminUser.ID, adminUser.Role, true)
 		if err != nil {
 			return &GeneralResponse{
 				Success: false,
-				Message: strPtr(fmt.Sprintf("无效的文章ID: %s", id)),
+				Message: strPtr(fmt.Sprintf("解析文章失败 (%s): %v", id, err)),
 				Code:    strPtr("INVALID_POST_ID"),
 			}, nil
 		}
-		postIDs[i] = uint(postID)
+		postIDs[i] = post.ID
 	}
 
 	// 创建标签服务
@@ -1880,18 +1903,21 @@ func (r *mutationResolver) BatchUpdateCategories(ctx context.Context, input Batc
 		return nil, err
 	}
 
-	// 转换 postIDs 为 uint
+	// 转换 postIDs 为 uint (支持slug)
+	helper := services.NewResolverHelper(r.Resolver.DB)
+	adminUser, _ := getUserFromContext(ctx, r.Resolver.DB) // requireAdmin ensures this is not nil
+
 	postIDs := make([]uint, len(input.PostIds))
 	for i, id := range input.PostIds {
-		postID, err := strconv.ParseUint(id, 10, 32)
+		post, err := helper.ResolveBlogPost(id, &adminUser.ID, adminUser.Role, true)
 		if err != nil {
 			return &GeneralResponse{
 				Success: false,
-				Message: strPtr(fmt.Sprintf("无效的文章ID: %s", id)),
+				Message: strPtr(fmt.Sprintf("解析文章失败 (%s): %v", id, err)),
 				Code:    strPtr("INVALID_POST_ID"),
 			}, nil
 		}
-		postIDs[i] = uint(postID)
+		postIDs[i] = post.ID
 	}
 
 	// 创建标签服务
@@ -2272,7 +2298,7 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, filt
 	}
 
 	// 构建查询
-	dbQuery := r.Resolver.DB.Model(&models.BlogPost{}).Preload("Author")
+	dbQuery := r.Resolver.DB.Model(&models.BlogPost{}).Preload("Author").Preload("Stats")
 
 	// 权限过滤
 	if currentUser == nil || currentUser.Role != "ADMIN" {
@@ -2384,17 +2410,19 @@ func (r *queryResolver) Posts(ctx context.Context, limit *int, offset *int, filt
 
 // PostVersions is the resolver for the postVersions field.
 func (r *queryResolver) PostVersions(ctx context.Context, postID string) ([]*BlogPostVersion, error) {
-	// 解析文章ID
-	id, err := strconv.ParseUint(postID, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("无效的文章ID: %w", err)
-	}
-
 	// 获取当前用户信息
 	currentUser, err := getUserFromContext(ctx, r.Resolver.DB)
 	if err != nil {
 		return nil, fmt.Errorf("需要登录才能查看文章版本: %w", err)
 	}
+
+	// 解析文章
+	helper := services.NewResolverHelper(r.Resolver.DB)
+	postResult, err := helper.ResolveBlogPost(postID, &currentUser.ID, currentUser.Role, true)
+	if err != nil {
+		return nil, fmt.Errorf("解析文章失败: %w", err)
+	}
+	id := uint64(postResult.ID)
 
 	// 检查用户是否有权限查看文章版本
 	var post models.BlogPost
@@ -2875,6 +2903,7 @@ func (r *queryResolver) GetRecentPosts(ctx context.Context, limit *int) ([]*Blog
 	var posts []models.BlogPost
 	err := r.Resolver.DB.Model(&models.BlogPost{}).
 		Preload("Author").
+		Preload("Stats").
 		Where("status = 'PUBLISHED' AND access_level = 'PUBLIC'").
 		Order("created_at DESC").
 		Limit(*limit).
@@ -2946,11 +2975,20 @@ func (r *queryResolver) Comments(ctx context.Context, blogPostID *string, limit 
 
 	// 如果提供了 blogPostID，按文章筛选
 	if blogPostID != nil {
-		postID, err := strconv.ParseUint(*blogPostID, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("无效的文章ID: %w", err)
+		helper := services.NewResolverHelper(r.Resolver.DB)
+
+		var userID *uint
+		var userRole string
+		if currentUser != nil {
+			userID = &currentUser.ID
+			userRole = currentUser.Role
 		}
-		dbQuery = dbQuery.Where("blog_post_id = ?", postID)
+
+		postResult, err := helper.ResolveBlogPost(*blogPostID, userID, userRole, true)
+		if err != nil {
+			return nil, fmt.Errorf("解析文章失败: %w", err)
+		}
+		dbQuery = dbQuery.Where("blog_post_id = ?", postResult.ID)
 	}
 
 	// 权限过滤 - 只显示已审核的评论，除非是管理员
@@ -3238,7 +3276,8 @@ func (r *queryResolver) UnreadNotificationCount(ctx context.Context) (int, error
 	// 获取当前用户
 	user, err := getUserFromContext(ctx, r.Resolver.DB)
 	if err != nil {
-		return 0, fmt.Errorf("未登录: %w", err)
+		// 未登录时静默返回 0，不再抛出错误日志
+		return 0, nil
 	}
 
 	// 创建通知服务

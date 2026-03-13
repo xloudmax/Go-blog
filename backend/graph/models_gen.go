@@ -53,6 +53,7 @@ type BlogPost struct {
 	LastEditedAt  *time.Time         `json:"lastEditedAt,omitempty"`
 	CreatedAt     time.Time          `json:"createdAt"`
 	UpdatedAt     time.Time          `json:"updatedAt"`
+	Version       int                `json:"version"`
 	NotionPageID  *string            `json:"notionPageId,omitempty"`
 	Author        *User              `json:"author"`
 	Versions      []*BlogPostVersion `json:"versions"`
@@ -81,7 +82,7 @@ type BlogPostStats struct {
 	ShareCount   int        `json:"shareCount"`
 	CommentCount int        `json:"commentCount"`
 	LastViewedAt *time.Time `json:"lastViewedAt,omitempty"`
-	UpdatedAt    time.Time  `json:"updatedAt"`
+	UpdatedAt    *time.Time `json:"updatedAt,omitempty"`
 }
 
 type BlogPostVersion struct {
@@ -351,6 +352,7 @@ type UpdatePostInput struct {
 	CoverImageURL *string      `json:"coverImageUrl,omitempty"`
 	AccessLevel   *AccessLevel `json:"accessLevel,omitempty"`
 	Status        *PostStatus  `json:"status,omitempty"`
+	Version       *int         `json:"version,omitempty"`
 	ChangeLog     *string      `json:"changeLog,omitempty"`
 }
 

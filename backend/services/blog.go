@@ -189,108 +189,139 @@ func (s *BlogService) CreatePostFromInput(input *models.CreateBlogPostInput, aut
 
 // UpdatePost 更新博客文章
 func (s *BlogService) UpdatePost(postID uint, input *models.UpdatePostInput, userID uint, userRole string) (*models.BlogPost, error) {
-	// 查找文章
 	var post models.BlogPost
-	if err := s.db.Preload("Author").First(&post, postID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, models.ErrPostNotFound
+	var updatedPost models.BlogPost
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		// 1. 锁定并查询当前文章（使用事务中的 tx）
+		if err := tx.Preload("Author").First(&post, postID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return models.ErrPostNotFound
+			}
+			return models.ErrInternalServerError
 		}
-		return nil, models.ErrInternalServerError
-	}
 
-	// 检查权限（作者或管理员）
-	if post.AuthorID != userID && userRole != "ADMIN" {
-		return nil, models.ErrForbidden
-	}
-
-	// 创建版本历史（简化版）
-	// 目前只在有内容变化时创建版本
-	if input.Content != nil && *input.Content != post.Content {
-		version := &models.BlogPostVersion{
-			BlogPostID:  post.ID,
-			VersionNum:  s.getNextVersionNumber(postID),
-			Title:       post.Title,
-			Content:     post.Content,
-			ChangeLog:   "Content updated", // 简化版本
-			CreatedByID: userID,
+		// 2. 权限检查
+		if post.AuthorID != userID && userRole != "ADMIN" {
+			return models.ErrForbidden
 		}
-		s.db.Create(version)
-	}
 
-	// 更新字段
-	if input.Title != nil {
-		post.Title = *input.Title
-	}
-
-	if input.Content != nil {
-		post.Content = *input.Content
-		now := time.Now()
-		post.LastEditedAt = &now
-	}
-
-	if input.Excerpt != nil {
-		post.Excerpt = *input.Excerpt
-	}
-
-	if input.CoverImageURL != nil {
-		post.CoverImageURL = *input.CoverImageURL
-	}
-
-	if input.AccessLevel != nil {
-		post.AccessLevel = *input.AccessLevel
-	}
-
-	if input.Status != nil {
-		post.Status = *input.Status
-		// 如果状态变为已发布且发布时间为空，则设置发布时间
-		if post.Status == "PUBLISHED" && post.PublishedAt == nil {
-			now := time.Now()
-			post.PublishedAt = &now
+		// 3. 乐观锁硬核校验
+		if input.Version != nil && post.Version != *input.Version {
+			return models.ErrEditConflict
 		}
-	}
 
-	// 更新标签和分类
-	if len(input.Tags) > 0 {
-		var tags []models.Tag
-		for _, tagName := range input.Tags {
-			var tag models.Tag
-			if err := s.db.FirstOrCreate(&tag, models.Tag{Name: tagName}).Error; err == nil {
+		// 4. 准备更新数据
+		oldVersion := post.Version
+		if input.Version != nil {
+			oldVersion = *input.Version
+		}
+
+		updateData := map[string]interface{}{
+			"version":    gorm.Expr("version + 1"),
+			"updated_at": time.Now(),
+		}
+
+		// 字段赋值...
+		if input.Title != nil {
+			updateData["title"] = *input.Title
+		}
+		if input.Content != nil {
+			updateData["content"] = *input.Content
+			updateData["last_edited_at"] = time.Now()
+			
+			// 创建版本历史
+			if post.Content != *input.Content {
+				version := &models.BlogPostVersion{
+					BlogPostID:  post.ID,
+					VersionNum:  s.getNextVersionNumber(postID),
+					Title:       post.Title,
+					Content:     post.Content,
+					ChangeLog:   "Content updated",
+					CreatedByID: userID,
+				}
+				tx.Create(version)
+			}
+		}
+		if input.Excerpt != nil {
+			updateData["excerpt"] = *input.Excerpt
+		}
+		if input.CoverImageURL != nil {
+			updateData["cover_image_url"] = *input.CoverImageURL
+		}
+		if input.AccessLevel != nil {
+			updateData["access_level"] = *input.AccessLevel
+		}
+		if input.Status != nil {
+			updateData["status"] = *input.Status
+			if *input.Status == "PUBLISHED" && post.PublishedAt == nil {
+				now := time.Now()
+				updateData["published_at"] = &now
+			}
+		}
+
+		// 5. 执行更新并验证版本
+		// 直接操作 Table 确保更新条件绝对精准
+		result := tx.Table("blog_post").Where("id = ? AND version = ?", post.ID, oldVersion).Updates(updateData)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return models.ErrEditConflict
+		}
+
+		// 6. 创建版本历史（在事务内）
+		if input.Content != nil && *input.Content != post.Content {
+			version := &models.BlogPostVersion{
+				BlogPostID:  post.ID,
+				VersionNum:  s.getNextVersionNumber(postID),
+				Title:       post.Title,
+				Content:     post.Content,
+				ChangeLog:   input.ChangeLog,
+				CreatedByID: userID,
+			}
+			tx.Create(version)
+		}
+
+		// 7. 更新标签和分类（如果提供）
+		if len(input.Tags) > 0 {
+			var tags []models.Tag
+			for _, tagName := range input.Tags {
+				var tag models.Tag
+				tx.FirstOrCreate(&tag, models.Tag{Name: tagName})
 				tags = append(tags, tag)
 			}
+			tx.Model(&post).Association("TagsList").Replace(tags)
+			tx.Model(&models.BlogPost{}).Where("id = ?", post.ID).Update("tags", s.joinTags(tags))
 		}
-		// 使用 Association 更新关联
-		if err := s.db.Model(&post).Association("TagsList").Replace(tags); err != nil {
-			return nil, err
-		}
-		post.Tags = s.joinTags(tags) // 保持兼容性
-	}
-	if len(input.Categories) > 0 {
-		var categories []models.Category
-		for _, catName := range input.Categories {
-			var cat models.Category
-			if err := s.db.FirstOrCreate(&cat, models.Category{Name: catName}).Error; err == nil {
+		
+		if len(input.Categories) > 0 {
+			var categories []models.Category
+			for _, catName := range input.Categories {
+				var cat models.Category
+				tx.FirstOrCreate(&cat, models.Category{Name: catName})
 				categories = append(categories, cat)
 			}
+			tx.Model(&post).Association("CategoriesList").Replace(categories)
+			tx.Model(&models.BlogPost{}).Where("id = ?", post.ID).Update("categories", s.joinCategories(categories))
 		}
-		// 使用 Association 更新关联
-		if err := s.db.Model(&post).Association("CategoriesList").Replace(categories); err != nil {
+
+		// 8. 重新加载最新数据（确保 version 是自增后的）
+		return tx.Preload("Author").Preload("Stats").First(&updatedPost, postID).Error
+	})
+
+	if err != nil {
+		if errors.Is(err, models.ErrEditConflict) {
+			return nil, models.ErrEditConflict
+		}
+		if errors.Is(err, models.ErrForbidden) || errors.Is(err, models.ErrPostNotFound) {
 			return nil, err
 		}
-		post.Categories = s.joinCategories(categories) // 保持兼容性
-	}
-
-	// 保存更新
-	if err := s.db.Save(&post).Error; err != nil {
-		middleware.GetLogger().Errorw("UpdatePost database save failed", "error", err)
+		middleware.GetLogger().Errorw("UpdatePost failed", "error", err)
 		return nil, models.ErrInternalServerError
 	}
 
-	// 重新加载完整数据
-	if err := s.db.Preload("Author").Preload("Stats").First(&post, postID).Error; err != nil {
-		return nil, models.ErrInternalServerError
-	}
-
-	return &post, nil
+	return &updatedPost, nil
 }
 
 // UpdatePostFromInput 从GraphQL输入更新博客文章
@@ -306,6 +337,8 @@ func (s *BlogService) UpdatePostFromInput(postID uint, input *models.UpdateBlogP
 
 		Status:  input.Status,
 		Excerpt: input.Excerpt,
+		Version: input.Version,
+		ChangeLog: input.ChangeLog,
 	}
 
 	return s.UpdatePost(postID, updateInput, userID, userRole)

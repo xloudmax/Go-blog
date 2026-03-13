@@ -1,6 +1,62 @@
 import { describe, it, expect, vi } from 'vitest';
+
 import { render, screen } from '@testing-library/react';
 import SearchAndFilter from '@/components/SearchAndFilter';
+
+// Mock Liquid components to avoid canvas issues in JSDOM
+vi.mock('../components/LiquidButton', () => ({
+  LiquidButton: ({ children, onClick, className, icon }: any) => (
+    <button onClick={onClick} className={className} data-testid="liquid-button">
+      {icon}
+      {children}
+    </button>
+  ),
+}));
+
+vi.mock('@/components/LiquidButton', () => ({
+  LiquidButton: ({ children, onClick, className, icon }: any) => (
+    <button onClick={onClick} className={className} data-testid="liquid-button">
+      {icon}
+      {children}
+    </button>
+  ),
+}));
+
+vi.mock('../components/LiquidSearchBox', () => ({
+  LiquidSearchBox: ({ onSearch, placeholder, value, children }: any) => (
+    <div>
+      <input 
+        placeholder={placeholder} 
+        value={value}
+        onChange={(e) => onSearch && onSearch(e.target.value)}
+        data-testid="liquid-search-box"
+      />
+      {children}
+    </div>
+  ),
+}));
+
+vi.mock('@/components/LiquidSearchBox', () => ({
+  LiquidSearchBox: ({ onSearch, placeholder, value, children }: any) => (
+    <div>
+      <input 
+        placeholder={placeholder} 
+        value={value}
+        onChange={(e) => onSearch && onSearch(e.target.value)}
+        data-testid="liquid-search-box"
+      />
+      {children}
+    </div>
+  ),
+}));
+
+vi.mock('../components/LiquidKit/filter', () => ({
+  LiquidFilter: ({ children }: any) => <>{children}</>,
+}));
+
+vi.mock('@/components/LiquidKit/filter', () => ({
+  LiquidFilter: ({ children }: any) => <>{children}</>,
+}));
 
 // Mock Ant Design components
 vi.mock('antd', () => {
@@ -58,8 +114,11 @@ vi.mock('antd', () => {
     ConfigProvider: ({ children }: any) => (
       <div data-testid="config-provider">{children}</div>
     ),
+    Grid: {
+      useBreakpoint: () => ({ md: true }),
+    },
   };
-});
+})
 
 // Mock Ant Design icons
 vi.mock('@ant-design/icons', () => ({

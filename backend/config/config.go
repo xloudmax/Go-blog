@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -68,24 +67,11 @@ type Config struct {
 
 // LoadConfig 加载应用配置
 func LoadConfig() *Config {
-	// 检测是否运行在 Tauri 环境
-	isTauri := os.Getenv("TAURI_ENV_PLATFORM") != "" || os.Getenv("TAURI_PLATFORM") != ""
-
+	// 默认数据库和上传路径
 	defaultDB := "blog_platform.db"
 	defaultUploads := "uploads"
 
-	if isTauri {
-		home, err := os.UserHomeDir()
-		if err == nil {
-			// 在用户目录下创建专用的应用数据目录
-			appDir := filepath.Join(home, ".c404-blog")
-			os.MkdirAll(appDir, 0755)
-			defaultDB = filepath.Join(appDir, "blog.db")
-			defaultUploads = filepath.Join(appDir, "uploads")
-			os.MkdirAll(defaultUploads, 0755)
-		}
-	}
-
+	// 如果需要，可以在这里保留对特定环境的路径处理，但不再强制重定向到 ~/.c404-blog
 	cfg := &Config{
 		// 基础配置
 		Environment: getEnv("GIN_MODE", "development"),

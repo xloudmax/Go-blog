@@ -29,7 +29,7 @@ func convertToGraphQLComment(comment *models.BlogPostComment) *BlogPostComment {
 			CreatedAt:     comment.CreatedAt,
 			UpdatedAt:     comment.UpdatedAt,
 			Author:        &User{ID: "0", Username: "Unknown", Email: "", Role: UserRoleUser, IsVerified: false, IsActive: true, CreatedAt: comment.CreatedAt, UpdatedAt: comment.UpdatedAt},
-			Stats:         &BlogPostStats{ID: strconv.FormatUint(uint64(comment.BlogPostID), 10), ViewCount: 0, LikeCount: 0, ShareCount: 0, CommentCount: 0, UpdatedAt: comment.UpdatedAt},
+			Stats:         &BlogPostStats{ID: strconv.FormatUint(uint64(comment.BlogPostID), 10), ViewCount: 0, LikeCount: 0, ShareCount: 0, CommentCount: 0, UpdatedAt: &comment.UpdatedAt},
 			IsLiked:       false,
 		}
 	}

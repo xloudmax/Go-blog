@@ -23,6 +23,7 @@ type BlogPost struct {
 	LastEditedAt   *time.Time        `json:"last_edited_at,omitempty"`                                         // 最后编辑时间
 	NotionPageID   string            `gorm:"index" json:"notion_page_id,omitempty"`                            // Notion Page ID
 	NotionLastEdit *time.Time        `json:"notion_last_edit,omitempty"`                                       // Notion 上的最后编辑时间
+	Version        int               `gorm:"not null;default:1" json:"version"`                                // 乐观锁版本号
 	AuthorID       uint              `gorm:"not null" json:"author_id"`                                        // 作者 ID，外键关联到用户表
 	Author         User              `gorm:"foreignKey:AuthorID" json:"author"`                                // 关联用户表，作者信息
 	Versions       []BlogPostVersion `gorm:"foreignKey:BlogPostID" json:"versions,omitempty"`                  // 版本历史
@@ -141,5 +142,6 @@ type UpdateBlogPostInput struct {
 	CoverImageURL *string  `json:"cover_image_url"`
 	AccessLevel   *string  `json:"access_level"`
 	Status        *string  `json:"status"`
+	Version       *int     `json:"version"` // 客户端提供的版本号
 	ChangeLog     string   `json:"change_log"`
 }
