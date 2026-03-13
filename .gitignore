@@ -54,8 +54,18 @@ stats-static.html
 dist-static
 
 # Binaries
-src-tauri/c404-backend-*
-src-tauri/blog-backend-*
+src-tauri/*-backend-*
+src-tauri/bin/
+src-tauri/bin_backup/
+backend/main
+backend/*-server
+backend/*.exe
+backend/*.bin
 
 # Tauri
 src-tauri/target/
+src-tauri/gen/
+
+# Security Fixes (Manual track removal)
+backend/blog_platform.db
+backend/.env
