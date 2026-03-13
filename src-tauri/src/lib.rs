@@ -124,11 +124,13 @@ pub fn run() {
                 // 3. 启动 Go Sidecar (仅桌面)
                 println!("TAURI: Attempting to spawn sidecar 'c404-backend'...");
                 
-                // 动态解析路径
+                // 预先获取开发环境下的工作根目录
+                let project_dir = std::env::current_dir().unwrap_or_default();
+                let workspace_root = project_dir.parent().unwrap_or(&project_dir).to_path_buf();
+
+                // 动态解析数据库和上传路径
                 let (db_path, uploads_path) = if cfg!(dev) {
                     // 开发环境下：指向项目根目录以便同步数据
-                    let project_dir = std::env::current_dir().unwrap_or_default();
-                    let workspace_root = project_dir.parent().unwrap_or(&project_dir);
                     (
                         workspace_root.join("backend/blog_platform.db"),
                         workspace_root.join("backend/uploads")
