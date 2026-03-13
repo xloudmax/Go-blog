@@ -54,6 +54,7 @@ stats-static.html
 dist-static
 
 # Binaries
+src-tauri/c404-backend-*
 src-tauri/blog-backend-*
 
 # Tauri

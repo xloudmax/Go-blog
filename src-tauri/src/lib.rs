@@ -158,7 +158,7 @@ pub fn run() {
                         })
                         .unwrap_or_else(|| "dev_unsafe_secret_do_not_use_in_prod".to_string())
                 } else {
-                    "production_secret_should_be_set_via_system_env".to_string()
+                    "PLACEHOLDER_FOR_PRODUCTION_SECRET".to_string()
                 };
 
                 let sidecar_command = app.shell()

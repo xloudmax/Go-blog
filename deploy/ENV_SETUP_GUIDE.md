@@ -39,7 +39,7 @@ cd backend && go run main.go
 ### 方法3: 手动设置环境变量
 
 ```bash
-export JWT_SECRET="X5cIMqG0p7tqKlSPvx408x660KtbtXsdzwCYdjJWn09bJwY2Fpwya91sadot108A"
+export JWT_SECRET="YOUR_STRONG_RANDOM_SECRET_KEY"
 export ADMIN_INVITE_CODE="76e2f0f3a8ee99ce498376118af55293"
 cd backend && go run main.go
 ```
