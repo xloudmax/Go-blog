@@ -69,3 +69,18 @@ src-tauri/gen/
 # Security Fixes (Manual track removal)
 backend/blog_platform.db
 backend/.env
+
+# Internal Modules (Closed Source)
+ai_service/
+scripts/
+deploy/
+/docs/gemini_api_ref.md
+/docs/vertex_ai_ops_guide.md
+
+# Sensitive Data
+**/.env
+**/.env.*
+batch_input.jsonl
+build_log.txt
+*.db*
+uploads/

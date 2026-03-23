@@ -15,11 +15,11 @@ export DATABASE_URL="blog_platform.db"
 # Go 编译配置：开启 SQLite FTS5 支持，确保全文索引可用
 export GOFLAGS="-tags=fts5"
 
-# JWT 安全密钥 (已生成强随机密钥)
-export JWT_SECRET="X5cIMqG0p7tqKlSPvx408x660KtbtXsdzwCYdjJWn09bJwY2Fpwya91sadot108A"
+# JWT 安全密钥 (生产环境请务必更改此值)
+export JWT_SECRET="your-super-secret-jwt-key-change-in-production"
 
 # 管理员邀请码 (用于首次创建管理员账号)
-export ADMIN_INVITE_CODE="76e2f0f3a8ee99ce498376118af55293"
+export ADMIN_INVITE_CODE="your-admin-invite-code"
 
 # Notion 服务配置 (获取 API Key: https://www.notion.so/my-integrations)
 export NOTION_API_KEY=""
