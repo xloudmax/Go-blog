@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -14,6 +15,8 @@ import (
 type RedisCache struct {
 	client *redis.Client
 	ctx    context.Context
+	hits   int64
+	misses int64
 }
 
 // NewRedisCache 创建新的 Redis 缓存实例
@@ -63,11 +66,14 @@ func (r *RedisCache) Set(key string, value interface{}, duration time.Duration) 
 func (r *RedisCache) Get(key string, target interface{}) bool {
 	valBytes, err := r.client.Get(r.ctx, key).Bytes()
 	if err == redis.Nil {
+		atomic.AddInt64(&r.misses, 1)
 		return false
 	} else if err != nil {
+		atomic.AddInt64(&r.misses, 1)
 		return false
 	}
 
+	atomic.AddInt64(&r.hits, 1)
 	if target == nil {
 		return true
 	}
@@ -115,6 +121,11 @@ func (r *RedisCache) Count() int {
 		return 0
 	}
 	return int(count)
+}
+
+// GetStats 获取缓存统计信息 (命中/未命中)
+func (r *RedisCache) GetStats() (int64, int64) {
+	return atomic.LoadInt64(&r.hits), atomic.LoadInt64(&r.misses)
 }
 
 // Incr 原子增加计数器

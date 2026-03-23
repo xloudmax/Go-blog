@@ -280,3 +280,161 @@ html.dark .markdown-body tr:nth-child(2n) {
 .markdown-body.mobile-prose h1 { font-size: 1.75em !important; margin-top: 1.5em !important; margin-bottom: 0.75em !important; }
 .markdown-body.mobile-prose h2 { font-size: 1.5em !important; margin-top: 1.25em !important; margin-bottom: 0.5em !important; }
 .markdown-body.mobile-prose h3 { font-size: 1.25em !important; margin-top: 1em !important; margin-bottom: 0.4em !important; }
+
+/* 增强的代码块样式 - 极致沉浸式与现代化适配 */
+.code-block-container {
+  position: relative;
+  margin: 1.5rem 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(208, 215, 222, 0.5);
+  background-color: #f8f9fa;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.code-block-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
+  border-color: rgba(9, 105, 218, 0.25);
+}
+
+html.dark .code-block-container {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #282c34; /* One Dark 背景色 */
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+html.dark .code-block-container:hover {
+  border-color: rgba(97, 175, 239, 0.3); /* One Dark Blue */
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.6);
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: rgba(0, 0, 0, 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+html.dark .code-block-header {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.code-block-lang {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #6a737d;
+  text-transform: uppercase;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+html.dark .code-block-lang {
+  color: #abb2bf;
+}
+
+.code-copy-btn {
+  color: #6a737d !important;
+  opacity: 0.4;
+  transition: all 0.2s ease !important;
+  border-radius: 6px !important;
+}
+
+.code-copy-btn:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  transform: scale(1.1);
+}
+
+html.dark .code-copy-btn {
+  color: #abb2bf !important;
+}
+
+html.dark .code-copy-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.code-block-content pre {
+  margin: 0 !important;
+  padding: 1.15rem !important;
+  background-color: transparent !important;
+  overflow-x: auto;
+}
+
+.code-block-content code {
+  padding: 0 !important;
+  background-color: transparent !important;
+  font-size: 0.92rem !important;
+  line-height: 1.65;
+  font-family: 'Fira Code', 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  tab-size: 4;
+}
+
+/* --- 语法高亮 (One Dark Pro Inspired) Token 适配 --- */
+
+/* 亮色模式 (GitHub Style) */
+html.light .hljs, html:not(.dark) .hljs { color: #24292e; }
+html.light .hljs-comment, html.light .hljs-quote { color: #6a737d; font-style: italic; }
+html.light .hljs-keyword, html.light .hljs-selector-tag { color: #d73a49; }
+html.light .hljs-string, html.light .hljs-doctag, html.light .hljs-regexp { color: #032f62; }
+html.light .hljs-title, html.light .hljs-section { color: #6f42c1; }
+html.light .hljs-variable, html.light .hljs-template-variable { color: #e36209; }
+html.light .hljs-function { color: #6f42c1; }
+html.light .hljs-attr, html.light .hljs-attribute { color: #005cc5; }
+html.light .hljs-number, html.light .hljs-literal { color: #005cc5; }
+html.light .hljs-params { color: #24292e; }
+html.light .hljs-built_in, html.light .hljs-bullet { color: #e36209; }
+
+/* 深色模式 (One Dark Ultimate) */
+html.dark .hljs { color: #abb2bf; }
+html.dark .hljs-comment, html.dark .hljs-quote { color: #5c6370; font-style: italic; }
+html.dark .hljs-keyword, html.dark .hljs-selector-tag { color: #c678dd; } /* Purple */
+html.dark .hljs-string, html.dark .hljs-doctag, html.dark .hljs-regexp { color: #98c379; } /* Green */
+html.dark .hljs-title, html.dark .hljs-section, html.dark .hljs-name { color: #e06c75; } /* Red (One Dark) */
+html.dark .hljs-variable, html.dark .hljs-template-variable { color: #d19a66; } /* Orange */
+html.dark .hljs-function, html.dark .hljs-title.function_ { color: #61afef; } /* Blue */
+html.dark .hljs-attr, html.dark .hljs-attribute { color: #d19a66; } /* Orange */
+html.dark .hljs-number, html.dark .hljs-literal { color: #d19a66; } /* Orange */
+html.dark .hljs-params { color: #abb2bf; }
+html.dark .hljs-built_in, html.dark .hljs-class { color: #e6c07b; } /* Yellow */
+html.dark .hljs-type, html.dark .hljs-meta { color: #61afef; } 
+html.dark .hljs-link, html.dark .hljs-symbol, html.dark .hljs-bullet, html.dark .hljs-addition { color: #98c379; }
+html.dark .hljs-deletion { color: #e06c75; }
+
+/* 自定义滚动条 - 更加隐形与 premium */
+.code-block-content pre::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.code-block-content pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-block-content pre::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+html.dark .code-block-content pre::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  background-clip: content-box;
+}
+
+.code-block-content pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.12);
+  background-clip: content-box;
+}
+
+html.dark .code-block-content pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+  background-clip: content-box;
+}

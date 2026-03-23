@@ -66,7 +66,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = React.memo(({
     if (posts.length <= 1) return;
     const timer = setInterval(handleNext, autoPlayInterval);
     return () => clearInterval(timer);
-  }, [handleNext, autoPlayInterval, posts.length]);
+  }, [handleNext, autoPlayInterval, posts.length, currentIndex]);
 
   const activePost = useMemo(() => posts[currentIndex], [posts, currentIndex]);
 

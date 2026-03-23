@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type Cache interface {
 	Stop()
 	Count() int
 	Incr(key string) (int64, error)
+	GetStats() (int64, int64)
 }
 
 // MemoryCache 内存缓存结构体
@@ -26,6 +28,8 @@ type MemoryCache struct {
 	data    map[string]*CacheItem
 	mutex   sync.RWMutex
 	janitor *janitor
+	hits    int64
+	misses  int64
 }
 
 // CacheItem 缓存项结构体
@@ -79,16 +83,19 @@ func (c *MemoryCache) Get(key string, target interface{}) bool {
 	item, found := c.data[key]
 	if !found {
 		c.mutex.RUnlock()
+		atomic.AddInt64(&c.misses, 1)
 		return false
 	}
 
 	if item.Expiration > 0 && time.Now().UnixNano() > item.Expiration {
 		c.mutex.RUnlock()
+		atomic.AddInt64(&c.misses, 1)
 		c.Delete(key)
 		return false
 	}
 
 	c.mutex.RUnlock()
+	atomic.AddInt64(&c.hits, 1)
 
 	// 使用反射将值拷贝到 target
 	if target != nil && item.Value != nil {
@@ -137,6 +144,11 @@ func (c *MemoryCache) Count() int {
 	count := len(c.data)
 	c.mutex.RUnlock()
 	return count
+}
+
+// GetStats 获取缓存统计信息 (命中/未命中)
+func (c *MemoryCache) GetStats() (int64, int64) {
+	return atomic.LoadInt64(&c.hits), atomic.LoadInt64(&c.misses)
 }
 
 // DeleteExpired 删除过期的缓存项

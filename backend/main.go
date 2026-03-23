@@ -100,8 +100,17 @@ func main() {
 	aiService := services.NewAIService()
 	logger.Infow("AI服务已初始化")
 
-	graphRAGService := services.NewGraphRAGService(db, aiService)
-	logger.Infow("GraphRAG服务已初始化")
+	// 初始化专门的 GraphRAG 数据库连接 (PostgreSQL)
+	graphDB, err := database.InitGraphRAGDB(cfg)
+	var graphRAGService *services.GraphRAGService
+	if err != nil {
+		logger.Warnw("GraphRAG数据库初始化失败，功能将受限", "error", err)
+		// 回退到主库 (虽然在 SQLite 下会报错，但能防止服务 crash)
+		graphRAGService = services.NewGraphRAGService(db, aiService)
+	} else {
+		logger.Infow("GraphRAG数据库连接已建立 (PostgreSQL)")
+		graphRAGService = services.NewGraphRAGService(graphDB, aiService)
+	}
 
 	// 配置路由
 	logger.Infow("配置路由和中间件")

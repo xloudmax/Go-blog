@@ -83,14 +83,15 @@ func (s *SearchService) AdvancedSearchPosts(query string, limit, offset int, use
 
 	if s.supportsFTS() {
 		res, err := s.searchWithFTS(keywords, limit, offset, userID, userRole)
-		if err != nil {
-			return nil, err
+		if err == nil {
+			s.LogSearchQuery(query, len(res.Posts), userID)
+			if useCache {
+				cacheService.Set(query, limit, offset, userID, userRole, res, cacheTTL)
+			}
+			return res, nil
 		}
-		s.LogSearchQuery(query, len(res.Posts), userID)
-		if useCache {
-			cacheService.Set(query, limit, offset, userID, userRole, res, cacheTTL)
-		}
-		return res, nil
+		// If FTS fails (e.g. missing module), log it and fallback to LIKE
+		fmt.Printf("Search: FTS failed, falling back to LIKE: %v\n", err)
 	}
 
 	dbQuery := s.applyVisibilityFilters(

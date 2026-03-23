@@ -83,7 +83,7 @@ func setupGraphRAGRoutes(r *gin.Engine, s *services.GraphRAGService) {
 				req.MaxHops = 2 // Default 2 hops
 			}
 
-			results, err := s.LocalSearch(c.Request.Context(), req.Query, req.MaxHops)
+			graphResult, err := s.LocalSearch(c.Request.Context(), req.Query, req.MaxHops)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -91,7 +91,8 @@ func setupGraphRAGRoutes(r *gin.Engine, s *services.GraphRAGService) {
 
 			c.JSON(http.StatusOK, gin.H{
 				"query":   req.Query,
-				"results": results,
+				"nodes":   graphResult.Nodes,
+				"edges":   graphResult.Edges,
 			})
 		})
 

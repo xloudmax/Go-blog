@@ -1,6 +1,6 @@
 // src/components/StaticRoot.tsx
 import { ConfigProvider, App as AntdApp } from 'antd';
-import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
+import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
 import App from '../App';
 import ThemeProvider, { useTheme } from './ThemeProvider';
 import { AppStateProvider } from '@/hooks';
@@ -8,8 +8,8 @@ import { AntdThemeProvider } from '@/theme/antdTheme';
 
 // 创建一个空的 Apollo Client，防止 Hook 报错
 const emptyClient = new ApolloClient({
+    link: new HttpLink({ uri: '/static-mock-api' }), // 提供一个 Mock URI 解决初始化报错
     cache: new InMemoryCache(),
-    // 在静态模式下，所有的 GraphQL 请求都不应该被触发，或者应该静默失败
 });
 
 // Simplified internal component for static mode (no Apollo)

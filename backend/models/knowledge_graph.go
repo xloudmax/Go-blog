@@ -66,4 +66,12 @@ type GraphSearchResult struct {
 	Description string    `json:"description"`
 	Type        string    `json:"type"`
 	HopLevel    int       `json:"hop_level"`
+	CommunityID *int      `json:"community_id"`
+}
+
+// GraphEdge represents a relationship between nodes in a search result.
+type GraphEdge struct {
+	SourceID uuid.UUID `json:"source_id" gorm:"column:source_id"`
+	TargetID uuid.UUID `json:"target_id" gorm:"column:target_id"`
+	Type     string    `json:"relation_type" gorm:"column:relation_type"`
 }

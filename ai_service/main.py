@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 import asyncpg
+import yaml
 from contextlib import asynccontextmanager
 import networkx as nx
 import leidenalg
@@ -25,30 +26,128 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ai_service")
 
-# --- Configuration & Client ---
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
-API_KEY = os.getenv("LLM_API_KEY")
-BASE_URL = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
-DATABASE_URL = os.getenv("GRAPH_DATABASE_URL") # e.g., postgresql://user:pass@localhost/db
+from google import genai
+from google.genai import types
 
-client: Optional[AsyncOpenAI] = None
-if API_KEY:
-    client = AsyncOpenAI(
-        api_key=API_KEY,
-        base_url=BASE_URL
+from google.genai.types import HttpOptions
+
+# --- Configuration Loader ---
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "model_config.yaml")
+
+def load_system_config():
+    try:
+        if os.path.exists(CONFIG_PATH):
+            with open(CONFIG_PATH, 'r') as f:
+                return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Failed to load model_config.yaml: {e}")
+    return {}
+
+_sys_config = load_system_config()
+
+def get_model_setting(task: str, key: str, default_val: Any = None) -> Any:
+    """Helper to get setting from config with task-specific fallback."""
+    task_cfg = _sys_config.get(task, {})
+    val = task_cfg.get(key)
+    if val is not None:
+        return val
+    return _sys_config.get('default', {}).get(key, default_val)
+
+# --- Base Configuration ---
+API_KEY = os.getenv("LLM_API_KEY")
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", get_model_setting("default", "project_id"))
+LOCATION = os.getenv("GOOGLE_CLOUD_REGION", get_model_setting("default", "location", "us-central1"))
+GRAPH_DATABASE_URL = os.getenv("GRAPH_DATABASE_URL")
+
+# Initialize the new Google GenAI Client
+client = genai.Client(
+    vertexai=True,
+    project=PROJECT_ID,
+    location=LOCATION,
+    api_key=API_KEY if API_KEY else None,
+    http_options=HttpOptions(api_version="v1")
+)
+logger.info(f"GenAI Client (v1) initialized for Vertex AI in {LOCATION}")
+
+async def get_gemini_response(
+    prompt: Union[str, List[Any]], 
+    system_instruction: Optional[str] = None, 
+    json_mode: bool = False,
+    model_id: Optional[str] = None,
+    task: Optional[str] = None
+) -> str:
+    """Utility to call GenAI SDK with exponential backoff retry."""
+    if not client: 
+        raise RuntimeError("AI Service Configuration Missing")
+
+    # Determine final model ID and settings
+    final_model = model_id
+    temp = 1.0
+    max_tokens = 65535
+
+    if task:
+        final_model = final_model or get_model_setting(task, "model_id")
+        temp = get_model_setting(task, "temperature", temp)
+        max_tokens = get_model_setting(task, "max_tokens", max_tokens)
+    
+    # Final fallback to environment variable if still none
+    final_model = final_model or os.getenv("LLM_MODEL", "gemini-1.5-flash")
+
+    gen_config = types.GenerateContentConfig(
+        temperature=temp,
+        top_p=0.95,
+        max_output_tokens=max_tokens,
+        system_instruction=system_instruction,
+        safety_settings=[
+            types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="OFF"),
+            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="OFF"),
+            types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
+            types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
+        ]
     )
-else:
-    logger.warning("LLM_API_KEY not set. AI features will use mock data.")
+
+    if json_mode: gen_config.response_mime_type = "application/json"
+
+    # Exponential Backoff Retry (Max 2 retries as suggested by documentation)
+    max_retries = 2
+    delay = 1 # Initial 1s delay
+
+    for attempt in range(max_retries + 1):
+        try:
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.models.generate_content(
+                    model=final_model,
+                    contents=prompt,
+                    config=gen_config
+                )
+            )
+            if not response or not response.text:
+                raise Exception("Empty response from Gemini API")
+            return response.text
+        except Exception as e:
+            if attempt < max_retries and ("429" in str(e) or "500" in str(e) or "503" in str(e)):
+                logger.warning(f"Retry {attempt+1}/{max_retries} for error: {e}. Waiting {delay}s...")
+                await asyncio.sleep(delay)
+                delay *= 2 
+            else:
+                logger.error(f"GenAI API Fatal Error: {e}")
+                # Raise the error instead of returning it as a string to prevent JSON decode errors
+                raise e
+    raise RuntimeError("Unexpected end of retry loop")
+
+# Embedding support using the new SDK
+# Embedding support is handled below by a more robust version
 
 db_pool = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global db_pool
-    if DATABASE_URL:
+    if GRAPH_DATABASE_URL:
         try:
-            db_pool = await asyncpg.create_pool(DATABASE_URL)
+            db_pool = await asyncpg.create_pool(GRAPH_DATABASE_URL)
             logger.info("Database pool created.")
         except Exception as e:
             logger.error(f"Failed to create database pool: {e}")
@@ -63,19 +162,27 @@ app = FastAPI(title="C404 Insight AI Service - 2025 Edition", lifespan=lifespan)
 
 # --- Data Models ---
 
+class CrossDomainApplication(BaseModel):
+    domain: str = Field(..., description="Distance level: 'Close', 'Somewhat Far', or 'Distant'")
+    example: str = Field(..., description="The concrete application example")
+    context: str = Field(..., description="The domain/field of this example")
+    strategy: str = Field(..., description="Actionable transfer strategy for this example")
+
 class MechanismNode(BaseModel):
     id: str = ""
     title: str
     active_ingredient: str = Field(..., description="A concise (max 15 words) description of the mechanism including a verb.")
+    applications: List[CrossDomainApplication] = Field(default_factory=list)
     children: Optional[List['MechanismNode']] = None
-
-MechanismNode.model_rebuild()
 
 class LLMMechanismNode(BaseModel):
     id: str
     title: str
     active_ingredient: str
     parentId: Optional[str] = None
+    applications: List[CrossDomainApplication] = Field(default_factory=list)
+
+MechanismNode.model_rebuild()
 
 class LLMMechanismEdge(BaseModel):
     source: str
@@ -93,6 +200,7 @@ class ReactFlowNodeData(BaseModel):
     title: str
     active_ingredient: str
     level: int
+    applications: List[CrossDomainApplication] = Field(default_factory=list)
 
 class ReactFlowNode(BaseModel):
     id: str
@@ -132,6 +240,7 @@ class KnowledgeExtractionResponse(BaseModel):
 
 class KnowledgeExtractionRequest(BaseModel):
     text: str
+    manual_data: Optional[Dict[str, Any]] = None
 
 # --- Prompts ---
 
@@ -148,23 +257,35 @@ CORE RULES:
 2. ACTIVE INGREDIENT EXTRACTION:
    - For every node, generate an "active_ingredient".
    - Constraint: Must be concise (max 15 words).
-   - Constraint: Must include a functional verb or verb phrase (e.g., "Leveraging high pressure differentials to drive fluid transfer" NOT "Pressure-based system").
+   - Must include a functional verb phrase (e.g., "Leveraging high pressure differentials to drive fluid transfer").
 
-3. OUTPUT SPECIFICATION:
-   - You MUST output a strictly valid JSON object using a FLATTENED structure to optimize for streaming.
+3. ANALOGICAL CUES & CROSS-DOMAIN APPS:
+   - For EVERY node, you MUST generate 3 cross-domain application examples:
+     a. "Close": A domain very similar to the original problem.
+     b. "Somewhat Far": A domain with some relation but distinct.
+     c. "Distant": A completely different domain that shares the same functional mechanism.
+   - For each example, provide an "example", its "context" (domain name), and an "Actionable Transfer Strategy" (strategy).
+
+4. OUTPUT SPECIFICATION:
+   - Output valid JSON using a FLATTENED structure.
    - Required Format:
      {
        "root_mechanism": "High-level Mechanism Name",
        "nodes": [
-         {"id": "node-1", "title": "...", "active_ingredient": "...", "parentId": null},
-         {"id": "node-2", "title": "...", "active_ingredient": "...", "parentId": "node-1"}
+         {
+           "id": "node-1", 
+           "title": "...", 
+           "active_ingredient": "...", 
+           "parentId": null,
+           "applications": [
+             {"domain": "Close", "example": "...", "context": "...", "strategy": "..."},
+             {"domain": "Somewhat Far", "example": "...", "context": "...", "strategy": "..."},
+             {"domain": "Distant", "example": "...", "context": "...", "strategy": "..."}
+           ]
+         }
        ],
-       "edges": [
-         {"source": "node-1", "target": "node-2"}
-       ]
+       "edges": [{"source": "...", "target": "..."}]
      }
-   - The root node MUST have 'parentId': null.
-   - All other nodes MUST have the correct 'parentId' based on the hierarchy.
 """
 
 KNOWLEDGE_EXTRACTION_PROMPT = """
@@ -187,8 +308,8 @@ Example Output:
 """
 
 COMMUNITY_SUMMARY_PROMPT = """
-You are a knowledge graph community analyst. Below are the entities and relationships within a specific "community" of nodes.
-Your goal is to generate a comprehensive summary of this community.
+You are a knowledge graph community analyst specializing in the BioSpark framework. Below are the entities and relationships within a specific "community" of nodes.
+Your goal is to generate a comprehensive summary of this community that facilitates analogical transfer.
 
 INPUT:
 - Entities: {entities}
@@ -197,19 +318,21 @@ INPUT:
 OUTPUT RULES:
 1. TITLE: Create a descriptive title (max 5 words).
 2. SUMMARY: A high-level overview of the functional mechanism of this community.
-3. FINDINGS: List 3 key technical takeaways or active ingredients.
+3. SPARKS: List 3 "BioSpark Sparks"—novel analogical insights, cross-domain inspirations, or creative adaptations enabled by this specific functional mechanism.
+4. TRADE-OFFS: Identify the primary technical or design trade-offs (e.g., latency vs. accuracy, cost vs. durability) inherent in this mechanism.
 
 Output strictly valid JSON:
 {{
   "title": "...",
   "summary": "...",
-  "findings": ["...", "...", "..."]
+  "sparks": ["...", "...", "..."],
+  "trade_offs": "..."
 }}
 """
 
 # --- Internal Logic & Stability ---
 
-async def run_leiden_clustering():
+async def run_leiden_clustering() -> int:
     """Fetches edges, runs Leiden clustering, and updates nodes."""
     if not db_pool:
         return 0
@@ -251,11 +374,14 @@ async def run_leiden_clustering():
         
         logger.info(f"Leiden clustering completed: {len(partition)} communities identified.")
         return len(partition)
+    return 0
 
-async def generate_all_community_summaries():
+async def generate_all_community_summaries() -> None:
     """Generates LLM summaries for all identified communities."""
     if not db_pool or not client:
         return
+    
+    assert db_pool is not None
         
     async with db_pool.acquire() as conn:
         # Get unique communities
@@ -291,14 +417,18 @@ async def generate_all_community_summaries():
                     relationships=rels_str
                 )
                 
-                response = await client.chat.completions.create(
-                    model=LLM_MODEL,
-                    messages=[{"role": "system", "content": prompt_content}],
-                    response_format={"type": "json_object"}
+                content = await get_gemini_response(
+                    prompt=prompt_content,
+                    json_mode=True,
+                    task="community_summary"
                 )
                 
-                content = response.choices[0].message.content
                 data = json.loads(content)
+                # Store Sparks and Trade-offs in the findings JSON field
+                findings_data = {
+                    "sparks": data.get("sparks", []),
+                    "trade_offs": data.get("trade_offs", "")
+                }
                 
                 await conn.execute(
                     """
@@ -310,25 +440,87 @@ async def generate_all_community_summaries():
                         findings = EXCLUDED.findings,
                         updated_at = CURRENT_TIMESTAMP
                     """,
-                    comm_id, 0, data['title'], data['summary'], json.dumps(data['findings'])
+                    comm_id, 0, data['title'], data['summary'], json.dumps(findings_data)
                 )
             except Exception as e:
                 logger.error(f"Failed to generate summary for community {comm_id}: {e}")
 
+def getFallbackMockData(query: str) -> FlattenedMechanismResponse:
+    """Provides structured mock data when AI service is unavailable."""
+    root_title = f"Mechanism: {query}"
+    root_id = "mock-root"
+    
+    # Mock root and children
+    nodes = [
+        ReactFlowNode(
+            id=root_id,
+            data=ReactFlowNodeData(
+                title=root_title, 
+                active_ingredient="Core coordinating mechanism for efficiency", 
+                level=1,
+                applications=[
+                    CrossDomainApplication( # type: ignore
+                        domain="Close", context="Domestic Laundry", 
+                        example="Optimizing detergent timing", 
+                        strategy="Apply precise dose targeting to reduce waste"
+                    ),
+                    CrossDomainApplication( # type: ignore
+                        domain="Distant", context="Aerospace Cleaning", 
+                        example="Ultrasonic decontamination of sensors", 
+                        strategy="Use ultrasonic vibration principles for fabric stain removal"
+                    )
+                ]
+            ),
+            position={"x": 250, "y": 0}
+        ),
+        ReactFlowNode(
+            id="mock-child-1",
+            data=ReactFlowNodeData(
+                title="Core Process", 
+                active_ingredient="Executing primary transformation", 
+                level=2,
+                applications=[]
+            ),
+            position={"x": 500, "y": -50}
+        ),
+        ReactFlowNode(
+            id="mock-child-2",
+            data=ReactFlowNodeData(
+                title="Regulatory Feedback", 
+                active_ingredient="Maintaining system homeostasis", 
+                level=2,
+                applications=[]
+            ),
+            position={"x": 500, "y": 50}
+        )
+    ]
+    
+    edges = [
+        ReactFlowEdge(id=f"edge-{root_id}-c1", source=root_id, target="mock-child-1"), # type: ignore
+        ReactFlowEdge(id=f"edge-{root_id}-c2", source=root_id, target="mock-child-2") # type: ignore
+    ]
+    
+    return FlattenedMechanismResponse(
+        tree_metadata=TreeMetadata(query=query, root_mechanism=root_title),
+        nodes=nodes,
+        edges=edges
+    )
+
 def generate_deterministic_id(path: str, title: str) -> str:
     """Generates a stable ID based on the node's path in the tree and title hash."""
     content = f"{path}:{title.strip().lower()}"
-    hash_val = hashlib.md5(content.encode()).hexdigest()[:8]
-    slug = "".join(c if c.isalnum() else "-" for c in title.lower())[:20].strip("-")
+    hash_val = str(hashlib.md5(content.encode()).hexdigest())[:8]
+    slug = "".join(c if c.isalnum() else "-" for c in title.lower())
+    slug = str(slug)[:20].strip("-")
     return f"mech-{hash_val}-{slug}"
 
 def flatten_tree(
     node: MechanismNode, 
     level: int = 1, 
     path: str = "root",
-    nodes: List[ReactFlowNode] = None, 
-    edges: List[ReactFlowEdge] = None
-) -> Dict[str, Any]:
+    nodes: Optional[List[ReactFlowNode]] = None, 
+    edges: Optional[List[ReactFlowEdge]] = None
+) -> Dict[str, List[Union[ReactFlowNode, ReactFlowEdge]]]:
     """Converts a nested tree into flattened nodes and edges for React Flow."""
     if nodes is None: nodes = []
     if edges is None: edges = []
@@ -341,12 +533,13 @@ def flatten_tree(
         data=ReactFlowNodeData(
             title=node.title,
             active_ingredient=node.active_ingredient,
-            level=level
+            level=level,
+            applications=node.applications if hasattr(node, "applications") else []
         ),
         position=position
     ))
 
-    if node.children:
+    if node.children is not None:
         for i, child in enumerate(node.children):
             child_id = generate_deterministic_id(f"{path}/{current_id}", child.title)
             edges.append(ReactFlowEdge(
@@ -371,50 +564,73 @@ async def retry_with_backoff(coro_func, *args, max_retries=3, initial_delay=1, *
             await asyncio.sleep(delay)
 
 async def get_embedding(text: str) -> List[float]:
-    """Generates an embedding for the given text."""
+    """Generates an embedding using the new GenAI SDK."""
     if not client:
-        return [0.0] * 1536
-    response = await client.embeddings.create(
-        input=[text],
-        model=EMBEDDING_MODEL
-    )
-    return response.data[0].embedding
+        return [0.0] * 768
+    
+    loop = asyncio.get_event_loop()
+    try:
+        response = await loop.run_in_executor(
+            None,
+            lambda: client.models.embed_content(
+                model=get_model_setting("embeddings", "model_id", "text-embedding-004"),
+                contents=text
+            )
+        )
+        # Handle different response formats (SDK v1 vs v1beta)
+        if hasattr(response, 'embeddings') and len(response.embeddings) > 0:
+            return response.embeddings[0].values
+        return [0.0] * 768
+    except Exception as e:
+        logger.error(f"Embedding Error: {e}")
+        return [0.0] * 768
 
 async def upsert_knowledge(extraction: KnowledgeExtractionResponse):
-    """Upserts extracted knowledge into the Postgres database."""
+    """Upserts extracted knowledge with Entity Disambiguation (Deduplication)."""
     if not db_pool:
         logger.warning("No database pool available. Skipping upsert.")
         return
 
     entity_name_to_id = {}
 
+    assert db_pool is not None
     async with db_pool.acquire() as conn:
-        # 1. Upsert Entities
+        # 1. Upsert Entities with Disambiguation
         for entity in extraction.entities:
-            embedding = await get_embedding(entity.description)
-            # Use name as a unique identifier for mapping relationships in this batch
-            row = await conn.fetchrow(
-                """
-                INSERT INTO knowledge_nodes (name, type, description, embedding)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (id) DO UPDATE SET 
-                    type = EXCLUDED.type, 
-                    description = EXCLUDED.description, 
-                    embedding = EXCLUDED.embedding,
-                    updated_at = CURRENT_TIMESTAMP
-                RETURNING id
-                """,
-                entity.name, entity.type, entity.description, embedding
-            )
-            # If no ID returned because we don't have UNIQUE on name yet in schema,
-            # we should probably handle it differently or add UNIQUE constraint.
-            # For now, let's assume UUIDs are generated and we might need to find by name if collision.
-            if not row:
-                # Fallback to find by name if we didn't add the unique constraint yet
-                row = await conn.fetchrow("SELECT id FROM knowledge_nodes WHERE name = $1", entity.name)
+            embedding_list = await get_embedding(entity.description)
+            # Convert list to pgvector string format: '[v1,v2,...]'
+            embedding_str = "[" + ",".join(map(str, embedding_list)) + "]"
             
-            if row:
-                entity_name_to_id[entity.name] = row['id']
+            # --- Entity Disambiguation Logic ---
+            existing_node = await conn.fetchrow(
+                """
+                SELECT id, name FROM knowledge_nodes 
+                WHERE name % $1 OR embedding <=> $2::vector < 0.1
+                ORDER BY similarity(name, $1) DESC, embedding <=> $2::vector ASC 
+                LIMIT 1
+                """,
+                entity.name, embedding_str
+            )
+
+            if existing_node:
+                target_id = existing_node['id']
+                logger.info(f"Disambiguation: Mapping '{entity.name}' to existing node '{existing_node['name']}' ({target_id})")
+                
+                await conn.execute(
+                    "UPDATE knowledge_nodes SET type = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+                    entity.type, target_id
+                )
+            else:
+                target_id = await conn.fetchval(
+                    """
+                    INSERT INTO knowledge_nodes (name, type, description, embedding)
+                    VALUES ($1, $2, $3, $4::vector)
+                    RETURNING id
+                    """,
+                    entity.name, entity.type, entity.description, embedding_str
+                )
+            
+            entity_name_to_id[entity.name] = target_id
 
         # 2. Upsert Relationships
         for rel in extraction.relationships:
@@ -422,6 +638,9 @@ async def upsert_knowledge(extraction: KnowledgeExtractionResponse):
             target_id = entity_name_to_id.get(rel.target)
             
             if source_id and target_id:
+                # Avoid self-referencing relationships
+                if source_id == target_id: continue
+
                 await conn.execute(
                     """
                     INSERT INTO knowledge_edges (source_id, target_id, relation_type, description)
@@ -439,24 +658,18 @@ async def generate_mechanism_tree(request: GenerateTreeRequest):
     logger.info(f"Received tree query: {query}")
 
     try:
-        if not client:
-            return FlattenedMechanismResponse(
-                tree_metadata=TreeMetadata(query=query, root_mechanism="Mock Root"),
-                nodes=[], edges=[]
-            )
+        if not PROJECT_ID:
+            return getFallbackMockData(query)
             
-        response = await retry_with_backoff(
-            client.chat.completions.create,
-            model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": MECHANISM_TREE_PROMPT},
-                {"role": "user", "content": f"Query: {query}"}
-            ],
-            response_format={"type": "json_object"}
+        content = await get_gemini_response(
+            prompt=f"Query: {query}",
+            system_instruction=MECHANISM_TREE_PROMPT,
+            json_mode=True,
+            task="mechanism_tree"
         )
         
-        content = response.choices[0].message.content
         raw_data = json.loads(content)
+        # ... (rest of parsing logic remains same)
         
         # Parse flat structure from LLM
         flat_tree = LLMMechanismTree(**raw_data)
@@ -466,7 +679,7 @@ async def generate_mechanism_tree(request: GenerateTreeRequest):
         
         # Prepare components for flatten_tree (which actually constructs React Flow nodes/edges)
         # We need to bridge LLMMechanismNode to MechanismNode if we want to use existing helpers
-        node_map = {n.id: MechanismNode(id=n.id, title=n.title, active_ingredient=n.active_ingredient, children=[]) for n in flat_tree.nodes}
+        node_map = {n.id: MechanismNode(id=n.id, title=n.title, active_ingredient=n.active_ingredient, applications=n.applications, children=[]) for n in flat_tree.nodes}
         root = None
         for n in flat_tree.nodes:
             if n.parentId and n.parentId in node_map:
@@ -503,66 +716,39 @@ async def generate_mechanism_tree_stream(request: GenerateTreeRequest):
     async def event_generator():
         try:
             if not client:
-                yield f"data: {json.dumps({'error': 'OpenAI client not configured'})}\n\n"
+                yield f"data: {json.dumps({'error': 'GenAI client not configured'})}\n\n"
                 return
 
-            # Note: We don't use retry_with_backoff for streaming as it complicates the generator.
-            # Real implementation would need a specialized streaming retry wrapper.
-            stream = await client.chat.completions.create(
-                model=LLM_MODEL,
-                messages=[
-                    {"role": "system", "content": MECHANISM_TREE_PROMPT},
-                    {"role": "user", "content": f"Query: {query}"}
-                ],
-                stream=True,
-                response_format={"type": "json_object"}
+            gen_config = types.GenerateContentConfig(
+                system_instruction=MECHANISM_TREE_PROMPT,
+                response_mime_type="application/json",
+                temperature=get_model_setting("mechanism_tree", "temperature", 1.0),
+                max_output_tokens=get_model_setting("mechanism_tree", "max_tokens", 8192)
             )
 
-            # Bridge between async token stream and sync ijson parser
-            class AsyncByteStream(io.BytesIO):
-                def __init__(self):
-                    super().__init__()
-                    self._condition = threading.Condition()
-                    self._closed = False
-
-                def write_tokens(self, tokens: bytes):
-                    with self._condition:
-                        self.write(tokens)
-                        self._condition.notify_all()
-
-                def close_stream(self):
-                    with self._condition:
-                        self._closed = True
-                        self._condition.notify_all()
-
-                def read(self, size=-1):
-                    # ijson calls read in a loop usually. 
-                    # This needs to be blocking for ijson but feedable from async.
-                    # Since we are running ijson in a thread, this works.
-                    with self._condition:
-                        while self.tell() == len(self.getvalue()) and not self._closed:
-                            self._condition.wait()
-                        return super().read(size)
-
-            # However, ijson 3.0+ supports async backends or we can use the 'items' generator
-            # with a custom file-like object. 
-            # A cleaner way with FastAPI/Async is to use ijson.parse or ijson.items 
-            # but we need a way to feed it chunks.
+            # Use the new SDK's streaming method
+            full_content: str = ""
+            node_count: int = 0
+            edge_count: int = 0
             
-            # Alternative: ijson.sendable_list or just manually parse chunks 
-            # if we want to avoid complex threading.
-            # But let's use the simplest reliable pattern: yield events as they are parsed.
+            # The SDK method is blocking, so we use loop.run_in_executor
+            def get_stream():
+                return client.models.generate_content_stream(
+                    model=get_model_setting("mechanism_tree", "model_id", "gemini-2.0-flash-exp"),
+                    contents=f"Query: {query}",
+                    config=gen_config
+                )
+
+            loop = asyncio.get_event_loop()
+            # We need to handle the generator in a way that remains async-friendly
+            # For simplicity in this CLI environment, we'll iterate through the stream
+            # but note that real-world heavy load would use a more robust queue.
             
-            full_content = ""
-            node_count = 0
-            edge_count = 0
-            
-            # For "BioSpark 2025" high-compliance, we emit specific event types.
-            async for chunk in stream:
-                token = chunk.choices[0].delta.content or ""
+            for chunk in get_stream():
+                token = chunk.text or ""
                 full_content += token
                 
-                # Simple "Heuristic" parsing for now to demonstrate True Streaming.
+                # ... (Heuristic parsing logic remains similar)
                 # True ijson incremental parsing usually requires a separate thread/pipe.
                 # Given the complexity of ijson with async streams, we'll implement 
                 # a high-frequency "buffer-and-search" parser for the flat format.
@@ -571,72 +757,72 @@ async def generate_mechanism_tree_stream(request: GenerateTreeRequest):
                 try:
                     # Search for the most recently completed node object
                     # This is a robust way to handle the "nodes" array in the flat structure.
-                    if '{"id":' in token or '"parentId":' in token or '}' in token:
-                         # Attempt to find completed nodes in current buffer
-                         # We look for the pattern in flat JSON: {"id": "...", ...}
-                         # This is specifically optimized for our FLATTENED prompt.
-                         nodes_start = full_content.find('"nodes": [')
-                         if nodes_start != -1:
-                             nodes_content = full_content[nodes_start + 10:]
-                             # Find all {...} blocks within nodes_content
-                             import re
-                             node_matches = list(re.finditer(r'\{[^{}]+\}', nodes_content))
-                             if len(node_matches) > node_count:
-                                 for i in range(node_count, len(node_matches)):
-                                     try:
-                                         node_json = node_matches[i].group(0)
-                                         node_data = json.loads(node_json)
-                                         # Validate it has required fields
-                                         if "id" in node_data and "title" in node_data:
-                                             # Convert to React Flow format via existing logic
-                                             m_node = MechanismNode(
-                                                 id=node_data["id"],
-                                                 title=node_data["title"],
-                                                 active_ingredient=node_data.get("active_ingredient", "")
-                                             )
-                                             # Reuse flatten_tree's logic for styling (level etc)
-                                             # For streaming, we might just emit the raw node and let frontend style,
-                                             # but here we generate the full data.
-                                             
-                                             # Metadata emission
-                                             if node_count == 0:
-                                                 root_match = re.search(r'"root_mechanism":\s*"([^"]+)"', full_content)
-                                                 root_mech = root_match.group(1) if root_match else "Analyzing..."
-                                                 yield f"data: {json.dumps({'type': 'metadata', 'query': query, 'root_mechanism': root_mech})}\n\n"
+                    nodes_start = full_content.find('"nodes": [')
+                    if nodes_start != -1:
+                        nodes_content: str = full_content[nodes_start + 10:] # type: ignore
+                        
+                        # Use a more sophisticated regex to capture nodes including their applications
+                        # We look for the structure: {"id": "...", ..., "applications": [...]}
+                        import re
+                        # Non-greedy match for a JSON object that likely represents a node
+                        node_matches = list(re.finditer(r'\{[^{}]*(?:"applications":\s*\[[^\]]*\])?[^{}]*\}', nodes_content))
+                        
+                        if len(node_matches) > node_count:
+                            for i in range(node_count, len(node_matches)):
+                                try:
+                                    node_json = node_matches[i].group(0)
+                                    # Ensure it's a closed object
+                                    if not node_json.endswith('}'): continue
+                                    
+                                    node_data = json.loads(node_json)
+                                    # Validate it has required fields
+                                    if "id" in node_data and "title" in node_data:
+                                        # Metadata emission (only once)
+                                        if node_count == 0:
+                                            root_match = re.search(r'"root_mechanism":\s*"([^"]+)"', full_content)
+                                            root_mech = "Analyzing..."
+                                            if root_match:
+                                                match_val = root_match.group(1)
+                                                if match_val:
+                                                    root_mech = str(match_val)
+                                            yield f"data: {json.dumps({'type': 'metadata', 'query': query, 'root_mechanism': root_mech})}\n\n"
 
-                                             yield f"data: {json.dumps({'type': 'node', 'data': {
-                                                 'id': m_node.id,
-                                                 'type': 'customMechanismNode',
-                                                 'data': {
-                                                     'title': m_node.title,
-                                                     'active_ingredient': m_node.active_ingredient,
-                                                     'level': 0 # Frontend Dagre will fix layout
-                                                 },
-                                                 'position': {'x': 0, 'y': 0}
-                                             }})}\n\n"
-                                             node_count += 1
-                                     except:
-                                         continue
+                                        # Emit node with applications (BioSpark Cues)
+                                        yield f"data: {json.dumps({'type': 'node', 'data': {
+                                            'id': node_data["id"],
+                                            'type': 'customMechanismNode',
+                                            'data': {
+                                                'title': node_data["title"],
+                                                'active_ingredient': node_data.get("active_ingredient", ""),
+                                                'level': 0, # Frontend Dagre will fix layout
+                                                'applications': node_data.get("applications", [])
+                                            },
+                                            'position': {'x': 0, 'y': 0}
+                                        }})}\n\n"
+                                        node_count += 1
+                                except Exception as inner_e:
+                                    # logger.debug(f"Partial parse failed: {inner_e}")
+                                    continue
 
-                         # Similar logic for edges
-                         edges_start = full_content.find('"edges": [')
-                         if edges_start != -1:
-                             edges_content = full_content[edges_start + 10:]
-                             edge_matches = list(re.finditer(r'\{[^{}]+\}', edges_content))
-                             if len(edge_matches) > edge_count:
-                                 for i in range(edge_count, len(edge_matches)):
-                                     try:
-                                         edge_json = edge_matches[i].group(0)
-                                         edge_data = json.loads(edge_json)
-                                         if "source" in edge_data and "target" in edge_data:
-                                             yield f"data: {json.dumps({'type': 'edge', 'data': {
-                                                 'id': f"edge-{edge_data['source']}-{edge_data['target']}",
-                                                 'source': edge_data['source'],
-                                                 'target': edge_data['target']
-                                             }})}\n\n"
-                                             edge_count += 1
-                                     except:
-                                         continue
+                    # Similar logic for edges
+                    edges_start = full_content.find('"edges": [')
+                    if edges_start != -1:
+                        edges_content: str = full_content[edges_start + 10:] # type: ignore
+                        edge_matches = list(re.finditer(r'\{[^{}]+\}', edges_content))
+                        if len(edge_matches) > edge_count:
+                            for i in range(edge_count, len(edge_matches)):
+                                try:
+                                    edge_json = edge_matches[i].group(0)
+                                    edge_data = json.loads(edge_json)
+                                    if "source" in edge_data and "target" in edge_data:
+                                        yield f"data: {json.dumps({'type': 'edge', 'data': {
+                                            'id': f"edge-{edge_data['source']}-{edge_data['target']}",
+                                            'source': edge_data['source'],
+                                            'target': edge_data['target']
+                                        }})}\n\n"
+                                        edge_count += 1 # type: ignore
+                                except:
+                                    continue
                 except Exception as e:
                     # Ignore partial parse errors during streaming
                     pass
@@ -650,24 +836,30 @@ async def generate_mechanism_tree_stream(request: GenerateTreeRequest):
 
 @app.post("/extract/knowledge", response_model=KnowledgeExtractionResponse)
 async def extract_knowledge_endpoint(request: KnowledgeExtractionRequest):
+    # 1. Support for Batch Results: If data is already extracted, just upsert it
+    if request.manual_data:
+        logger.info("Receiving manual data for upsert (Batch Mode).")
+        # Ensure manual_data is a dict before unpacking
+        data_to_use = request.manual_data if isinstance(request.manual_data, dict) else {}
+        extraction = KnowledgeExtractionResponse(**data_to_use)
+        asyncio.create_task(upsert_knowledge(extraction))
+        return extraction
+
+    # 2. Normal Path: Perform LLM extraction
     text = request.text
     logger.info("Received text for knowledge extraction.")
 
     try:
         if not client:
-            raise HTTPException(status_code=500, detail="OpenAI client not configured.")
+            raise HTTPException(status_code=500, detail="GenAI client not configured.")
 
-        response = await retry_with_backoff(
-            client.chat.completions.create,
-            model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": KNOWLEDGE_EXTRACTION_PROMPT},
-                {"role": "user", "content": f"Text: {text}"}
-            ],
-            response_format={"type": "json_object"}
+        content = await get_gemini_response(
+            prompt=f"Text: {text}",
+            system_instruction=KNOWLEDGE_EXTRACTION_PROMPT,
+            json_mode=True,
+            task="knowledge_extraction"
         )
         
-        content = response.choices[0].message.content
         raw_data = json.loads(content)
         extraction = KnowledgeExtractionResponse(**raw_data)
         
@@ -717,6 +909,7 @@ async def global_search_endpoint(request: GlobalSearchRequest):
     
     logger.info(f"Global Search Query: {request.query}")
     
+    assert db_pool is not None
     async with db_pool.acquire() as conn:
         # Search communities using Full-Text Search on Title and Summary
         communities = await conn.fetch(
@@ -739,20 +932,40 @@ async def global_search_endpoint(request: GlobalSearchRequest):
         if not communities:
              return {"answer": "No relevant knowledge communities found to answer this global query."}
 
-        context = "\n\n".join([
-            f"Community: {c['title']}\nSummary: {c['summary']}\nKey Findings: {c['findings']}" 
-            for c in communities
-        ])
+        # Prepare context, expanding the JSON findings for the LLM
+        context_parts = []
+        for c in communities:
+            findings = {}
+            try:
+                findings = json.loads(c['findings'])
+            except:
+                pass
+            
+            sparks = "\n".join([f"- {s}" for s in findings.get("sparks", [])])
+            trade_offs = findings.get("trade_offs", "Not specified")
+            
+            context_parts.append(
+                f"### Community: {c['title']}\n"
+                f"**Summary**: {c['summary']}\n"
+                f"**BioSpark Sparks**:\n{sparks}\n"
+                f"**Trade-offs**: {trade_offs}"
+            )
+        
+        context = "\n\n".join(context_parts)
         
         try:
-            response = await client.chat.completions.create(
-                model=LLM_MODEL,
-                messages=[
-                    {"role": "system", "content": "You are a global knowledge graph analyst. Use the provided high-level community summaries to answer the user's broad question. If the data provided is insufficient, state that clearly."},
-                    {"role": "user", "content": f"Query: {request.query}\n\nData Context (Community Summaries):\n{context}"}
-                ]
+            answer = await get_gemini_response(
+                prompt=f"Query: {request.query}\n\nData Context (BioSpark Community Summaries):\n{context}",
+                system_instruction=(
+                    "You are a global knowledge graph analyst specializing in the BioSpark framework (2025 Standard). "
+                    "Use the provided community summaries to answer the user's question. "
+                    "In your response, you MUST include sections for 'Insights', 'Mechanism Sparks', and 'Transfer Trade-offs' "
+                    "based on the data provided. Use the terminology from the BioSpark paper. "
+                    "If the data provided is insufficient to provide a complete answer, state that clearly."
+                ),
+                task="global_search"
             )
-            return {"answer": response.choices[0].message.content}
+            return {"answer": answer}
         except Exception as e:
             logger.error(f"Error in LLM global search: {e}")
             raise HTTPException(status_code=500, detail=str(e))

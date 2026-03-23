@@ -7,34 +7,32 @@ import {
   Connection,
   Edge,
   Position,
-  Background,
   Controls,
-  Node,
-  BackgroundVariant,
+  Node as FlowNode,
   MarkerType,
 } from '@xyflow/react';
 import dagre from 'dagre';
-import '@xyflow/react/dist/style.css';
-import { MechanismNode } from '../generated/graphql';
+import { ExtendedMechanismNode, MechanismNodeData } from '../types';
 import CustomNode from './CustomNode';
 import { ThemeContext } from './ThemeProvider';
 
 interface MechanismTreeProps {
-  data: MechanismNode;
+  data: ExtendedMechanismNode;
 }
 
-const nodeWidth = 260; // Slightly wider for new design
-const nodeHeight = 100;
+const nodeWidth = 260; 
+const nodeHeight = 80;
 
 const nodeTypes = {
   custom: CustomNode,
 };
 
-const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
+const getLayoutedElements = (nodes: FlowNode<MechanismNodeData>[], edges: Edge[]) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-  dagreGraph.setGraph({ rankdir: 'TB', nodesep: 60, ranksep: 80 });
+  // INCREASED SPACING: nodesep (Horizontal) and ranksep (Vertical)
+  dagreGraph.setGraph({ rankdir: 'TB', nodesep: 100, ranksep: 120 });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
@@ -60,31 +58,22 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   return { nodes, edges };
 };
 
-const flattenTree = (node: MechanismNode, isDarkMode: boolean, parentId?: string): { nodes: Node[]; edges: Edge[] } => {
-  const nodes: Node[] = [];
+const flattenTree = (
+  node: ExtendedMechanismNode, 
+  isDarkMode: boolean, 
+  parentId?: string, 
+  visited: Set<string> = new Set()
+): { nodes: FlowNode<MechanismNodeData>[]; edges: Edge[] } => {
+  const nodes: FlowNode<MechanismNodeData>[] = [];
   const edges: Edge[] = [];
   
   const isRoot = !parentId;
-  const isMechanism = !!(parentId && parentId === 'root'); // Heuristic: direct children of root are mechanisms
+  const isMechanism = !!(parentId && parentId === 'virtual-root'); 
   
-  // Colors based on theme
-  const edgeColor = isDarkMode ? '#818cf8' : '#6366f1'; // Indigo-400 (Dark) vs Indigo-500 (Light)
+  const edgeColor = isDarkMode ? '#818cf8' : '#6366f1';
 
-  const flowNode: Node = {
-    id: node.id,
-    type: 'custom', // Use our custom node
-    data: {
-      title: node.title,
-      active_ingredient: node.active_ingredient,
-      isRoot,
-      isMechanism,
-    },
-    position: { x: 0, y: 0 },
-    // no style/className here, CustomNode handles it
-  };
-
-  nodes.push(flowNode);
-
+  // 1. If we have already fully processed this node's children, 
+  // just return the edge connection to it.
   if (parentId) {
     edges.push({
       id: `${parentId}-${node.id}`,
@@ -92,22 +81,37 @@ const flattenTree = (node: MechanismNode, isDarkMode: boolean, parentId?: string
       target: node.id,
       type: 'smoothstep', 
       animated: true,
-      interactionWidth: 20, // Better hover interaction
       style: { stroke: edgeColor, strokeWidth: 1.5 },
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        color: edgeColor,
-      },
+      markerEnd: { type: MarkerType.ArrowClosed, color: edgeColor },
     });
   }
 
+  // 2. If this node has already been added to the nodes list, stop recursion
+  if (visited.has(node.id)) {
+    return { nodes: [], edges }; 
+  }
+  
+  visited.add(node.id);
+
+  const flowNode: FlowNode<MechanismNodeData> = {
+    id: node.id,
+    type: 'custom', 
+    data: {
+      title: node.title,
+      active_ingredient: node.active_ingredient,
+      communityId: node.community_id, // New field for coloring
+      applications: node.applications, // New field for analogical cues
+      isRoot,
+      isMechanism,
+    },
+    position: { x: 0, y: 0 },
+  };
+
+  nodes.push(flowNode);
+
   if (node.children) {
     node.children.forEach((child) => {
-      // If parent is root, then children are mechanisms. 
-      // If parent is mechanism, children are solutions.
-      // We pass this info down? No need, flattenTree is recursive.
-      // But we need to know the 'depth' or type for styling.
-      const { nodes: childNodes, edges: childEdges } = flattenTree(child, isDarkMode, node.id);
+      const { nodes: childNodes, edges: childEdges } = flattenTree(child, isDarkMode, node.id, visited);
       nodes.push(...childNodes);
       edges.push(...childEdges);
     });
@@ -143,7 +147,7 @@ export const MechanismTree = ({ data }: MechanismTreeProps) => {
   );
 
   return (
-    <div className="w-full h-full min-h-[600px] bg-transparent backdrop-blur-sm transition-colors duration-300">
+    <div className="w-full h-full min-h-[600px] bg-transparent transition-colors duration-300">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -152,18 +156,11 @@ export const MechanismTree = ({ data }: MechanismTreeProps) => {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         fitView
-        fitViewOptions={{ duration: 800, padding: 0.2 }}
+        fitViewOptions={{ duration: 800, padding: 0.1 }}
         attributionPosition="bottom-right"
         proOptions={{ hideAttribution: true }}
       >
-        <Controls className="!bg-white dark:!bg-slate-800 !border-slate-200 dark:!border-slate-700 [&>button]:!border-b-slate-200 dark:[&>button]:!border-b-slate-700 [&_svg]:!fill-slate-600 dark:[&_svg]:!fill-slate-300 shadow-md !m-4" />
-        <Background 
-            color={isDarkMode ? "#cbd5e1" : "#94a3b8"} // Slate-300 vs Slate-400
-            gap={24} 
-            size={1} 
-            variant={BackgroundVariant.Dots} 
-            className="opacity-20" 
-        />
+        <Controls className="!bg-white/5 !border-white/10 [&>button]:!border-b-white/10 [&_svg]:!fill-slate-300 shadow-none !m-4" />
       </ReactFlow>
     </div>
   );

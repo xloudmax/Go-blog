@@ -107,6 +107,7 @@ describe('ArticleListContainer', () => {
       lastEditedAt: null,
       updatedAt: '2023-01-01T00:00:00Z',
       versions: [],
+      version: 1,
       coverImageUrl: null,
     },
     {
@@ -151,6 +152,7 @@ describe('ArticleListContainer', () => {
       lastEditedAt: null,
       updatedAt: '2023-01-02T00:00:00Z',
       versions: [],
+      version: 1,
       coverImageUrl: null,
     },
   ];

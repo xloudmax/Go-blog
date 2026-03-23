@@ -24,6 +24,9 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ post, onNavigate }) => {
 
   // 预加载文章详情
   const prefetchPost = () => {
+    if (import.meta.env.VITE_STATIC_EXPORT === 'true') {
+      return;
+    }
     client.query({
       query: POST_QUERY,
       variables: { slug: post.slug },

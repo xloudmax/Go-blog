@@ -14,6 +14,7 @@ import {
   BellOutlined,
   DeploymentUnitOutlined,
   ExperimentOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { useAppUser } from '@/hooks';
 import { useUnreadNotificationCount } from '@/api/graphql/notification';
@@ -47,66 +48,60 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
   const unreadCount = unreadData?.unreadNotificationCount || 0;
 
   // 顶部导航菜单项
-  const topMenuItems: MenuItem[] = isStatic ? [
+  const topMenuItems: MenuItem[] = [
     {
       key: 'posts',
       icon: <FileTextOutlined />,
-      label: '文章列表',
-      path: '/home',
-    }
-  ] : [
-    {
-      key: 'posts',
-      icon: <FileTextOutlined />,
-      label: '文章',
+      label: isStatic ? '文章列表' : '文章',
       path: '/home',
     },
-    // ... (rest of standard items)
-    {
+    ...(!isStatic ? [{
       key: 'tags',
-      icon: <BookOutlined />,
+      icon: <AppstoreOutlined />,
       label: '标签分类',
       path: '/tags',
-    },
+    }] : []),
     {
       key: 'search',
       icon: <SearchOutlined />,
       label: '搜索',
       path: '/search',
     },
-    {
-      key: 'insight',
-      icon: <DeploymentUnitOutlined />,
-      label: '知识洞察',
-      path: '/insight',
-    },
-    {
-      key: 'reference',
-      icon: <BookOutlined />,
-      label: '知识卡片',
-      path: '/reference',
-    },
+    ...(!isStatic ? [
+      {
+        key: 'insight',
+        icon: <DeploymentUnitOutlined />,
+        label: '知识洞察',
+        path: '/insight',
+      },
+      {
+        key: 'reference',
+        icon: <BookOutlined />,
+        label: '知识卡片',
+        path: '/reference',
+      }
+    ] : []),
     {
       key: 'liquid-glass',
       icon: <ExperimentOutlined />,
-      label: '液态玻璃测试',
+      label: '液态玻璃',
       path: '/liquid-glass',
     },
-    ...(isAuthenticated ? [{
+    ...(!isStatic && isAuthenticated ? [{
       key: 'notifications',
       icon: <BellOutlined />,
       label: '通知中心',
       path: '/notifications',
       requireAuth: true,
     }] : []),
-    ...(isAuthenticated ? [{
+    ...(!isStatic && isAuthenticated ? [{
       key: 'editor',
       icon: <EditOutlined />,
       label: '写文章',
       path: '/editor/posts',
       requireAuth: true,
     }] : []),
-    ...(isAdmin ? [{
+    ...(!isStatic && isAdmin ? [{
       key: 'admin',
       icon: <SettingOutlined />,
       label: '管理员控制台',
@@ -205,7 +200,7 @@ const IconSidebar: React.FC<IconSidebarProps> = ({ isDarkMode = false, onThemeTo
       >
       {/* 顶部：Logo */}
       <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '1rem' }}>
-        <div className="cursor-pointer" onClick={() => navigate('/')}>
+        <div className="cursor-pointer" onClick={() => navigate(isStatic ? '/home' : '/')}>
           <Tooltip title="Blog" placement="right">
             <div
               className="w-11 h-11 flex items-center justify-center transition-all"

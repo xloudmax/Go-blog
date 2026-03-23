@@ -1,0 +1,40 @@
+# C404 Model Configuration
+# This file controls which models are used for different AI tasks
+
+# --- Mechanism Tree Generation ---
+# High-performance model recommended for complex structural reasoning
+mechanism_tree:
+  model_id: "gemini-2.0-flash-exp" # Or "gemini-1.5-pro"
+  temperature: 1.0
+  max_tokens: 8192
+
+# --- Knowledge Graph Extraction ---
+# Cost-effective model for high-volume entity extraction
+knowledge_extraction:
+  model_id: "gemini-1.5-flash-002"
+  temperature: 0.1 # Low temperature for consistency
+  max_tokens: 4096
+
+# --- Community Summarization ---
+# Reasoning-heavy model for summarizing graph communities
+community_summary:
+  model_id: "gemini-1.5-pro-002"
+  temperature: 0.7
+  max_tokens: 2048
+
+# --- Embeddings ---
+# Specific model for vector generation
+embeddings:
+  model_id: "text-embedding-004"
+
+# --- Global Search ---
+# Reasoning model for synthesizing answers from multiple communities
+global_search:
+  model_id: "gemini-1.5-pro-002"
+  temperature: 0.7
+  max_tokens: 4000
+
+# --- Global Settings ---
+default:
+  location: "us-central1"
+  project_id: "project-830053bb-738a-4041-96a"

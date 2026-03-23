@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"repair-platform/models"
 	"strings"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -58,20 +59,117 @@ func main() {
 		fmt.Println("⚠️ 警告: 数据库中没有已发布的文章")
 	}
 
+	// 定义用于静态导出的数据结构 (完全扁平化且不包含循环引用)
+	type StaticStats struct {
+		ViewCount    int    `json:"viewCount"`
+		LikeCount    int    `json:"likeCount"`
+		CommentCount int    `json:"commentCount"`
+		UpdatedAt    string `json:"updatedAt"`
+	}
+
+	type StaticAuthor struct {
+		ID       uint   `json:"id"`
+		Username string `json:"username"`
+		Avatar   string `json:"avatar"`
+	}
+
+	type StaticPost struct {
+		ID            uint         `json:"id"`
+		Title         string       `json:"title"`
+		Slug          string       `json:"slug"`
+		Content       string       `json:"content"`
+		Excerpt       string       `json:"excerpt"`
+		CoverImageURL string       `json:"coverImageUrl"`
+		Status        string       `json:"status"`
+		CreatedAt     string       `json:"createdAt"`
+		UpdatedAt     string       `json:"updatedAt"`
+		PublishedAt   string       `json:"publishedAt"`
+		Tags          []string     `json:"tags"`
+		Categories    []string     `json:"categories"`
+		Author        StaticAuthor `json:"author"`
+		Stats         StaticStats  `json:"stats"`
+	}
+
+	// 转换数据
+	var staticPosts []StaticPost
+	for _, p := range posts {
+		// 处理时间格式
+		pubDate := ""
+		if p.PublishedAt != nil {
+			pubDate = p.PublishedAt.Format(time.RFC3339)
+		}
+		
+		sp := StaticPost{
+			ID:            p.ID,
+			Title:         p.Title,
+			Slug:          p.Slug,
+			Content:       p.Content,
+			Excerpt:       p.Excerpt,
+			CoverImageURL: p.CoverImageURL,
+			Status:        p.Status,
+			CreatedAt:     p.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:     p.UpdatedAt.Format(time.RFC3339),
+			PublishedAt:   pubDate,
+			Author: StaticAuthor{
+				ID:       p.Author.ID,
+				Username: p.Author.Username,
+				Avatar:   p.Author.Avatar,
+			},
+		}
+
+		// 处理统计信息
+		if p.Stats != nil {
+			sp.Stats = StaticStats{
+				ViewCount:    p.Stats.ViewCount,
+				LikeCount:    p.Stats.LikeCount,
+				CommentCount: p.Stats.CommentCount,
+				UpdatedAt:    p.Stats.UpdatedAt.Format(time.RFC3339),
+			}
+		}
+		
+		// 转换标签
+		if p.Tags != "" {
+			tags := strings.Split(p.Tags, ",")
+			for _, t := range tags {
+				trimmed := strings.TrimSpace(t)
+				if trimmed != "" {
+					sp.Tags = append(sp.Tags, trimmed)
+				}
+			}
+		} else {
+			sp.Tags = []string{}
+		}
+
+		// 转换分类
+		if p.Categories != "" {
+			cats := strings.Split(p.Categories, ",")
+			for _, c := range cats {
+				trimmed := strings.TrimSpace(c)
+				if trimmed != "" {
+					sp.Categories = append(sp.Categories, trimmed)
+				}
+			}
+		} else {
+			sp.Categories = []string{}
+		}
+		
+		staticPosts = append(staticPosts, sp)
+	}
+
 	// 5. 生成 posts.json
-	postsJSON, _ := json.Marshal(posts)
+	postsJSON, _ := json.Marshal(staticPosts)
 	os.WriteFile(filepath.Join(targetDir, "posts.json"), postsJSON, 0644)
 
 	// 6. 生成个体文章详情
-	for _, post := range posts {
+	for _, post := range staticPosts {
 		postJSON, _ := json.Marshal(post)
 		os.WriteFile(filepath.Join(postsDir, post.Slug+".json"), postJSON, 0644)
 	}
 
 	// 7. 生成 dashboard.json
 	dashboard := map[string]interface{}{
-		"popularPosts": posts,
-		"recentPosts":  posts,
+		"popularPosts": staticPosts,
+		"recentPosts":  staticPosts,
 		"tags":         extractTags(posts),
 	}
 	dashboardJSON, _ := json.Marshal(dashboard)

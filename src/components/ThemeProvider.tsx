@@ -37,8 +37,8 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                 if (mq && mq.matches) {
                     return 'dark'
                 }
-            } catch (e) {
-                console.error('matchMedia error:', e);
+            } catch (_e) {
+                // MatchMedia error usually happens in older browsers or non-browser environments
             }
         }
 
@@ -71,8 +71,8 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
             mediaQuery.addEventListener?.('change', handleChange);
             return () => mediaQuery.removeEventListener?.('change', handleChange);
-        } catch (e) {
-            console.error('matchMedia effect error:', e);
+        } catch (_e) {
+            // MatchMedia error
         }
     }, []);
  

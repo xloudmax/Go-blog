@@ -439,9 +439,6 @@ export default function LiquidGlassTestPage() {
         <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400">
           Liquid Glass Playground
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1.5 text-xs max-w-lg mx-auto">
-          Physics-based refraction with SDF displacement maps — 1:1 replica of the kube.io demo.
-        </p>
         <p className="text-pink-600/60 dark:text-pink-400/60 text-[10px] mt-1">Chrome/Edge only (SVG filters as backdrop-filter)</p>
       </header>
 

@@ -11,18 +11,47 @@ const { Title, Text } = Typography;
 export default function QuickRefListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
   
-  const { posts, loading, filterByTags, filterBySearch, loadMore, hasMore } = useBlogList(50);
+  const { posts: apolloPosts, loading: apolloLoading, filterByTags, filterBySearch, loadMore, hasMore } = useBlogList(50);
 
-  // Initialize filter to only show QuickRef tags
+  const [staticPosts, setStaticPosts] = useState<import('@/types').BlogPost[]>([]);
+  const [staticLoading, setStaticLoading] = useState(isStatic);
+
+  // 加载静态数据
   useEffect(() => {
-    filterByTags(['QuickRef']);
-  }, [filterByTags]);
+    if (isStatic) {
+      setStaticLoading(true);
+      fetch('./static/posts.json')
+        .then(res => res.json())
+        .then(data => {
+          // 在本地进行标签过滤
+          const filtered = data.filter((post: import('@/types').BlogPost) => 
+            Array.isArray(post.tags) && post.tags.includes('QuickRef')
+          );
+          setStaticPosts(filtered);
+          setStaticLoading(false);
+        })
+        .catch(() => setStaticLoading(false));
+    } else {
+      filterByTags(['QuickRef']);
+    }
+  }, [isStatic, filterByTags]);
+
+  const loading = isStatic ? staticLoading : apolloLoading;
+  const allPosts = isStatic ? staticPosts : apolloPosts;
+
+  // 静态模式下的搜索过滤
+  const filteredPosts = isStatic 
+    ? allPosts.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    : allPosts;
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearchTerm(val);
-    filterBySearch(val);
+    if (!isStatic) {
+      filterBySearch(val);
+    }
   };
 
   return (
@@ -48,14 +77,14 @@ export default function QuickRefListPage() {
           </div>
         </div>
 
-        {loading && posts.length === 0 ? (
+        {loading && filteredPosts.length === 0 ? (
           <div className="flex justify-center py-20"><Spin size="large" /></div>
-        ) : posts.length === 0 ? (
+        ) : filteredPosts.length === 0 ? (
           <Empty description="暂无速查表数据" className="py-20" />
         ) : (
           <>
             <Row gutter={[16, 16]}>
-              {posts.map((post, index) => (
+              {filteredPosts.map((post, index) => (
                 <Col xs={12} sm={8} md={6} lg={4} key={post.id}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -78,7 +107,7 @@ export default function QuickRefListPage() {
               ))}
             </Row>
 
-            {hasMore && (
+            {hasMore && !isStatic && (
               <div className="mt-12 text-center">
                 <motion.button
                   whileHover={{ scale: 1.05 }}

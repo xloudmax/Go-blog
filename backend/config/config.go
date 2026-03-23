@@ -61,6 +61,9 @@ type Config struct {
 	AIServiceURL     string
 	AIServiceTimeout string
 
+	// GraphRAG 配置
+	GraphRAGDSN string
+
 	// Notion 服务配置
 	NotionAPIKey string
 }
@@ -118,6 +121,9 @@ func LoadConfig() *Config {
 		// AI 服务配置
 		AIServiceURL:     getEnv("AI_SERVICE_URL", "http://localhost:8000"),
 		AIServiceTimeout: getEnv("AI_SERVICE_TIMEOUT", "30s"),
+
+		// GraphRAG 配置
+		GraphRAGDSN: getEnv("POSTGRES_DSN", ""),
 
 		// Notion 服务配置
 		NotionAPIKey: getEnv("NOTION_API_KEY", ""),

@@ -3,7 +3,7 @@
 	"scripts": {
 		"dev": "vite --host",
 		"build": "vite build",
-		"build:static": "vite build -c vite.static.config.ts",
+		"build:static": "vite build -c vite.static.config.ts && cd backend && go run cmd/export_static/main.go && cd .. && cp dist-static/index.static.html dist-static/index.html && cp dist-static/index.html dist-static/404.html && touch dist-static/.nojekyll && echo 'xloudmax.cc' > dist-static/CNAME",
 		"build:full-static": "pnpm build:static && cd backend && go run cmd/export_static/main.go && cd .. && npx serve dist-static",
 		"preview": "vite preview",
 		"test": "vitest",

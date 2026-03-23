@@ -71,6 +71,18 @@ export default defineConfig({
       }
     }) as any // Cast to any to bypass vite/rollup type mismatch
   ],
+  server: {
+    proxy: {
+      '/graphql': {
+        target: 'http://localhost:11451',
+        changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:11451',
+        changeOrigin: true,
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

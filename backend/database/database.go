@@ -119,6 +119,30 @@ func InitTestDB() (*gorm.DB, error) {
 	return db, nil
 }
 
+// InitGraphRAGDB 初始化专门用于 GraphRAG 的 PostgreSQL 连接
+func InitGraphRAGDB(cfg *config.Config) (*gorm.DB, error) {
+	if cfg.GraphRAGDSN == "" {
+		return nil, fmt.Errorf("GraphRAGDSN is not configured")
+	}
+
+	db, err := gorm.Open(postgres.Open(cfg.GraphRAGDSN), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to GraphRAG database: %w", err)
+	}
+
+	sqlDB, err := db.DB()
+	if err == nil {
+		sqlDB.SetMaxOpenConns(50)
+		sqlDB.SetMaxIdleConns(10)
+	}
+
+	return db, nil
+}
+
 // CloseDB 关闭数据库连接
 func CloseDB(db *gorm.DB) {
 	sqlDB, err := db.DB()

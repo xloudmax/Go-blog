@@ -77,6 +77,11 @@ export default function PostDetailPage() {
   const error = isStatic ? staticError : apolloError;
   const post = isStatic ? staticPost : apolloData?.post;
 
+  // 确保 tags 始终是数组 (处理 SSG 模式下的字符串数据)
+  const safeTags: string[] = Array.isArray(post?.tags) 
+    ? post.tags 
+    : (typeof post?.tags === 'string' ? (post.tags as string).split(',').filter(Boolean) : []);
+
   // 使用优化后的点赞 Hook
   const { isLiked, likeCount, handleLike } = useLike({
     postId: post?.id || '',
@@ -371,10 +376,10 @@ export default function PostDetailPage() {
                 </div>
 
                 {/* 标签 */}
-                {post.tags && post.tags.length > 0 && (
+                {safeTags.length > 0 && (
                   <div style={{ marginBottom: '1rem' }}>
                     <Space wrap>
-                      {post.tags.map((tag: string) => (
+                      {safeTags.map((tag: string) => (
                         <Tag key={tag} color="blue">
                           {tag}
                         </Tag>

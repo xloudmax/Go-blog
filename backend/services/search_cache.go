@@ -91,8 +91,18 @@ func (s *SearchCacheService) InvalidateAll() {
 
 // GetCacheStats 获取缓存统计信息
 func (s *SearchCacheService) GetCacheStats() map[string]interface{} {
+	hits, misses := s.cache.GetStats()
+	total := hits + misses
+	hitRate := 0.0
+	if total > 0 {
+		hitRate = float64(hits) / float64(total)
+	}
+
 	return map[string]interface{}{
 		"total_items": s.cache.Count(),
+		"hits":        hits,
+		"misses":      misses,
+		"hit_rate":    hitRate,
 		"cache_type":  "memory",
 	}
 }

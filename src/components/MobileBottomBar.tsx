@@ -31,6 +31,7 @@ const getNavItems = (userAvatar?: string, isAuthenticated?: boolean, isAdmin?: b
   if (isStatic) {
     return [
       { key: 'home', icon: <HomeOutlined />, label: '首页', path: '/home' },
+      { key: 'search', icon: <SearchOutlined />, label: '搜索', path: '/search' },
     ];
   }
   const items = [

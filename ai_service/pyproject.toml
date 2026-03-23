@@ -15,4 +15,9 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "python-igraph>=1.0.0",
     "uvicorn>=0.40.0",
+    "google-cloud-aiplatform>=1.70.0",
+    "google-cloud-storage>=2.18.2",
+    "google-genai>=1.0.0",
+    "requests>=2.32.3",
+    "pyyaml>=6.0.2",
 ]

@@ -42,12 +42,14 @@ interface CommentSectionProps {
 }
 
 const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
+  const isStaticExport = import.meta.env.VITE_STATIC_EXPORT === 'true';
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
 
-  const { comments, total, loading, error, refetch } = useComments(blogPostId, 10);
+  // 静态导出模式下不请求 API
+  const { comments, total, loading, error, refetch } = useComments(isStaticExport ? "" : blogPostId, 10);
   const {
     createComment,
     likeComment,
@@ -58,6 +60,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
   
   // 处理创建评论
   const handleCreateComment = useCallback(async () => {
+    if (isStaticExport) return;
     if (!newComment.trim()) {
       notification.warning({
         message: '警告',
@@ -87,7 +90,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
         duration: 5,
       });
     }
-  }, [newComment, blogPostId, createComment, refetch]);
+  }, [newComment, blogPostId, createComment, refetch, isStaticExport]);
   
   // 处理回复评论
   const handleReplyComment = useCallback(async (parentId: string) => {
@@ -505,40 +508,50 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogPostId }) => {
     <div style={{ marginTop: '2rem' }}>
       <div style={{ marginBottom: '1.5rem' }}>
         <Title level={4} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
-          <CommentOutlined /> 评论 ({total})
+          <CommentOutlined /> 评论 ({isStaticExport ? 0 : total})
         </Title>
       </div>
 
       {/* 发表评论 */}
-      <div
-        style={{
-          marginBottom: '2rem',
-          padding: '0',
-          background: 'transparent',
-        }}
-      >
-        <TextArea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="What are your thoughts?"
-          autoSize={{ minRows: 3, maxRows: 6 }}
-          className="!bg-gray-50 dark:!bg-[#151b28] !border-gray-200 dark:!border-gray-800 rounded-xl"
-          style={{ marginBottom: '12px', padding: '16px' }}
-        />
-        <LiquidButton
-          variant="primary"
-          className="!h-10 !px-6 flex items-center gap-2"
-          onClick={handleCreateComment}
-          loading={actionLoading.create}
+      {!isStaticExport ? (
+        <div
+          style={{
+            marginBottom: '2rem',
+            padding: '0',
+            background: 'transparent',
+          }}
         >
-          <SendOutlined /> 发表评论
-        </LiquidButton>
-      </div>
+          <TextArea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="What are your thoughts?"
+            autoSize={{ minRows: 3, maxRows: 6 }}
+            className="!bg-gray-50 dark:!bg-[#151b28] !border-gray-200 dark:!border-gray-800 rounded-xl"
+            style={{ marginBottom: '12px', padding: '16px' }}
+          />
+          <LiquidButton
+            variant="primary"
+            className="!h-10 !px-6 flex items-center gap-2"
+            onClick={handleCreateComment}
+            loading={actionLoading.create}
+          >
+            <SendOutlined /> 发表评论
+          </LiquidButton>
+        </div>
+      ) : (
+        <Alert
+          message="静态模式提示"
+          description="当前处于静态导出浏览模式，评论功能已禁用。如需参与讨论，请访问在线版本。"
+          type="info"
+          showIcon
+          className="rounded-xl mb-8"
+        />
+      )}
 
       <Divider style={{ margin: '1.5rem 0' }} />
 
       {/* 评论列表 */}
-      {loading ? (
+      {loading && !isStaticExport ? (
         <div style={{ textAlign: 'center', padding: '3rem 0' }}>
           <Spin size="large" />
           <Text style={{ display: 'block', marginTop: '1rem' }}>正在加载评论...</Text>

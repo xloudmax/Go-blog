@@ -4,7 +4,6 @@ import { ClockCircleOutlined } from '@ant-design/icons';
 import { motion, Variants } from 'framer-motion';
 import type { BlogPost } from '@/types';
 import { getGradientByString } from '@/utils/gradients';
-import { LiquidGlass } from './LiquidKit/glass';
 
 interface HeroArticleCardProps {
   post: BlogPost;
@@ -58,18 +57,6 @@ const HeroArticleCard: React.FC<HeroArticleCardProps> = React.memo(({ post, onNa
           <div className="absolute inset-0" style={{ background: activeGradient }} />
         )}
          <div className="absolute inset-0 opacity-15 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
-      </div>
-
-      {/* Glass Layer - Ensure it doesn't block interactions unnecessarily */}
-      <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden rounded-[32px]">
-        <LiquidGlass
-          glassThickness={80} 
-          blur={0.25} 
-          bezelWidth={35} 
-          refractiveIndex={1.4} 
-          specularOpacity={0.1}
-          style={{ width: '100%', height: '100%' }}
-        />
       </div>
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent z-[2] pointer-events-none" />

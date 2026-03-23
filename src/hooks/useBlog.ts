@@ -67,14 +67,35 @@ export const useBlogList = (initialLimit = 15) => {
 
   // 缓存上一份有效数据，防止 loading 时页面跳动
   const lastPostsRef = useRef<BlogPost[]>([]);
+  
   const posts = useMemo(() => {
-    if (isStatic) return staticPosts;
+    if (isStatic) {
+      // 在静态模式下执行本地过滤
+      let result = [...staticPosts];
+      
+      if (filter.search) {
+        const s = filter.search.toLowerCase();
+        result = result.filter(p => 
+          p.title.toLowerCase().includes(s) || 
+          p.content.toLowerCase().includes(s)
+        );
+      }
+      
+      if (filter.tags && filter.tags.length > 0) {
+        result = result.filter(p => 
+          filter.tags?.every(t => Array.isArray(p.tags) && p.tags.includes(t))
+        );
+      }
+      
+      return result;
+    }
+    
     if (data?.posts) {
       lastPostsRef.current = data.posts as BlogPost[];
       return data.posts as BlogPost[];
     }
     return lastPostsRef.current;
-  }, [data?.posts, staticPosts, isStatic]);
+  }, [data?.posts, staticPosts, isStatic, filter.search, filter.tags]);
   
   // 简单的分页处理
   const goToPage = useCallback((page: number) => {

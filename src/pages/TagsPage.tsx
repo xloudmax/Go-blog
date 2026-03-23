@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, Card, Tag, Empty, Spin, Space, Typography, Grid } from 'antd';
 import { TagOutlined, FolderOutlined } from '@ant-design/icons';
 import { useGetTagsQuery, useGetCategoriesQuery } from '@/generated/graphql';
+import { useBlogDashboard, useEnhancedSearchHook } from '@/hooks';
 import { LiquidSearchBox } from '@/components/LiquidSearchBox';
 import { PageHeader } from '@/components/PageHeader';
 import { PageContainer } from '@/components/PageContainer';
+import ArticleCard from '@/components/ArticleCard';
+import { BlogPost } from '@/types';
 
 const { Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -14,21 +17,44 @@ export default function TagsPage() {
   const navigate = useNavigate();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const isStatic = import.meta.env.VITE_STATIC_EXPORT === 'true';
   const [activeTab, setActiveTab] = useState<string>('tags');
   const [searchText, setSearchText] = useState<string>('');
 
-  // 获取标签数据
+  // Articles search hook
+  const { search, results: searchResults, loading: searchLoading } = useEnhancedSearchHook();
+
+  // Trigger search when text changes
+  useEffect(() => {
+    search({ query: searchText, limit: 12 });
+  }, [searchText, search]);
+
+  // 动态模式使用 Apollo 自动生成的 Query
   const { data: tagsData, loading: tagsLoading } = useGetTagsQuery({
     variables: { limit: 100, search: searchText || undefined },
+    skip: isStatic
   });
 
-  // 获取分类数据
   const { data: categoriesData, loading: categoriesLoading } = useGetCategoriesQuery({
     variables: { limit: 100, search: searchText || undefined },
+    skip: isStatic
   });
 
-  const tags = tagsData?.getTags || [];
-  const categories = categoriesData?.getCategories || [];
+  // 静态模式使用 useBlogDashboard 提供的本地数据
+  const { tags: staticTags } = useBlogDashboard();
+
+  const apolloTags = tagsData?.getTags || [];
+  const rawTags = isStatic ? staticTags : apolloTags;
+
+  // 统一数据格式并应用本地搜索过滤
+  interface TagItem { name: string; count: number; }
+  const tags = (rawTags as (TagItem | string)[])
+    .map(t => typeof t === 'string' ? { name: t, count: 0 } : t)
+    .filter(t => t.name.toLowerCase().includes(searchText.toLowerCase()));
+
+  const categories = isStatic 
+    ? [] // 目前静态导出暂不支持独立分类列表，若需要可后续扩展 dashboard.json
+    : (categoriesData?.getCategories || []);
 
   // 处理标签点击
   const handleTagClick = (name: string) => {
@@ -38,6 +64,40 @@ export default function TagsPage() {
   // 处理分类点击
   const handleCategoryClick = (name: string) => {
     navigate(`/search?category=${encodeURIComponent(name)}`);
+  };
+
+  // Rendering articles
+  const renderArticles = () => {
+    if (searchLoading) {
+      return (
+        <div style={{ textAlign: 'center', padding: isMobile ? '1.5rem' : '3rem' }}>
+          <Spin size="large" />
+        </div>
+      );
+    }
+
+    const posts = searchResults?.posts || [];
+
+    if (posts.length === 0) {
+      return (
+        <Empty
+          description={searchText ? '没有找到匹配的文章' : '请输入搜索内容'}
+          style={{ padding: isMobile ? '1.5rem' : '3rem' }}
+        />
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+        {(posts as unknown as BlogPost[]).map((post: BlogPost) => (
+          <ArticleCard
+            key={post.id}
+            post={post}
+            onNavigate={(slug) => navigate(`/post/${slug}`)}
+          />
+        ))}
+      </div>
+    );
   };
 
   // 渲染标签列表
@@ -185,6 +245,15 @@ export default function TagsPage() {
           onChange={setActiveTab}
           centered={isMobile}
           items={[
+            {
+              key: 'articles',
+              label: (
+                <span>
+                   文章 ({searchResults.length})
+                </span>
+              ),
+              children: renderArticles(),
+            },
             {
               key: 'tags',
               label: (
